@@ -1,18 +1,8 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Arc;
 
-use axum::{
-    extract::{Path, Query},
-    http::{HeaderMap, StatusCode},
-    response::sse::{Event, Sse},
-    response::{IntoResponse, Json, Response},
-    Extension, Router,
-};
 use fnrpc::router::RpcRouter;
-use futures::stream::{Stream, StreamExt};
 // use rspc::Procedures;
-use serde_json::Value;
-use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
 use crate::{
@@ -82,7 +72,7 @@ use config_rs::root::base_dir;
 pub async fn start(
     // procedures: Procedures<AppState>,
     state: AppState,
-    fnrpc_router: RpcRouter<Ctx>,
+    fnrpc_router: Arc<RpcRouter<Ctx>>,
     dist_dir: PathBuf,
     port: u16,
 ) {

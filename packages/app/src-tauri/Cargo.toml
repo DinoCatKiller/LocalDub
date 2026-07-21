@@ -29,8 +29,9 @@ serde_json = "1"
 core-rs = { path = "../../core-rs" }
 config-rs = { path = "../../config-rs" }
 device-rs = { path = "../../device-rs" }
-fnrpc = { version = "0.3", features = ["tracing"] }
-fnrpc-axum = { version = "0.3" }
+fnrpc = { version = "0.3.3", features = ["ts-bindings", "tracing"] }
+fnrpc-axum = { version = "0.3.3" }
+fnrpc-tauri = { version = "0.3.3" }
 # rspc = { version = "0.4", features = ["typescript"] }
 rspc-axum = "0.3"
 tauri-plugin-rspc = "0.2"

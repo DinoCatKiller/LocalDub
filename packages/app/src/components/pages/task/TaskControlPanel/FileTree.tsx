@@ -1,11 +1,13 @@
 import { For, Show, createSignal } from "solid-js";
-import { fnrpc } from "#/integrations/fnrpc/client.ts";
+import { client, fnrpc } from "#/integrations/fnrpc/client.ts";
 import type { DirEntry } from "#/integrations/fnrpc/bindings.ts";
+import { useQuery } from "@tanstack/solid-query";
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function formatSize(bytes: number | bigint): string {
+  const n = typeof bytes === 'bigint' ? Number(bytes) : bytes as number
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 interface FileTreeProps {
@@ -63,11 +65,11 @@ function FileTreeItem(props: {
 
 export function FileTree(props: FileTreeProps) {
   const depth = props.depth ?? 0;
-  const query = fnrpc.createQuery(() => ['list_app_directory', props.relativeDir]);
+  const query = useQuery(() => client.list_app_directory.queryOptions(props.relativeDir));
 
   return (
     <Show
-      when={query.data}
+      when={query.isSuccess}
       fallback={
         <div class="px-2 py-1 text-xs text-muted-foreground">
           {query.isPending ? "Loading..." : query.isError ? "Failed to load" : ""}

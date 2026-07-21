@@ -107,8 +107,25 @@ export type PlatformInfo = {
 
 export type ProbeResult = "Ok" | "Fail";
 
+/**
+ *  An RPC error returned by any handler (query, mutate, subscribe).
+ * 
+ *  Maps to [`RpcError`](https://docs.rs/fnrpc-client/latest/fnrpc_client/class.RpcError.html)
+ *  in the TypeScript client.
+ * 
+ *  # TS mirror
+ * 
+ *  ```typescript
+ *  class RpcError extends Error {
+ *    name: "RpcErr";
+ *    code: string;
+ *    message: string;
+ *    data: unknown;
+ *  }
+ *  ```
+ */
 export type RpcErr = {
-	name: "RpcErr",
+	name: string,
 	code: string,
 	message: string,
 	data: unknown | null,
@@ -183,30 +200,45 @@ export type VulkanHeaps = {
 	device_local: number | null,
 	host_visible: number | null,
 };
+
 export type Procedures = {
-  device_info: { kind: "query"; input: null; output: DeviceInfo; error: RpcErr };
-  find_server: { kind: "query"; input: ServerType; output: ServerInfo; error: RpcErr };
-  get_group_list: { kind: "query"; input: null; output: GroupInfo[]; error: RpcErr };
-  get_task_ctx: { kind: "query"; input: string; output: Context; error: RpcErr };
-  list_app_directory: { kind: "query"; input: string; output: DirEntry[]; error: RpcErr };
-  read_app_file_bin: { kind: "query"; input: string; output: number[]; error: RpcErr };
-  read_app_file_text: { kind: "query"; input: string; output: string; error: RpcErr };
-  reset_count: { kind: "mutate"; input: null; output: null; error: RpcErr };
-  write_app_file_text: { kind: "mutate"; input: [string, string]; output: null; error: RpcErr };
-  tick: { kind: "subscribe"; input: bigint; output: bigint; error: RpcErr };
-  watch_task_log: { kind: "subscribe"; input: string; output: string; error: RpcErr };
+  read_app_file_text: { kind: "query"; method: "GET"; input: string; output: string; error: RpcErr };
+  write_app_file_text: { kind: "mutate"; method: "POST"; input: [string, string]; output: null; error: RpcErr };
+  read_app_file_bin: { kind: "query"; method: "GET"; input: string; output: number[]; error: RpcErr };
+  list_app_directory: { kind: "query"; method: "GET"; input: string; output: DirEntry[]; error: RpcErr };
+  watch_task_log: { kind: "subscribe"; method: "GET"; input: string; output: string; error: RpcErr };
+  tick: { kind: "subscribe"; method: "GET"; input: bigint; output: bigint; error: RpcErr };
+  get_group_list: { kind: "query"; method: "GET"; input: null; output: GroupInfo[]; error: RpcErr };
+  get_task_ctx: { kind: "query"; method: "GET"; input: string; output: Context; error: RpcErr };
+  health_check: { kind: "query"; method: "GET"; input: null; output: string; error: RpcErr };
+  get_count: { kind: "query"; method: "GET"; input: null; output: string; error: RpcErr };
+  reset_count: { kind: "mutate"; method: "POST"; input: null; output: null; error: RpcErr };
+  find_server: { kind: "query"; method: "GET"; input: ServerType; output: ServerInfo; error: RpcErr };
+  start_torch: { kind: "mutate"; method: "POST"; input: null; output: number; error: RpcErr };
+  stop_torch: { kind: "mutate"; method: "POST"; input: null; output: null; error: RpcErr };
+  check_torch: { kind: "query"; method: "GET"; input: null; output: boolean; error: RpcErr };
+  start_voxcpm: { kind: "mutate"; method: "POST"; input: null; output: number; error: RpcErr };
+  stop_voxcpm: { kind: "mutate"; method: "POST"; input: null; output: null; error: RpcErr };
+  device_info: { kind: "query"; method: "GET"; input: null; output: DeviceInfo; error: RpcErr };
 }
 
-export const __procedureKinds = {
-  device_info: "query",
-  find_server: "query",
-  get_group_list: "query",
-  get_task_ctx: "query",
-  list_app_directory: "query",
-  read_app_file_bin: "query",
-  read_app_file_text: "query",
-  reset_count: "mutate",
-  write_app_file_text: "mutate",
-  tick: "subscribe",
-  watch_task_log: "subscribe",
+export const __procedureMeta = {
+  read_app_file_text: { kind: "query", method: "GET" },
+  write_app_file_text: { kind: "mutate", method: "POST" },
+  read_app_file_bin: { kind: "query", method: "GET" },
+  list_app_directory: { kind: "query", method: "GET" },
+  watch_task_log: { kind: "subscribe", method: "GET" },
+  tick: { kind: "subscribe", method: "GET" },
+  get_group_list: { kind: "query", method: "GET" },
+  get_task_ctx: { kind: "query", method: "GET" },
+  health_check: { kind: "query", method: "GET" },
+  get_count: { kind: "query", method: "GET" },
+  reset_count: { kind: "mutate", method: "POST" },
+  find_server: { kind: "query", method: "GET" },
+  start_torch: { kind: "mutate", method: "POST" },
+  stop_torch: { kind: "mutate", method: "POST" },
+  check_torch: { kind: "query", method: "GET" },
+  start_voxcpm: { kind: "mutate", method: "POST" },
+  stop_voxcpm: { kind: "mutate", method: "POST" },
+  device_info: { kind: "query", method: "GET" },
 } as const;

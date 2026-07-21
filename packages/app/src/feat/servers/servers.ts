@@ -2,7 +2,8 @@ import { to } from '@repo/shared/lib/utils/try';
 import { findServer } from '@repo/core/servers/discovery'
 import type { ModelServerStatus } from '@repo/core/servers/type'
 import { fetchStatsRes } from '@repo/core/servers/client';
-import { client } from '#/integrations/rspc/rspc.ts';
+import { client, fnrpc } from '#/integrations/fnrpc/client.ts';
+// import { client } from '#/integrations/rspc/rspc.ts';
 
 let _torchPort = 19109
 let _voxcpmPort = 19112
@@ -48,7 +49,7 @@ export async function startTorch(): Promise<ModelServerStatus> {
 	_torchPort = port
 	if (await ping(port)) return fetchStats(port)
 
-	_torchPort = await client.mutation(['startTorch', null])
+	_torchPort = await fnrpc.start_torch()
 	return waitForHealth(_torchPort)
 }
 
@@ -58,7 +59,7 @@ export async function stopTorch(): Promise<ModelServerStatus> {
 	} catch {
 		// already gone
 	}
-	await client.mutation(['stopTorch', null])
+	await fnrpc.start_torch()
 	return { status: 'stopped', port: _torchPort, uptime_s: 0, models: {} }
 }
 
@@ -66,11 +67,11 @@ export async function restartTorch(): Promise<ModelServerStatus> {
 	try {
 		await fetch(`http://127.0.0.1:${_torchPort}/api/shutdown`, { method: 'POST' })
 	} catch { /* ok */ }
-	await client.mutation(['stopTorch', null])
+	await fnrpc.start_torch()
 
 	await new Promise((r) => setTimeout(r, 1500))
 
-	_torchPort = await client.mutation(['startTorch', null])
+	_torchPort = await fnrpc.start_torch()
 	return waitForHealth(_torchPort)
 }
 
@@ -110,20 +111,20 @@ export async function startVoxCpm(): Promise<ModelServerStatus> {
 	_voxcpmPort = port
 	if (await pingVoxCpm(port)) return fetchVoxCpmHealth(port)
 
-	_voxcpmPort = await client.mutation(['startVoxcpm', null])
+	_voxcpmPort = await fnrpc.start_voxcpm()
 	return waitForVoxCpm(_voxcpmPort)
 }
 
 export async function get_voxcpm_torch_gradio_status(): Promise<ModelServerStatus> {
 	console.log(`get_voxcpm_torch_gradio_status(), _voxcpmPort=${_voxcpmPort}`)
-	const { port } = await client.query(['find_server', 'VoxcpmTorchGradio'])
+	const { port } = await fnrpc.find_server('VoxcpmTorchGradio')
 	console.log(`get_voxcpm_torch_gradio_status() => found port=${port}`)
 	_voxcpmPort = port
 	return fetchStats(port)
 }
 
 export async function stopVoxCpm(): Promise<ModelServerStatus> {
-	await client.mutation(['stopVoxcpm', null])
+	await fnrpc.stop_voxcpm()
 	return { status: 'stopped', port: _voxcpmPort, uptime_s: 0, models: { voxcpm: { status: 'unloaded', device: '' } } }
 }
 

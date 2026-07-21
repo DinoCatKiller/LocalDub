@@ -188,6 +188,7 @@ dependencies = [
  "device-rs",
  "fnrpc",
  "fnrpc-axum",
+ "fnrpc-tauri",
  "futures",
  "rspc-axum",
  "serde",
@@ -3437,9 +3438,9 @@ dependencies = [
 
 [[package]]
 name = "fnrpc"
-version = "0.3.0"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "941dd3640ffcd878e2b0c0e79833eac0cd2dd7618e3c55bf0eda546203fca768"
+checksum = "e70b2d24449762f6f87d8442fa792e859ed88a341d21beb7808b99c4c2f35624"
 dependencies = [
  "fnrpc-macros",
  "futures",
@@ -3454,9 +3455,9 @@ dependencies = [
 
 [[package]]
 name = "fnrpc-axum"
-version = "0.3.0"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47adf2b7a56428e2ec5bd703fad403b7eb8dae7131fcd58613f8fc71eed007b8"
+checksum = "f0eae581f829e4817d385e6fd6d9f721e89b565f5705793784bdd5483778fe67"
 dependencies = [
  "async-trait",
  "axum 0.8.9",
@@ -3470,13 +3471,28 @@ dependencies = [
 
 [[package]]
 name = "fnrpc-macros"
-version = "0.3.0"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08ba425715b477cbcc0a83889626c86c7263828aeb41a1d753edb213003f745a"
+checksum = "63c645db889c82fd6c2751cfc22df9a73addde5affdeb12962d52095f9a0ba0c"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.118",
+]
+
+[[package]]
+name = "fnrpc-tauri"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d3bf35a8ffb5c668e1091bfb676fa4af25e9068408c6ede83f365383545c096"
+dependencies = [
+ "fnrpc",
+ "futures",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tokio",
+ "tokio-util",
 ]
 
 [[package]]

@@ -14,15 +14,15 @@ import * as torchApi from '../feat/servers/servers';
 import { getLocale } from '@repo/shared/i18n/utils';
 // import { getGroupList } from '#/cmd/tasks.ts';
 import { Header } from '#/components/app/header/Header.tsx';
-import { client as rspcClient, rspc,  RspcClient } from '#/integrations/rspc/rspc.ts';
-import { Procedures, ProceduresLegacy } from '#/integrations/rspc/bindings.ts';
+// import { client as rspcClient, rspc,  RspcClient } from '#/integrations/rspc/rspc.ts';
+// import { Procedures, ProceduresLegacy } from '#/integrations/rspc/bindings.ts';
 import { client, fnrpc } from '#/integrations/fnrpc/client.ts';
-import { createSolidQueryHooks } from '#/integrations/rspc/query.tsx';
+// import { createSolidQueryHooks } from '#/integrations/rspc/query.tsx';
 import { getQueryClient } from '@repo/ui-solid/tanstack-query/provider';
 import { isTauri } from '@tauri-apps/api/core';
 interface MyRouterContext {
 	queryClient: QueryClient;
-  client: RspcClient
+  // client: RspcClient
 }
 
 export const Route = createRootRoute<MyRouterContext>({
@@ -51,12 +51,12 @@ function RootComponent() {
   )
 }
 function RootDocument({ children }: { children: JSX.Element }) {
-  const queryClient = getQueryClient();
+  // const queryClient = getQueryClient();
   return <>
   <HeadContent />
   {/*<rspc.Provider client={rspcClient} queryClient={queryClient}>*/}
   {/*<fnrpc.Provider client={client} queryClient={queryClient}>*/}
-  <ClientApiProvider value={{
+  {/*<ClientApiProvider value={{
     serversManagerApi: {
       startTorch: torchApi.startTorch,
       stopTorch: torchApi.stopTorch,
@@ -78,7 +78,7 @@ function RootDocument({ children }: { children: JSX.Element }) {
     // taskApi: {
     //   getGroupList
     // }
-  }}>
+  }}>*/}
     <ThemeProvider>
       <SidebarProvider>
         <AppSidebar />
@@ -90,7 +90,7 @@ function RootDocument({ children }: { children: JSX.Element }) {
         </main>
       </SidebarProvider>
     </ThemeProvider>
-  </ClientApiProvider>
+  {/*</ClientApiProvider>*/}
   {/*</fnrpc.Provider>*/}
   {/* </rspc.Provider>*/}
   <Devtools />

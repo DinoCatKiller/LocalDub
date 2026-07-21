@@ -1,10 +1,12 @@
 pub mod commands;
 mod ctx;
+pub mod feat;
 pub mod func;
 pub mod integrations;
-pub mod feat;
 // pub mod router;
 mod server;
+use std::sync::Arc;
+
 use ctx::AppState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -12,8 +14,7 @@ pub fn run() {
     tracing_subscriber::fmt().with_env_filter("info").init();
 
     // fnRPC router (independent from rspc)
-    let fnrpc_router = crate::integrations::fnrpc_func::build_fn_rpc_router()
-        .layer(fnrpc::middleware::TracingLayer);
+    let fnrpc_router = Arc::new(integrations::fnrpc_func::build_fn_rpc_router());
 
     // rspc router (legacy)
     // let rspc_router = crate::router::build();
@@ -34,8 +35,13 @@ pub fn run() {
         crate::server::start(axum_state, axum_fnrpc, dist_dir, 19110).await;
     });
 
-    let app_state_for_manage = app_state.clone();
-
+    let tauri_state = fnrpc_tauri::FnrpcTauriState::from_arc(fnrpc_router, move || {
+        use axum::http::HeaderMap;
+        ctx::Ctx {
+            state: app_state.clone(),
+            headers: HeaderMap::new(),
+        }
+    });
     // Tauri desktop
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -43,12 +49,8 @@ pub fn run() {
         //     procedures,
         //     move |_window: tauri::Window| app_state.clone(),
         // ))
-        .manage(fnrpc_router)
-        .manage(app_state_for_manage)
-        .invoke_handler(tauri::generate_handler![
-            integrations::fnrpc_tauri::rpc_fn,
-            integrations::fnrpc_tauri::rpc_sub,
-        ])
+        .manage(tauri_state)
+        .invoke_handler(fnrpc_tauri::generate_handler!(ctx::Ctx))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

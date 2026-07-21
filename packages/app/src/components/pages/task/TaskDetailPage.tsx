@@ -1,11 +1,12 @@
-import { createSignal, Show } from "solid-js";
-import { fnrpc } from "#/integrations/fnrpc/client.ts";
+import { createSignal, Match, Show, Switch } from "solid-js";
+import { client, fnrpc } from "#/integrations/fnrpc/client.ts";
 import { VideoPanel } from "./VideoPanel";
 import { VideoControls } from "./VideoControls";
 import { Timeline } from "./Timeline/Timeline";
 import type { Track } from "./Timeline/consts";
 import { TaskControlPanel } from "#/components/pages/task/TaskControlPanel/TaskControlPanel.tsx";
 import { AiReviewPanel } from "#/components/pages/task/AiReviewPanel.tsx";
+import { createQuery, useQuery } from "@tanstack/solid-query";
 
 interface Props {
   groupId: string;
@@ -14,7 +15,7 @@ interface Props {
 
 export function TaskDetailPage(props: Props) {
   const taskDir = `workfolder/${props.groupId}/${props.taskId}`;
-  const taskCtxQ = fnrpc.createQuery(() => ['get_task_ctx', taskDir]);
+  const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(taskDir));
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
   const [currentTime, setCurrentTime] = createSignal(0);
   const [duration, setDuration] = createSignal(0);
@@ -50,8 +51,8 @@ export function TaskDetailPage(props: Props) {
     if (v) v.currentTime = ms / 1000;
   };
 
-  const asrQuery = fnrpc.createQuery(
-    () => ['read_app_file_text', `${taskDir}/asr/asr.json`],
+  const asrQuery = useQuery(
+    () => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`),
   );
 
   const asrSegments = () => {
@@ -69,9 +70,10 @@ export function TaskDetailPage(props: Props) {
 
   const transLang = () => taskCtxQ.data?.target_language;
 
-  const transQuery = fnrpc.createQuery(
-    () => ['read_app_file_text', `${taskDir}/translate/translation.${transLang()}.json`],
-    () => ({ enabled: !!transLang(), initialData: '' }),
+  const transQuery = useQuery(
+    () => client.read_app_file_text.queryOptions(`${taskDir}/translate/translation.${transLang()}.json`, {
+      enabled: !!transLang(),
+    }),
   );
 
   const transSegments = () => {
@@ -103,8 +105,11 @@ export function TaskDetailPage(props: Props) {
   return (
     <div class="flex flex-col h-full w-full min-w-0 max-w-full">
       <div class="flex h-120">
-        <Show when={taskCtxQ.data}  >
-          {ctx => <TaskControlPanel ctx={ctx()} onOpenFile={(name, path) => console.log('open', name, path)} />}
+        <Show when={taskCtxQ.isPending}>
+          <p>Loading...</p>
+        </Show>
+        <Show when={taskCtxQ.isSuccess} >
+          <TaskControlPanel ctx={taskCtxQ.data!} onOpenFile={(name, path) => console.log('open', name, path)} />
         </Show>
         <div class="flex-1 min-w-0 flex flex-col">
           <Show when={videoUrl()} fallback={

@@ -5,13 +5,11 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 
 use device_rs::DeviceInfo;
-use fnrpc::router::RpcRouter;
-use futures::StreamExt;
-use serde_json::Value;
-use tauri::ipc::Channel;
 
-use crate::ctx::{AppState, Ctx};
-use axum::http::HeaderMap;
+use crate::ctx::{
+    AppState,
+    // Ctx
+};
 
 // #[tauri::command]
 // pub async fn rpc_fn(
