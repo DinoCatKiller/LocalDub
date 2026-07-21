@@ -3437,40 +3437,42 @@ dependencies = [
 
 [[package]]
 name = "fnrpc"
-version = "0.1.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d507f4e64818d434d4c2d17baa2d520354a7d8f3054f3d9bfb2644e3896e460a"
+checksum = "941dd3640ffcd878e2b0c0e79833eac0cd2dd7618e3c55bf0eda546203fca768"
 dependencies = [
- "async-trait",
  "fnrpc-macros",
  "futures",
+ "http",
  "serde",
  "serde_json",
  "specta",
  "specta-typescript",
  "tracing",
+ "xitca-router",
 ]
 
 [[package]]
 name = "fnrpc-axum"
-version = "0.1.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "517f8f47ded5549307cab76b246a36b13a19c4c0b1d82b2dd5cbb63559fc56de"
+checksum = "47adf2b7a56428e2ec5bd703fad403b7eb8dae7131fcd58613f8fc71eed007b8"
 dependencies = [
  "async-trait",
  "axum 0.8.9",
  "fnrpc",
  "futures",
+ "http-body",
+ "http-body-util",
  "serde_json",
- "tokio",
- "tokio-stream",
+ "url",
 ]
 
 [[package]]
 name = "fnrpc-macros"
-version = "0.1.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c7230f848c06a225d8c07703b20202ebdbd48ebfb8b0ab5d5373676ca4671b0"
+checksum = "08ba425715b477cbcc0a83889626c86c7263828aeb41a1d753edb213003f745a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8443,6 +8445,7 @@ version = "0.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "639404ee95557f2f8b7e4cb773ffefd45304c7ab8ba21ac83b69051595e083c0"
 dependencies = [
+ "serde",
  "specta",
 ]
 
@@ -9571,17 +9574,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1729aa945f29d91ba541258c8df89027d5792d85a8841fb65e8bf0f4ede4ef61"
 dependencies = [
  "rustls",
- "tokio",
-]
-
-[[package]]
-name = "tokio-stream"
-version = "0.1.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32da49809aab5c3bc678af03902d4ccddea2a87d028d86392a4b1560c6906c70"
-dependencies = [
- "futures-core",
- "pin-project-lite",
  "tokio",
 ]
 
@@ -11678,6 +11670,21 @@ dependencies = [
  "libc",
  "rustix 1.1.4",
 ]
+
+[[package]]
+name = "xitca-router"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39029311bd70b93f9a7df925ceb14c31010eca2e2d43a099f7ef55324c391b18"
+dependencies = [
+ "xitca-unsafe-collection",
+]
+
+[[package]]
+name = "xitca-unsafe-collection"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "467b95b08735dcd7061be626d02aea062bc0b99918bc9de11b8fc15d901158ae"
 
 [[package]]
 name = "xml-rs"

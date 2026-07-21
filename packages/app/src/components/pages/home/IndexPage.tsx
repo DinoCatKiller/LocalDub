@@ -1,11 +1,13 @@
 import { client, fnrpc } from "#/integrations/fnrpc/client.ts";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui-solid/base/card";
-import { For, Show } from "solid-js";
+import { createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import { Link } from "@tanstack/solid-router";
 import type { TaskBrief } from "#/integrations/fnrpc/bindings.ts";
 import { CardX } from "@repo/ui-solid/custom/card";
 import { ScrollArea } from "@repo/ui-solid/base/scroll-area";
 import { Separator } from "@repo/ui-solid/base/separator";
+import { consumeEventIterator } from "@fnrpc/client";
+import { createQuery } from "@tanstack/solid-query";
 type GroupInfo = { group_id: string; task_count: number; created_at: string | null; tasks: TaskBrief[] };
 
 function StatCard(p: { label: string; value: number }) {
@@ -40,15 +42,59 @@ function timeAgo(iso: string | null | undefined) {
   return `${Math.floor(hr / 24)}d ago`;
 }
 
+function Row(props: { label: string; children: any }) {
+  return (
+    <div class="flex items-center gap-2 flex-wrap min-h-9 px-3 py-2 rounded-lg bg-card border text-sm">
+      <span class="font-mono text-xs text-muted-foreground shrink-0 w-36">{props.label}</span>
+      {props.children}
+    </div>
+  );
+}
+function TickTest() {
+  const [count, setCount] = createSignal<number | null>(null);
+  const [running, setRunning] = createSignal(false);
+
+  createEffect(() => {
+    if (!running()) return;
+    const iter = fnrpc.tick(BigInt(500));
+    const cancel = consumeEventIterator(iter, {
+      onEvent: v => {
+        setCount(Number(v))
+      },
+      onError: e => {
+        console.error('tick error', e)
+      }
+    });
+    onCleanup(() => cancel());
+  });
+
+  return (
+    <Row label="tick(ms)">
+      <span class="text-muted-foreground text-xs">500ms</span>
+      <button
+        class={running()
+          ? 'bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700'
+          : 'bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700'}
+        onClick={() => setRunning(!running())}
+      >
+        {running() ? 'Stop' : 'Start'}
+      </button>
+      <Show when={count() !== null}>
+        <span class="font-mono text-sm">Value: {count()}</span>
+      </Show>
+    </Row>
+  );
+}
+
 export function IndexPage() {
   import("@fnrpc/client").then(({ consumeEventIterator }) => {
-    const stream = client.watch_task_log('workfolder/深宫团宠，猫狗皇子皆是我的心头崽（30集）/第1集');
+    const stream = fnrpc.watch_task_log('workfolder/深宫团宠，猫狗皇子皆是我的心头崽（30集）/第1集');
     consumeEventIterator(stream, {
       onEvent: (line) => console.log("[log]", line),
       onError: (err) => console.error(err),
     });
   });
-  const groupListQ = fnrpc.createQuery(() => ['get_group_list']);
+  const groupListQ = createQuery(() => client.get_group_list.queryOptions(null) );
   const groups = () => (groupListQ.data ?? []) as GroupInfo[];
   const allTasks = () => groups().flatMap(g => g.tasks);
   const s = () => {
@@ -68,7 +114,7 @@ export function IndexPage() {
   return (
     <div class="flex flex-col gap-6 p-6 h-full overflow-auto">
       <h1 class="text-lg font-semibold">Dashboard</h1>
-
+      <TickTest />
       <Show when={groupListQ.isPending}>
         <span class="text-muted-foreground">Loading...</span>
       </Show>

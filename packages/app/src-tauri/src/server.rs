@@ -92,12 +92,12 @@ pub async fn start(
 
     let media_root = base_dir();
     let app = build_axum_router(fnrpc_router, state)
+        .nest_service("/media", ServeDir::new(&media_root))
         // .nest("/rspc", rspc_router)
         // .route(
         //     "/fnrpc/*path",
         //     axum::routing::get(fnrpc_get_handler).post(fnrpc_post_handler),
         // )
-        .nest_service("/media", ServeDir::new(&media_root))
         // .layer(CorsLayer::permissive())
         // .layer(Extension(fnrpc_router))
         // .layer(Extension(state))

@@ -16,16 +16,14 @@ import {
 import { TooltipX } from '@repo/ui-solid/custom/tooltip';
 import { openSettings } from './settings/settings';
 import { ChevronRight, Folder, LayoutDashboard, Settings, SquarePlayIcon } from 'lucide-solid';
-import { useClientApi } from '@repo/ui/app/api/context';
 import { createQuery, useQuery } from '@tanstack/solid-query';
 import { GroupInfo } from '@repo/core/cmd/tasks/get_task';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@repo/ui-solid/base/collapsible';
 import { For, Match, Show, Switch } from 'solid-js';
 import { Separator } from '@repo/ui-solid/base/separator';
 import { cn } from '@repo/shared/lib/utils';
-import { client, rspc } from '#/integrations/rspc/rspc.ts';
 import { ScrollArea } from '@repo/ui-solid/base/scroll-area';
-import { fnrpc } from '#/integrations/fnrpc/client.ts';
+import { client, fnrpc } from '#/integrations/fnrpc/client.ts';
 import { useLiveQuery } from '@tanstack/solid-db';
 import { taskGroupExpandCollection } from '#/feat/task_tree/sync.ts';
 
@@ -46,14 +44,14 @@ const TaskTree = (p: {items: GroupInfo[]}) => {
       taskGroupExpandCollection.insert({ id: groupId });
     }
   };
-	
+
 	return <For each={p.items}>{item => (<SidebarMenuItem class='h-fit '>
 		<Collapsible
 			class="group/collapsible [&[data-expanded]>button>svg:first-child]:rotate-90"
 			open={isExpanded(item.group_id)}
   		onOpenChange={() => toggle(item.group_id)}
 		>
-			<CollapsibleTrigger as={SidebarMenuButton} class='gap-px rounded-none items-center'>	
+			<CollapsibleTrigger as={SidebarMenuButton} class='gap-px rounded-none items-center'>
 				<ChevronRight class="transition-transform" />
 				<Folder />
 				<span class='h-4 text-sm leading-4 pl-0.75'>{item.group_id}</span>
@@ -68,7 +66,7 @@ const TaskTree = (p: {items: GroupInfo[]}) => {
 					/>
 				<SidebarMenuSub class="border-0 m-0 p-0 gap-0">
 					{item.tasks.map(task => (<SidebarMenuButton class='rounded-none' style={getButtonPx(1)}
-						as={Link} 
+						as={Link}
 						to={`/group/${item.group_id}/${task.id}`}
 						activeProps={{
 							class: "bg-accent/70!"
@@ -88,10 +86,10 @@ export function AppSidebar() {
 	// const api = useClientApi()
 	// const groupList1 = createQuery(()=>({
 	// 		queryKey: ['groupList'],
-	// 		queryFn: () => client.query(['getGroupList', null]) 
+	// 		queryFn: () => client.query(['getGroupList', null])
 	// 	}))
-	
-	const groupListQ = fnrpc.createQuery(() => ['get_group_list'])
+
+	const groupListQ = createQuery(() => client.get_group_list.queryOptions(null))
 	return (
 		<Sidebar>
 			<SidebarHeader class="flex-row">
@@ -121,7 +119,7 @@ export function AppSidebar() {
 					</Switch>
 				</SidebarMenu>
 				</ScrollArea>
-					
+
 					{/* <SidebarMenu>
 						<SidebarMenuItem>
 							<SidebarMenuButton as={Link} to="/">

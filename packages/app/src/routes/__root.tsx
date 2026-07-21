@@ -54,8 +54,8 @@ function RootDocument({ children }: { children: JSX.Element }) {
   const queryClient = getQueryClient();
   return <>
   <HeadContent />
-  <rspc.Provider client={rspcClient} queryClient={queryClient}>
-  <fnrpc.Provider client={client} queryClient={queryClient}>
+  {/*<rspc.Provider client={rspcClient} queryClient={queryClient}>*/}
+  {/*<fnrpc.Provider client={client} queryClient={queryClient}>*/}
   <ClientApiProvider value={{
     serversManagerApi: {
       startTorch: torchApi.startTorch,
@@ -91,8 +91,8 @@ function RootDocument({ children }: { children: JSX.Element }) {
       </SidebarProvider>
     </ThemeProvider>
   </ClientApiProvider>
-  </fnrpc.Provider>
-  </rspc.Provider>
+  {/*</fnrpc.Provider>*/}
+  {/* </rspc.Provider>*/}
   <Devtools />
   <Scripts />
   </>

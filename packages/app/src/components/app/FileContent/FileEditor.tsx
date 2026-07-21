@@ -3,6 +3,7 @@ import { getAutoSaveMode } from '../settings/editorPrefs';
 import { useTheme } from '@repo/ui-solid/theme';
 import { fnrpc, client } from '#/integrations/fnrpc/client.ts';
 import { loadMonacoTheme } from '../settings/loadTheme';
+import { createMutation, createQuery } from '@tanstack/solid-query';
 
 const AUTO_SAVE_DELAY = 2000;
 
@@ -61,8 +62,8 @@ export function FileEditor(props: Props) {
     setDirty(editor.getValue() !== lastSavedContent);
   };
 
-  const writeFile = fnrpc.createMutation(() => 'write_app_file_text');
-  const fileQuery = fnrpc.createQuery(() => ['read_app_file_text', props.path]);
+  const writeFile = createMutation(() => client.write_app_file_text.mutationOptions());
+  const fileQuery = createQuery(() => client.read_app_file_text.queryOptions( props.path));
 
   const doSave = async () => {
     if (!editor) return;
@@ -120,7 +121,7 @@ export function FileEditor(props: Props) {
             ? schemaRef.slice(1)
             : resolveRelative(props.path, schemaRef);
           try {
-            const schemaContent = await client.read_app_file_text(schemaPath);
+            const schemaContent = await fnrpc.read_app_file_text(schemaPath);
             const schemaObj = JSON.parse(schemaContent);
             (monaco.languages.json as any)?.jsonDefaults?.setDiagnosticsOptions({
               validate: true,

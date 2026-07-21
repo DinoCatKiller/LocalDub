@@ -193,6 +193,7 @@ export type Procedures = {
   read_app_file_text: { kind: "query"; input: string; output: string; error: RpcErr };
   reset_count: { kind: "mutate"; input: null; output: null; error: RpcErr };
   write_app_file_text: { kind: "mutate"; input: [string, string]; output: null; error: RpcErr };
+  tick: { kind: "subscribe"; input: bigint; output: bigint; error: RpcErr };
   watch_task_log: { kind: "subscribe"; input: string; output: string; error: RpcErr };
 }
 
@@ -206,5 +207,6 @@ export const __procedureKinds = {
   read_app_file_text: "query",
   reset_count: "mutate",
   write_app_file_text: "mutate",
+  tick: "subscribe",
   watch_task_log: "subscribe",
 } as const;
