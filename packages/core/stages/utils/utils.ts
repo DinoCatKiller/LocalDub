@@ -182,15 +182,16 @@ export function translationFilePath(taskDir: string, lang: string): string {
 }
 
 export function subtitleFilePath(ctx: Context,): string {
-	const src = ctx.input?.task?.subtitleSource ?? 'asr'
+  const src = ctx.input?.task?.subtitleSource ?? 'asr'
+
 	if (src === 'ocr') {
 		const fixFile = join(ctx.task.task_dir, 'ocr_fix', 'ocr_fix.json');
-		if (existsSync(fixFile)) return fixFile;
+		return fixFile;
 	}
 	if (src === 'asr_ocr') {
 		const filename = ctx.input?.stages?.asr_ocr_fix?.llmFix ? 'asr_ocr_fused_llm_fix.json' : 'asr_ocr_fused.json';
 		const fixFile = join(ctx.task.task_dir, 'asr_ocr_fix', filename);
-		if (existsSync(fixFile)) return fixFile;
+		return fixFile;
 	}
 	return join(ctx.task.task_dir, 'asr_fix', 'asr_fix.json');
 }

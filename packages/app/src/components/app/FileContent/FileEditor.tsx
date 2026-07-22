@@ -1,8 +1,8 @@
-import { createSignal, onMount, onCleanup } from 'solid-js';
-import { getAutoSaveMode } from '../settings/editorPrefs';
+import { createSignal, onMount, onCleanup, Match, Switch } from 'solid-js';
+import { getAutoSaveMode } from '../settings/editorPrefs.ts';
 import { useTheme } from '@repo/ui-solid/theme';
 import { fnrpc, client } from '#/integrations/fnrpc/client.ts';
-import { loadMonacoTheme } from '../settings/loadTheme';
+import { loadMonacoTheme } from '../settings/loadTheme.ts';
 import { createMutation, createQuery } from '@tanstack/solid-query';
 
 const AUTO_SAVE_DELAY = 2000;
@@ -63,7 +63,7 @@ export function FileEditor(props: Props) {
   };
 
   const writeFile = createMutation(() => client.write_app_file_text.mutationOptions());
-  const fileQuery = createQuery(() => client.read_app_file_text.queryOptions( props.path));
+  const fileQuery = createQuery(() => client.read_app_file_text.queryOptions(props.path));
 
   const doSave = async () => {
     if (!editor) return;
@@ -92,7 +92,7 @@ export function FileEditor(props: Props) {
   };
 
   onMount(async () => {
-    if (!containerRef) return;
+    if (!containerRef || fileQuery.isLoading) return;
 
     const content = fileQuery.data ?? '';
     lastSavedContent = content;
@@ -188,7 +188,14 @@ export function FileEditor(props: Props) {
           title="Unsaved changes — click to save"
         ></span>
       </div>
+      <Switch>
+        <Match when={fileQuery.isLoading}>
+          <div>Loading...</div>
+        </Match>
+        <Match when={fileQuery.isSuccess}>
       <div ref={containerRef} class="border-x border-b border-gray-700 overflow-hidden h-full" />
+        </Match>
+      </Switch>
     </div>
   );
 }

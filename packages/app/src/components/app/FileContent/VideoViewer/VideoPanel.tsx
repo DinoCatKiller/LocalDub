@@ -1,16 +1,18 @@
-interface Props {
-  videoPath: string;
+import { mediaUrl } from "#/lib/utils/path.ts";
+
+export interface VideoPanelProps {
+  path: string;
   onReady: (ref: HTMLVideoElement) => void;
 }
 
-export function VideoPanel(props: Props) {
+export function VideoPanel(props: VideoPanelProps) {
   let videoRef!: HTMLVideoElement;
 
   return (
     <div class="flex items-center justify-center bg-black h-full w-full overflow-hidden">
       <video
         ref={videoRef}
-        src={props.videoPath}
+        src={mediaUrl(props.path)}
         // controls
         class="max-h-full max-w-full object-contain"
         onLoadedMetadata={() => props.onReady(videoRef)}

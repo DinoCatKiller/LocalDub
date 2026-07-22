@@ -50,7 +50,7 @@ function RootComponent() {
     </RootDocument>
   )
 }
-function RootDocument({ children }: { children: JSX.Element }) {
+ function RootDocument({ children }: { children: JSX.Element }) {
   // const queryClient = getQueryClient();
   return <>
   <HeadContent />
@@ -79,7 +79,7 @@ function RootDocument({ children }: { children: JSX.Element }) {
     //   getGroupList
     // }
   }}>*/}
-    <ThemeProvider>
+    {/*<ThemeProvider>*/}
       <SidebarProvider>
         <AppSidebar />
         <main class="min-w-0 flex-1 h-screen grid grid-rows-[auto_1fr]">
@@ -89,7 +89,7 @@ function RootDocument({ children }: { children: JSX.Element }) {
           <Toaster duration={1000 * 10} />
         </main>
       </SidebarProvider>
-    </ThemeProvider>
+    {/*</ThemeProvider>*/}
   {/*</ClientApiProvider>*/}
   {/*</fnrpc.Provider>*/}
   {/* </rspc.Provider>*/}

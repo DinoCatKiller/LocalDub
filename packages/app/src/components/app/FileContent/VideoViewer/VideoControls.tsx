@@ -2,7 +2,7 @@ import { Play, Pause } from "lucide-solid";
 import { srtTime } from "@repo/core/utils/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@repo/ui-solid/base/select";
 
-interface Props {
+export interface VideoControlsProps {
   playing: boolean;
   currentTime: number;
   duration: number;
@@ -14,9 +14,9 @@ interface Props {
 const rateValues = ["0.5", "0.75", "1", "1.25", "1.5", "2"];
 const rateLabel = (v: string) => `${v}x`;
 
-export function VideoControls(props: Props) {
+export function VideoControls(props: VideoControlsProps) {
   return (
-    <div class="flex items-center h-10 px-3 gap-3 bg-muted/20 border-t text-sm select-none">
+    <div class="flex items-center h-8 px-3 gap-3 bg-muted/20 border-t text-sm select-none">
       <span class="text-xs text-muted-foreground  tabular-nums">
         {srtTime(props.currentTime, '.')} / {srtTime(props.duration, '.')}
       </span>

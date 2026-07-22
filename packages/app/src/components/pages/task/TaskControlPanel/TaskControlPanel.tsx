@@ -6,7 +6,7 @@ import { FileTree } from "./FileTree";
 
 export const TaskControlPanel = (p: {
   ctx: Context;
-  onOpenFile: (name: string, path: string) => void;
+  // onOpenFile: (name: string, path: string) => void;
 }) => {
   const params = useParams({from: '/group/$id/$taskId'});
   const taskDir = `workfolder/${params().id}/${p.ctx.task.id}`;
@@ -26,7 +26,7 @@ export const TaskControlPanel = (p: {
           <TabsContent value={tab} class="overflow-auto p-0">
             <FileTree
               relativeDir={tab === 'root' ? taskDir : `${taskDir}/${tab}`}
-              onOpenFile={p.onOpenFile}
+              // onOpenFile={p.onOpenFile}
             />
           </TabsContent>
         )}</For>

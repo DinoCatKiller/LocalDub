@@ -2,6 +2,7 @@ import { For, Show, createSignal } from "solid-js";
 import { client, fnrpc } from "#/integrations/fnrpc/client.ts";
 import type { DirEntry } from "#/integrations/fnrpc/bindings.ts";
 import { useQuery } from "@tanstack/solid-query";
+import { setActivePath } from "#/components/app/FileContent/store/ContentPanel.ts";
 
 function formatSize(bytes: number | bigint): string {
   const n = typeof bytes === 'bigint' ? Number(bytes) : bytes as number
@@ -12,14 +13,14 @@ function formatSize(bytes: number | bigint): string {
 
 interface FileTreeProps {
   relativeDir: string;
-  onOpenFile: (name: string, path: string) => void;
+  // onOpenFile: (name: string, path: string) => void;
   depth?: number;
 }
 
 function FileTreeItem(props: {
   entry: DirEntry;
   fullPath: string;
-  onOpenFile: (name: string, path: string) => void;
+  // onOpenFile: (name: string, path: string) => void;
   depth: number;
 }) {
   const [expanded, setExpanded] = createSignal(false);
@@ -39,7 +40,7 @@ function FileTreeItem(props: {
         <Show when={expanded()}>
           <FileTree
             relativeDir={props.fullPath}
-            onOpenFile={props.onOpenFile}
+            // onOpenFile={props.onOpenFile}
             depth={props.depth + 1}
           />
         </Show>
@@ -51,7 +52,10 @@ function FileTreeItem(props: {
     <div
       class="flex items-center gap-1 px-2 py-0.5 cursor-pointer hover:bg-accent/40 truncate text-xs"
       style={{ "padding-left": `${props.depth * 16 + 8}px` }}
-      onClick={() => props.onOpenFile(props.entry.name, props.fullPath)}
+      onClick={() => {
+        setActivePath(props.fullPath)
+        // props.onOpenFile(props.entry.name, props.fullPath)
+      }}
     >
       <span class="w-3 shrink-0" />
       <span class="text-muted-foreground">📄</span>
@@ -81,7 +85,7 @@ export function FileTree(props: FileTreeProps) {
           <FileTreeItem
             entry={entry}
             fullPath={`${props.relativeDir}/${entry.name}`}
-            onOpenFile={props.onOpenFile}
+            // onOpenFile={props.onOpenFile}
             depth={depth}
           />
         )}

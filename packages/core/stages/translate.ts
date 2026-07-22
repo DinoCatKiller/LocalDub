@@ -45,12 +45,12 @@ export async function stageTranslate(ctx: Context) {
 		setCtx(taskDir, { target_language: resolvedDstLang });
 	}
 
-	const srtFile = subtitleFilePath(ctx);
 	const dstLangCode = resolvedDstLang;
 	const translationFile = translationFilePath(taskDir, dstLangCode);
 	const srcLangName = LANG_NAMES[srcLangCode] || srcLangCode;
 	const dstLangName = LANG_NAMES[dstLangCode] || dstLangCode;
 
+	const srtFile = subtitleFilePath(ctx);
 	const data = await readJson(srtFile, ctx);
 	const segments = data.result.segments;
 	const texts = segments.map((u: any) => (u.text || '').trim());

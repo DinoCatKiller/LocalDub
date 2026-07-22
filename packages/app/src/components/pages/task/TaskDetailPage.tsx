@@ -1,11 +1,10 @@
 import { createSignal, Match, Show, Switch } from "solid-js";
 import { client, fnrpc } from "#/integrations/fnrpc/client.ts";
-import { VideoPanel } from "./VideoPanel";
-import { VideoControls } from "./VideoControls";
 import { Timeline } from "./Timeline/Timeline";
 import type { Track } from "./Timeline/consts";
 import { TaskControlPanel } from "#/components/pages/task/TaskControlPanel/TaskControlPanel.tsx";
 import { AiReviewPanel } from "#/components/pages/task/AiReviewPanel.tsx";
+import { ContentPanel } from "#/components/app/FileContent/ContentPanel";
 import { createQuery, useQuery } from "@tanstack/solid-query";
 
 interface Props {
@@ -22,6 +21,7 @@ export function TaskDetailPage(props: Props) {
   const [playing, setPlaying] = createSignal(false);
   const [playbackRate, setPlaybackRate] = createSignal(1);
 
+  // 视频源地址（默认取 video_source.mp4）
   const videoUrl = () => taskCtxQ.data?.video_source_path
     ? `http://localhost:19110/media/${taskDir}/video_source.mp4`
     : "";
@@ -51,6 +51,7 @@ export function TaskDetailPage(props: Props) {
     if (v) v.currentTime = ms / 1000;
   };
 
+  // ASR 字幕段
   const asrQuery = useQuery(
     () => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`),
   );
@@ -102,39 +103,42 @@ export function TaskDetailPage(props: Props) {
     return result;
   };
 
+  // ContentPanel 暴露给 FileTree 的 openFile 回调
+  const handleFileOpen = (_name: string, path: string) => {
+    // 如果点击的是当前项目的默认视频，自动用 VideoViewer 打开
+    if (path.includes('video_source.mp4') && videoUrl()) {
+      // 暂不处理：可以在后续通过 VideoViewer 路径直接渲染
+    }
+  };
+
   return (
     <div class="flex flex-col h-full w-full min-w-0 max-w-full">
+      {/* 上层：左侧面板 + 中间内容区 + 右侧 AI Review */}
       <div class="flex h-120">
         <Show when={taskCtxQ.isPending}>
           <p>Loading...</p>
         </Show>
         <Show when={taskCtxQ.isSuccess} >
-          <TaskControlPanel ctx={taskCtxQ.data!} onOpenFile={(name, path) => console.log('open', name, path)} />
+          <TaskControlPanel ctx={taskCtxQ.data!}
+            // onOpenFile={(name, path) => handleFileOpen(name, path)}
+          />
         </Show>
         <div class="flex-1 min-w-0 flex flex-col">
-          <Show when={videoUrl()} fallback={
-            <div class="flex-1 flex items-center justify-center bg-black text-muted-foreground">
-              <Show when={taskCtxQ.isPending} fallback="No video source">
-                Loading...
-              </Show>
-            </div>
-          }>
-            <div class="flex-1 min-h-0">
-              <VideoPanel videoPath={videoUrl()} onReady={onVideoReady} />
-            </div>
-            <VideoControls
-              playing={playing()}
-              currentTime={currentTime()}
-              duration={duration()}
-              playbackRate={playbackRate()}
-              onTogglePlay={togglePlay}
-              onRateChange={onRateChange}
-            />
-          </Show>
+          <ContentPanel
+            onFileOpen={(name, path) => handleFileOpen(name, path)}
+            currentTime={currentTime()}
+            duration={duration()}
+            playbackRate={playbackRate()}
+            playing={playing()}
+            onTogglePlay={togglePlay}
+            onRateChange={onRateChange}
+            onReady={onVideoReady}
+          />
         </div>
         <AiReviewPanel />
       </div>
 
+      {/* 下层：时间线轨道 */}
       <div class="flex-1">
         <Timeline
           tracks={tracks()}
