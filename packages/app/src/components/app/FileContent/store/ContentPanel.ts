@@ -23,6 +23,7 @@ export const setActivePath = (path: string | null) => {
   contentPanelStore.setState((state) => ({ ...state, activePath: path }));
 }
 
+export const useTabs = () => useSelector(contentPanelStore, (state) => state.tabs)
 export const setTabs = (tabs: TabItem[]) => {
   contentPanelStore.setState((state) => ({ ...state, tabs }));
 }
