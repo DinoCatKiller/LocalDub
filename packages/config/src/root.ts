@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve, isAbsolute } from 'node:path';
 import envPaths from 'env-paths';
 
-const __dirname = import.meta.dir;
+const __dirname = import.meta.dir ;
 
 function hasWorkspaces(packageJsonPath: string): boolean {
   if (!existsSync(packageJsonPath)) return false;

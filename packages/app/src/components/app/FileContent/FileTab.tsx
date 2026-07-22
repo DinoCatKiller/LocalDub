@@ -29,7 +29,7 @@ export function FileTab() {
               class={`
                 relative flex items-center gap-2 px-3 py-1.5 cursor-pointer
                 border-r text-xs whitespace-nowrap
-                ${isActive ? 'bg-crust  ' : 'text-muted-foreground hover:bg-muted/50'}
+                ${isActive ? 'bg-crust  ' : ' hover:bg-crust/50'}
               `}
               onClick={() => setActivePath(tab.path)}
             >

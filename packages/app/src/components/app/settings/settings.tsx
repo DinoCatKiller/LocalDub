@@ -9,8 +9,8 @@ import { GeneralSettings } from "./general";
 import { ServerManager } from "./ServerManager";
 import { DeviceInfo } from "./DeviceInfo";
 // import { useClientApi } from "../api/context";
-import { InputEditor } from "./InputEditor";
 import { i18n } from "@repo/shared/i18n/utils";
+import { FileEditor } from "../FileContent/FileEditor";
 
 export const SettingsContent = () => {
   const baseItems = [
@@ -24,9 +24,9 @@ export const SettingsContent = () => {
       label: i18n.shortcuts(),
       icon: Keyboard,
     },
-    { value: 'servers', label: 'Servers', icon: Server as typeof Settings, content: ServerManager as Component },
-    { value: 'device', label: 'Device', icon: Monitor as typeof Settings, content: DeviceInfo as Component },
-    { value: 'config', label: 'Config', icon: Code as typeof Settings, content: InputEditor as Component },
+    { value: 'servers', label: 'Servers', icon: Server as typeof Settings,  },
+    { value: 'device', label: 'Device', icon: Monitor as typeof Settings,  },
+    { value: 'config', label: 'Config', icon: Code as typeof Settings,  },
   ];
   return <ClientOnly>
     <Tabs defaultValue="general" orientation='vertical' class='gap-5 h-full' >
@@ -50,7 +50,7 @@ export const SettingsContent = () => {
         <DeviceInfo />
       </TabsContent>
       <TabsContent value="config">
-        <InputEditor />
+        <FileEditor path="packages/cli/input.json" label="input.json" />
       </TabsContent>
     </Tabs>
   </ClientOnly>

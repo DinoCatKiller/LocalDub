@@ -1,9 +1,11 @@
-import { createSignal, onMount, onCleanup, Match, Switch } from 'solid-js';
+import { createSignal, onMount, onCleanup, createEffect, Match, Switch } from 'solid-js';
 import { getAutoSaveMode } from '../settings/editorPrefs.ts';
 import { useTheme } from '@repo/ui-solid/theme';
 import { fnrpc, client } from '#/integrations/fnrpc/client.ts';
 import { loadMonacoTheme } from '../settings/loadTheme.ts';
-import { createMutation, createQuery } from '@tanstack/solid-query';
+import { createMutation, useMutation, useQuery } from '@tanstack/solid-query';
+import { Loader2, LoaderCircleIcon } from 'lucide-solid';
+import { Show } from 'solid-js/types/server/rendering.js';
 
 const AUTO_SAVE_DELAY = 2000;
 
@@ -51,67 +53,100 @@ interface Props {
 export function FileEditor(props: Props) {
   const { themeName } = useTheme();
   let containerRef: HTMLDivElement | undefined;
+  // 长期持有的 editor instance（不随 tab 切换销毁）
   let editor: any = null;
-  let model: any = null;
+  // 当前 model — 随 path 变化而创建新 model，旧的 dispose
+  let currentModel: any = null;
   let autoSaveTimer: ReturnType<typeof setTimeout> | undefined;
-  let lastSavedContent = '';
+  // lastSavedContent 跟随当前文件的保存状态
   const [dirty, setDirty] = createSignal(false);
+  const [pathKey, setPathKey] = createSignal(props.path);
+
+  // 每个文件独立维护 savedContent（用 Map 存储，而不是 single value）
+  const savedContentMap = new Map<string, string>();
 
   const updateDirty = () => {
     if (!editor) return;
-    setDirty(editor.getValue() !== lastSavedContent);
+    const saved = savedContentMap.get(props.path) ?? '';
+    setDirty(editor.getValue() !== saved);
   };
 
-  const writeFile = createMutation(() => client.write_app_file_text.mutationOptions());
-  const fileQuery = createQuery(() => client.read_app_file_text.queryOptions(props.path));
+  const writeFile = useMutation(() => client.write_app_file_text.mutationOptions());
+  /** 读取文件内容 */
+  const fileQ = useQuery(() => client.read_app_file_text.queryOptions(props.path))
+  // 初始内容（首次 mount 时用）
+  let initialContent: string | undefined;
 
-  const doSave = async () => {
-    if (!editor) return;
+  /** 保存文件 */
+  async function doSave(): Promise<void> {
+    if (!editor || !currentModel) return;
     const content = editor.getValue();
     try {
       if (props.path.endsWith('.json')) JSON.parse(content);
       await writeFile.mutateAsync([props.path, content]);
       clearTimeout(autoSaveTimer);
-      lastSavedContent = content;
+      savedContentMap.set(props.path, content);
       setDirty(false);
     } catch {
       alert('Invalid JSON');
     }
-  };
+  }
 
-  const debouncedSave = (content: string) => {
+  /** 防抖自动保存 */
+  function debouncedSave(content: string) {
     clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(async () => {
       try {
         if (props.path.endsWith('.json')) JSON.parse(content);
         await writeFile.mutateAsync([props.path, content]);
-        lastSavedContent = content;
+        savedContentMap.set(props.path, content);
         setDirty(false);
       } catch { /* silent */ }
     }, AUTO_SAVE_DELAY);
-  };
+  }
+
+  let monacoInitialized = false;
+  let monaco: typeof import('monaco-editor') | null = null;
 
   onMount(async () => {
-    if (!containerRef || fileQuery.isLoading) return;
+    if (!containerRef || fileQ.isLoading) return;
 
-    const content = fileQuery.data ?? '';
-    lastSavedContent = content;
+    // 读取初始内容
+    initialContent = fileQ.data ?? ""
+    savedContentMap.set(props.path, initialContent);
 
-    const monaco = await import('monaco-editor');
+    if (!monacoInitialized) {
+      monacoInitialized = true;
+      (self as any).MonacoEnvironment = {
+        getWorker: async (mod: string, label: string) => {
+          if (label === 'json') {
+            const jsonMod = await import('monaco-editor/esm/vs/language/json/json.worker?worker');
+            return new jsonMod.default();
+          }
+          const baseMod = await import('monaco-editor/esm/vs/editor/editor.worker?worker');
+          return new baseMod.default();
+        },
+      };
+    }
 
-    (self as any).MonacoEnvironment = {
-      getWorker: async (_: string, label: string) => {
-        if (label === 'json') {
-          const mod = await import('monaco-editor/esm/vs/language/json/json.worker?worker');
-          return new mod.default();
-        }
-        const mod = await import('monaco-editor/esm/vs/editor/editor.worker?worker');
-        return new mod.default();
-      },
-    };
+    monaco = await import('monaco-editor');
 
     const lang = detectLang(props.path);
+    const content = initialContent ?? '';
 
+    // 加载主题
+    const { themeByName } = await import('@repo/ui-solid/theme/defs');
+    const def = themeByName(themeName());
+    let monacoTheme = 'vs-dark';
+    if (def) {
+      try {
+        const themeFile = def.monacoTheme.replace(/[\\/:"*?<>|]/g, '_');
+        await loadMonacoTheme(monaco, themeFile, def.value);
+        monacoTheme = def.value;
+      } catch { /* fallback */ }
+    }
+
+    // JSON schema 诊断
     if (lang === 'json' && content) {
       try {
         const parsed = JSON.parse(content);
@@ -132,20 +167,10 @@ export function FileEditor(props: Props) {
       } catch { /* not valid JSON */ }
     }
 
-    const { themeByName } = await import('@repo/ui-solid/theme/defs');
-    const def = themeByName(themeName());
-    let monacoTheme = 'vs-dark';
-    if (def) {
-      try {
-        const themeFile = def.monacoTheme.replace(/[\\/:"*?<>|]/g, '_');
-        await loadMonacoTheme(monaco, themeFile, def.value);
-        monacoTheme = def.value;
-      } catch { /* fallback */ }
-    }
-
-    model = monaco.editor.createModel(content, lang, monaco.Uri.parse(`file://${props.path}`));
+    // 创建 model + editor（仅第一次）
+    currentModel = monaco.editor.createModel(content, lang, monaco.Uri.parse(`file://${props.path}`));
     editor = monaco.editor.create(containerRef, {
-      model,
+      model: currentModel,
       language: lang,
       theme: monacoTheme,
       automaticLayout: true,
@@ -167,10 +192,32 @@ export function FileEditor(props: Props) {
     });
   });
 
+  // ✅ 核心：path 变化时只换 model，不重建 editor
+  let prevPathRef = props.path;
+  createEffect(() => {
+    const newPath = props.path;
+    if (newPath === prevPathRef || fileQ.isLoading) return;
+    prevPathRef = newPath;
+    setPathKey(newPath);
+
+    const newLang = detectLang(newPath);
+      if (!monaco) return;
+      savedContentMap.set(newPath, fileQ.data!);
+
+      // dispose 旧 model
+      currentModel?.dispose();
+
+      // 创建新 model 并绑定到已有 editor
+      // console.log('FileEditor.createEffect.fetchContent.content:', content)
+      currentModel = monaco.editor.createModel(fileQ.data!, newLang, monaco.Uri.parse(`file://${newPath}`));
+      editor.setModel(currentModel);
+      setDirty(false);
+  });
+
   onCleanup(() => {
     clearTimeout(autoSaveTimer);
     editor?.dispose();
-    model?.dispose();
+    currentModel?.dispose();
   });
 
   return (
@@ -188,13 +235,13 @@ export function FileEditor(props: Props) {
           title="Unsaved changes — click to save"
         ></span>
       </div>
-      <Switch>
-        <Match when={fileQuery.isLoading}>
-          <div>Loading...</div>
+      <Switch >
+      <Match when={fileQ.isLoading}>
+        <LoaderCircleIcon  /> 加载中...
         </Match>
-        <Match when={fileQuery.isSuccess}>
+      <Match when={fileQ.isSuccess}>
       <div ref={containerRef} class="border-x border-b border-gray-700 overflow-hidden h-full" />
-        </Match>
+      </Match>
       </Switch>
     </div>
   );
