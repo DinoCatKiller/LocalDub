@@ -1,6 +1,5 @@
 import { createEffect, createResource, Show } from 'solid-js';
 import { createQuery, useQuery } from '@tanstack/solid-query';
-import { rspc } from '#/integrations/rspc/rspc.ts';
 import { client, fnrpc } from '#/integrations/fnrpc/client.ts';
 
 export function DeviceInfo() {

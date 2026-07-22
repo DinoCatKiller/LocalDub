@@ -4,7 +4,6 @@ import { Button } from '@repo/ui-solid/base/button';
 import { CardX } from '@repo/ui-solid/custom/card';
 import { toastError } from '@repo/ui-solid/custom/toast';
 import { ModelServerStatus } from '@repo/core/servers/type';
-import { rspc } from '#/integrations/rspc/rspc.ts';
 import { checkTorch, get_voxcpm_torch_gradio_status, restartTorch, restartVoxCpm, startTorch, startVoxCpm, stopTorch, stopVoxCpm } from '#/feat/servers/servers.ts';
 import { cn } from '@repo/shared/lib/utils';
 
@@ -31,7 +30,7 @@ function ServerCard(props: {
   onRestart: () => void;
 }) {
   const isLoading = () => props.isLoading ?? false
-  const status = () => { 
+  const status = () => {
     if (isLoading()) return 'pending'
     if (props.error) return 'error'
     return props.data?.status ?? "unknown"
