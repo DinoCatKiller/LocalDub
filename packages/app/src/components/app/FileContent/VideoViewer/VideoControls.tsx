@@ -16,7 +16,7 @@ const rateLabel = (v: string) => `${v}x`;
 
 export function VideoControls(props: VideoControlsProps) {
   return (
-    <div class="flex items-center h-8 px-3 gap-3 bg-muted/20 border-t text-sm select-none">
+    <div class="flex items-center h-8 px-3 gap-3  border-t text-sm select-none">
       <span class="text-xs text-muted-foreground  tabular-nums">
         {srtTime(props.currentTime, '.')} / {srtTime(props.duration, '.')}
       </span>

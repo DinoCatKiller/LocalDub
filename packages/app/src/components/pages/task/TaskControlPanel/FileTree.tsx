@@ -2,7 +2,7 @@ import { For, Show, createSignal } from "solid-js";
 import { client, fnrpc } from "#/integrations/fnrpc/client.ts";
 import type { DirEntry } from "#/integrations/fnrpc/bindings.ts";
 import { useQuery } from "@tanstack/solid-query";
-import { setActivePath } from "#/components/app/FileContent/store/ContentPanel.ts";
+import { addTab, setActivePath } from "#/components/app/FileContent/store/ContentPanel.ts";
 
 function formatSize(bytes: number | bigint): string {
   const n = typeof bytes === 'bigint' ? Number(bytes) : bytes as number
@@ -53,6 +53,10 @@ function FileTreeItem(props: {
       class="flex items-center gap-1 px-2 py-0.5 cursor-pointer hover:bg-accent/40 truncate text-xs"
       style={{ "padding-left": `${props.depth * 16 + 8}px` }}
       onClick={() => {
+        addTab({
+          label: props.entry.name,
+          path: props.fullPath,
+        })
         setActivePath(props.fullPath)
         // props.onOpenFile(props.entry.name, props.fullPath)
       }}
