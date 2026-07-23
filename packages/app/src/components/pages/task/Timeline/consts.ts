@@ -28,14 +28,54 @@ export interface RulerConfig {
   tickIntervalMs: number;
 }
 
-function findOptimalInterval(pixelsPerFrame: number, pixelsPerSecond: number, minSpacingPx: number): number {
-  for (const fi of LABEL_FRAME_INTERVALS) {
-    if (pixelsPerFrame * fi >= minSpacingPx) return fi;
+function computeIntervalMs(
+  pxPerFrame: number,
+  pxPerSec: number,
+  fps: number,
+  minPx: number,
+  frameIntervals: number[],
+): number {
+  for (const fi of frameIntervals) {
+    if (pxPerFrame * fi >= minPx) return (fi / fps) * 1000;
   }
   for (const sm of SECOND_MULTIPLIERS) {
-    if (pixelsPerSecond * sm >= minSpacingPx) return sm;
+    if (pxPerSec * sm >= minPx) return sm * 1000;
   }
-  return 60;
+  return 60 * 1000;
+}
+
+function alignTickToLabel(labelMs: number, tickMs: number, fps: number): number {
+  if (tickMs >= labelMs) return labelMs;
+
+  const frameMs = 1000 / fps;
+  const labelFrames = Math.round(labelMs / frameMs);
+
+  if (Math.abs(labelFrames * frameMs - labelMs) < 0.5) {
+    let bestFrames = labelFrames;
+    let bestDiff = Infinity;
+    for (let f = 1; f <= labelFrames; f++) {
+      if (labelFrames % f === 0) {
+        const diff = Math.abs(f - Math.round(tickMs / frameMs));
+        if (diff < bestDiff || (diff === bestDiff && f > bestFrames)) {
+          bestDiff = diff;
+          bestFrames = f;
+        }
+      }
+    }
+    return (bestFrames / fps) * 1000;
+  }
+
+  const labelSec = labelMs / 1000;
+  const candidates = SECOND_MULTIPLIERS.filter(sm => sm < labelSec && labelSec % sm === 0);
+  if (candidates.length > 0) {
+    const tickSec = tickMs / 1000;
+    const best = candidates.reduce((a, b) =>
+      Math.abs(a - tickSec) <= Math.abs(b - tickSec) ? a : b,
+    );
+    return best * 1000;
+  }
+
+  return tickMs;
 }
 
 export function rulerConfig(pxPerMs: number, fps: FrameRate): RulerConfig {
@@ -43,12 +83,17 @@ export function rulerConfig(pxPerMs: number, fps: FrameRate): RulerConfig {
   const pxPerSec = pxPerMs * 1000;
   const pxPerFrame = pxPerSec / fpsFloat;
 
-  const labelIntervalSec = findOptimalInterval(pxPerFrame, pxPerSec, MIN_LABEL_SPACING_PX);
+  const labelMs = computeIntervalMs(pxPerFrame, pxPerSec, fpsFloat, MIN_LABEL_SPACING_PX, LABEL_FRAME_INTERVALS);
+  const rawTickMs = computeIntervalMs(pxPerFrame, pxPerSec, fpsFloat, MIN_TICK_SPACING_PX, TICK_FRAME_INTERVALS);
+  const tickMs = alignTickToLabel(labelMs, rawTickMs, fpsFloat);
 
-  return {
-    labelIntervalMs: labelIntervalSec * 1000,
-    tickIntervalMs: labelIntervalSec * 1000,
-  };
+  return { labelIntervalMs: labelMs, tickIntervalMs: tickMs };
+}
+
+export function shouldShowLabel(ms: number, labelIntervalMs: number): boolean {
+  if (labelIntervalMs <= 0) return false;
+  const ratio = ms / labelIntervalMs;
+  return Math.abs(ratio - Math.round(ratio)) < 0.001;
 }
 
 export function msToRuler(ms: number) {

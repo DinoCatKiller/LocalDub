@@ -1,5 +1,5 @@
 import { For } from "solid-js";
-import { msToRuler, type RulerConfig } from "./consts";
+import { msToRuler, shouldShowLabel, type RulerConfig } from "./consts";
 
 interface Props {
   ref: (el: HTMLDivElement) => void;
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function TimelineRuler(props: Props) {
-  const tickCount = () => Math.ceil(props.duration / props.rulerCfg.labelIntervalMs) + 1;
+  const tickCount = () => Math.ceil(props.duration / props.rulerCfg.tickIntervalMs) + 1;
 
   return (
     <div ref={props.ref} class="overflow-hidden shrink-0 border-b bg-muted/20">
@@ -22,13 +22,18 @@ export function TimelineRuler(props: Props) {
       >
         <For each={Array.from({ length: tickCount() }, (_, i) => i)}>
           {(i) => {
-            const tickMs = i * props.rulerCfg.labelIntervalMs;
+            const ms = i * props.rulerCfg.tickIntervalMs;
+            const isLabel = shouldShowLabel(ms, props.rulerCfg.labelIntervalMs);
             return (
               <div
-                class="absolute top-0 h-full border-l border-muted-foreground/20 pl-0.5 leading-tight"
-                style={{ left: `${tickMs * props.pxPerMs}px` }}
+                class="absolute border-l border-muted-foreground/20"
+                classList={{
+                  "top-0 h-full pl-0.5 leading-tight": isLabel,
+                  "top-1.5 h-1.5": !isLabel,
+                }}
+                style={{ left: `${ms * props.pxPerMs}px` }}
               >
-                {msToRuler(tickMs)}
+                {isLabel ? msToRuler(ms) : null}
               </div>
             );
           }}
