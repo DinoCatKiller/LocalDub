@@ -80,13 +80,6 @@ export function Timeline(props: Props) {
     playheadDragging = false;
   };
 
-  const onRulerClick = (e: MouseEvent) => {
-    const rect = rulerRef.getBoundingClientRect();
-    const x = e.clientX - rect.left + rulerRef.scrollLeft;
-    const ms = x / pxPerMs();
-    props.onSeek(Math.max(0, Math.min(ms, props.duration)));
-  };
-
   return (
     <div class="flex flex-col h-full  border-t select-none">
       <TimelineToolbar zoom={zoom()} sliderValue={sliderPos()} onSliderChange={onSliderChange} />
@@ -106,7 +99,8 @@ export function Timeline(props: Props) {
             rulerCfg={rc()}
             pxPerMs={pxPerMs()}
             fps={fpsFloat()}
-            onRulerClick={onRulerClick}
+            getTracksScrollElement={() => tracksRef}
+            onSeek={props.onSeek}
           />
 
           <TimelineTracks
