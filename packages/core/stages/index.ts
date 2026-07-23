@@ -7,7 +7,7 @@ import { stageOcrFix } from './ocr/ocr_fix';
 import { stageAsrOcrPre } from './asr_ocr/asr_ocr_pre';
 import { stageAsrOcr } from './asr_ocr/asr_ocr';
 import { stageAsrOcrFix } from './asr_ocr/asr_ocr_fix';
-import { stageTranslate } from './translate';
+import { stageTranslate } from './translate/translate';
 import { stageSplitAudio } from './split_audio';
 import { stageTts } from './tts';
 import { stageMergeAudio } from './merge_audio';
