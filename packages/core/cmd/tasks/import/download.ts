@@ -12,12 +12,14 @@ import {
 	ffmpeg,
 	nowISO,
 } from '@repo/core/stages/utils/utils.ts';
-import { TaskCtx, readCtx, setCtx, setStage, setTask, writeCtx } from '@repo/core/context/context.ts';
+import { TaskCtx, VideoSource, readCtx, setCtx, setStage, setTask, writeCtx } from '@repo/core/context/context.ts';
 import { startLog } from '../../../stages/utils/log.ts';
 import { getStages } from '@repo/core/stages/utils/stages';
 import { InputArgs } from '@repo/core/input/input';
 import { autoGroupIdAndVideoId, copyFileToPath, downloadRemoteVideo, encodeToMp4 } from './utils.ts';
 import { WORKFOLDER } from '@repo/config/path/paths';
+import { probeFrameRate } from '../../../utils/ffmpeg.ts';
+
 
 
 export const importVideo = async (input: InputArgs) => {
@@ -30,7 +32,18 @@ export const importVideo = async (input: InputArgs) => {
 	const {groupId, taskId, ytDlpExtArgs, title, source}	= await autoGroupIdAndVideoId(url)
 	startLog('import', taskId);
 	const taskDir = join(WORKFOLDER, groupId, taskId);
-	mkdirSync(taskDir, { recursive: true });
+  mkdirSync(taskDir, { recursive: true });
+  const { downloadedVideoPath, videoPath } = await downloadVideo(
+    url,
+    source,
+    groupId,
+    taskId,
+    ytDlpExtArgs,
+  );
+ 	// ✅ 探测视频帧率并写回 context
+	const frame_rate = probeFrameRate(videoPath);
+	emitLog(taskDir, `[Download] Video frame rate: ${frame_rate} FPS`);
+
 	const stages = getStages(input.task.pipeline);
 	const ctx: TaskCtx = {
 		task: {
@@ -41,7 +54,8 @@ export const importVideo = async (input: InputArgs) => {
 			created_at: nowISO(),
 			task_dir: taskDir,
 			title: title || taskId,
-		},
+    },
+		frame_rate,
 		asr_language: input.task.sourceLang || 'auto',
 		pipeline: input.task.pipeline || 'dub',
 		lastRunPipeline: input.task.pipeline || 'dub',
@@ -57,29 +71,32 @@ export const importVideo = async (input: InputArgs) => {
 	}
 
 	writeCtx(ctx);
-	return {ctx, ytDlpExtArgs}
+	return ctx
 }
+
 export async function downloadVideo(
-	ctx: TaskCtx,
+  url: string,
+  source: VideoSource,
+  groupId: string,
+	taskId: string,
 	ytDlpExtArgs: string[]
 ) {
-	const videoPath = ctx.video_source_path!
-	const url = ctx.task.url
-	const taskDir = ctx.task.task_dir
-	let rawVideoPath = join(taskDir, `${ctx.task.id}.mp4`);
+  const taskDir = join(WORKFOLDER, groupId, taskId);
+  let downloadedVideoPath = join(taskDir, `${taskId}.mp4`);
+	const videoPath  = join(taskDir, 'audio_source.wav')
 	// Extract audio for downstream stages
-	const audioPath = ctx.audioSourcePath!
-	if (ctx.task.source === 'local' || ctx.task.source === 'remote') {
-		if (ctx.task.source === 'local') {
-			copyFileToPath(url, rawVideoPath);
-		} else if (ctx.task.source === 'remote') {
-		  rawVideoPath =	await	downloadRemoteVideo(url, taskDir);
+	const audioPath = join(taskDir, 'audio_source.wav')
+	if (source === 'local' || source === 'remote') {
+		if (source === 'local') {
+			copyFileToPath(url, downloadedVideoPath);
+		} else if (source === 'remote') {
+		  downloadedVideoPath =	await	downloadRemoteVideo(url, taskDir);
 		}
 
 		emitLog(taskDir, '[Download] Importing local video...');
 
 		const t0 = Date.now();
-		encodeToMp4(rawVideoPath, videoPath);
+		encodeToMp4(downloadedVideoPath, videoPath);
 
 		const elapsedSec = (Date.now() - t0) / 1000;
 
@@ -93,7 +110,7 @@ export async function downloadVideo(
 		emitLog(taskDir, '[Download] Extracting audio_source.wav...');
 		ffmpeg(['-i', videoPath, '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2', audioPath]);
 
-	} else if (ctx.task.source === 'youtube' || ctx.task.source === 'bilibili') {
+	} else if (source === 'youtube' || source === 'bilibili') {
 		// console.log(`[Download] video info: `, info);
 
 		emitLog(taskDir, '[Download] Downloading video...');
@@ -140,5 +157,5 @@ export async function downloadVideo(
 		ffmpeg(['-i', videoPath, '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2', audioPath]);
 	}
 
-	return;
+	return {  downloadedVideoPath, videoPath }
 }

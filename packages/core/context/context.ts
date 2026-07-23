@@ -32,6 +32,7 @@ export interface TaskCtx {
   pipeline: 'dub' | 'subtitle';
   lastRunPipeline?: 'dub' | 'subtitle'; // 用于 detect pipeline 切换
   input: CliInput
+  frame_rate: number;
   runInfo?: {
 		asr?: {
 			engine: string; // 'whisper-pytorch' | 'faster-whisper'
