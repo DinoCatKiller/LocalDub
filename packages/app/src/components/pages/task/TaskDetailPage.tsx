@@ -14,6 +14,7 @@ import {
   setPlaybackRate,
   useCurrentTime,
   useDuration,
+  useFps,
 } from "#/components/app/FileContent/store/videoViewer";
 
 interface Props {
@@ -119,6 +120,7 @@ export function TaskDetailPage(props: Props) {
 
   const duration = useDuration();
   const currentTime = useCurrentTime();
+  const fps = useFps();
 
   return (
     <div class="flex flex-col h-full w-full min-w-0 max-w-full">
@@ -150,6 +152,7 @@ export function TaskDetailPage(props: Props) {
           tracks={tracks()}
           duration={duration()}
           currentTime={currentTime()}
+          fps={fps()}
           onSeek={onSeek}
         />
       </div>

@@ -10,7 +10,9 @@ interface Props {
 export function TimelineTrackSide(props: Props) {
   return (
     <div class="w-30 shrink-0 border-r flex flex-col">
-      <div class="h-5 border-b bg-muted/20 shrink-0" />
+      <div class="border-b bg-muted/20 shrink-0" >
+        <div class='h-5' />
+      </div>
       <div ref={props.ref} class="flex-1 overflow-hidden">
         <For each={props.tracks}>
           {(track, i) => (

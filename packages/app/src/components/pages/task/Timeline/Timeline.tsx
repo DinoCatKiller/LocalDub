@@ -4,14 +4,16 @@ import { TimelineToolbar } from "./TimelineToolbar";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrackSide } from "./TimelineTrackSide";
 import { TimelineTracks } from "./TimelineTracks";
-import { BASE_PX_PER_MS, rulerInterval, trackColor } from "./consts";
+import { BASE_PX_PER_MS, rulerConfig, trackColor } from "./consts";
 export type { Track, TrackSegment } from "./consts";
 import type { Track } from "./consts";
+import type { FrameRate } from "@repo/core/utils/timecode";
 
 interface Props {
   tracks: Track[];
   duration: number;
   currentTime: number;
+  fps: FrameRate;
   onSeek: (ms: number) => void;
 }
 
@@ -19,7 +21,7 @@ export function Timeline(props: Props) {
   const [zoom, setZoom] = createSignal(1);
   const pxPerMs = () => BASE_PX_PER_MS * zoom();
   const totalPx = () => props.duration * pxPerMs();
-  const ri = () => rulerInterval(pxPerMs());
+  const rc = () => rulerConfig(pxPerMs(), props.fps);
 
   let tracksRef!: HTMLDivElement;
   let rulerRef!: HTMLDivElement;
@@ -83,7 +85,7 @@ export function Timeline(props: Props) {
             ref={(el) => rulerRef = el}
             totalPx={totalPx()}
             duration={props.duration}
-            interval={ri()}
+            rulerCfg={rc()}
             pxPerMs={pxPerMs()}
             onRulerClick={onRulerClick}
           />
