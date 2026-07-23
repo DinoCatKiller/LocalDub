@@ -1,4 +1,4 @@
-import { createSignal, onMount } from "solid-js";
+import { createSignal } from "solid-js";
 import { useScrollSync } from "#/hooks/useScrollSync";
 import { TimelineToolbar } from "./TimelineToolbar";
 import { TimelineRuler } from "./TimelineRuler";
@@ -62,15 +62,6 @@ export function Timeline(props: Props) {
   let rightRef!: HTMLDivElement;
   let playheadDragging = false;
 
-  const [viewportWidth, setViewportWidth] = createSignal(800);
-
-  onMount(() => {
-    const ro = new ResizeObserver(([entry]) => {
-      setViewportWidth(entry.contentRect.width);
-    });
-    ro.observe(rightRef);
-  });
-
   const onPlayheadDown = (e: PointerEvent) => {
     e.preventDefault();
     playheadDragging = true;
@@ -114,8 +105,6 @@ export function Timeline(props: Props) {
             duration={props.duration}
             rulerCfg={rc()}
             pxPerMs={pxPerMs()}
-            scrollLeft={scrollLeft()}
-            viewportWidth={viewportWidth()}
             fps={fpsFloat()}
             onRulerClick={onRulerClick}
           />
