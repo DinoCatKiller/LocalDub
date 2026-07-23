@@ -1,5 +1,4 @@
 import { For } from "solid-js";
-import { createVirtualizer } from "@tanstack/solid-virtual";
 import { msToRuler, shouldShowLabel, type RulerConfig } from "./consts";
 
 interface Props {
@@ -9,28 +8,17 @@ interface Props {
   rulerCfg: RulerConfig;
   pxPerMs: number;
   fps: number;
-  getTracksScrollElement: () => HTMLDivElement | undefined;
   onSeek: (ms: number) => void;
 }
 
 export function TimelineRuler(props: Props) {
-  const tickIntervalMs = () => props.rulerCfg.tickIntervalMs;
-  const tickCount = () => Math.ceil(props.duration / tickIntervalMs()) + 1;
-  const tickWidth = () => tickIntervalMs() * props.pxPerMs;
-
-  const virtualizer = createVirtualizer({
-    count: tickCount(),
-    getScrollElement: () => props.getTracksScrollElement() ?? null,
-    estimateSize: () => tickWidth(),
-    horizontal: true,
-    overscan: 10,
-  });
+  const tickCount = () => Math.ceil(props.duration / props.rulerCfg.tickIntervalMs) + 1;
 
   const onRulerClick = (e: MouseEvent) => {
-    const el = props.getTracksScrollElement();
-    if (!el) return;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left + el.scrollLeft;
+    const parent = (e.currentTarget as HTMLElement).parentElement;
+    const scrollLeft = parent?.scrollLeft ?? 0;
+    const x = e.clientX - rect.left + scrollLeft;
     const ms = x / props.pxPerMs;
     props.onSeek(Math.max(0, Math.min(ms, props.duration)));
   };
@@ -39,12 +27,12 @@ export function TimelineRuler(props: Props) {
     <div ref={props.ref} class="overflow-hidden shrink-0 border-b bg-muted/20">
       <div
         class="relative h-5 text-[10px] text-muted-foreground cursor-pointer"
-        style={{ width: `${props.totalPx}px` }}
+        style={{ width: `${props.totalPx}px`, "min-width": "100%" }}
         onClick={onRulerClick}
       >
-        <For each={virtualizer.getVirtualItems()}>
-          {(item) => {
-            const ms = () => item.index * tickIntervalMs();
+        <For each={Array.from({ length: tickCount() }, (_, i) => i)}>
+          {(i) => {
+            const ms = () => i * props.rulerCfg.tickIntervalMs;
             const isLabel = () => shouldShowLabel(ms(), props.rulerCfg.labelIntervalMs);
             return (
               <div
@@ -53,7 +41,7 @@ export function TimelineRuler(props: Props) {
                   "top-0 h-full pl-0.5 leading-tight": isLabel(),
                   "top-1.5 h-1.5": !isLabel(),
                 }}
-                style={{ left: `${item.start}px` }}
+                style={{ left: `${ms() * props.pxPerMs}px` }}
               >
                 {isLabel() ? msToRuler(ms(), props.fps) : null}
               </div>
