@@ -33,7 +33,7 @@ export const importVideo = async (input: InputArgs) => {
 	startLog('import', taskId);
 	const taskDir = join(WORKFOLDER, groupId, taskId);
   mkdirSync(taskDir, { recursive: true });
-  const { downloadedVideoPath, videoPath } = await downloadVideo(
+  const { downloadedVideoPath, videoPath, audioPath } = await downloadVideo(
     url,
     source,
     groupId,
@@ -66,8 +66,8 @@ export const importVideo = async (input: InputArgs) => {
 			label: stage,
 			status: 'pending',
 		})),
-		video_source_path: join(taskDir, 'video_source.mp4'),
-		audioSourcePath: join(taskDir, 'audio_source.wav')
+		video_source_path: videoPath,
+		audioSourcePath: audioPath
 	}
 
 	writeCtx(ctx);
@@ -83,7 +83,7 @@ export async function downloadVideo(
 ) {
   const taskDir = join(WORKFOLDER, groupId, taskId);
   let downloadedVideoPath = join(taskDir, `${taskId}.mp4`);
-	const videoPath  = join(taskDir, 'audio_source.wav')
+	const videoPath  = join(taskDir, 'video_source.mp4')
 	// Extract audio for downstream stages
 	const audioPath = join(taskDir, 'audio_source.wav')
 	if (source === 'local' || source === 'remote') {
@@ -157,5 +157,5 @@ export async function downloadVideo(
 		ffmpeg(['-i', videoPath, '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2', audioPath]);
 	}
 
-	return {  downloadedVideoPath, videoPath }
+	return {  downloadedVideoPath, videoPath, audioPath }
 }
