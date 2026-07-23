@@ -182,7 +182,7 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "config-rs",
  "core-rs",
  "device-rs",
@@ -190,14 +190,12 @@ dependencies = [
  "fnrpc-axum",
  "fnrpc-tauri",
  "futures",
- "rspc-axum",
  "serde",
  "serde_json",
  "specta",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
- "tauri-plugin-rspc",
  "tokio",
  "tower 0.4.13",
  "tower-http 0.5.2",
@@ -471,48 +469,11 @@ dependencies = [
 
 [[package]]
 name = "axum"
-version = "0.7.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edca88bc138befd0323b20752846e6587272d3b03b0343c8ea28a6f819e6e71f"
-dependencies = [
- "async-trait",
- "axum-core 0.4.5",
- "base64 0.22.1",
- "bytes",
- "futures-util",
- "http",
- "http-body",
- "http-body-util",
- "hyper",
- "hyper-util",
- "itoa",
- "matchit 0.7.3",
- "memchr",
- "mime",
- "percent-encoding",
- "pin-project-lite",
- "rustversion",
- "serde",
- "serde_json",
- "serde_path_to_error",
- "serde_urlencoded",
- "sha1",
- "sync_wrapper",
- "tokio",
- "tokio-tungstenite 0.24.0",
- "tower 0.5.3",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
-name = "axum"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "31b698c5f9a010f6573133b09e0de5408834d0c82f8d7475a89fc1867a71cd90"
 dependencies = [
- "axum-core 0.5.6",
+ "axum-core",
  "base64 0.22.1",
  "bytes",
  "form_urlencoded",
@@ -523,7 +484,7 @@ dependencies = [
  "hyper",
  "hyper-util",
  "itoa",
- "matchit 0.8.4",
+ "matchit",
  "memchr",
  "mime",
  "percent-encoding",
@@ -537,27 +498,6 @@ dependencies = [
  "tokio",
  "tokio-tungstenite 0.29.0",
  "tower 0.5.3",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
-name = "axum-core"
-version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09f2bd6146b97ae3359fa0cc6d6b376d9539582c7b4220f041a33ec24c226199"
-dependencies = [
- "async-trait",
- "bytes",
- "futures-util",
- "http",
- "http-body",
- "http-body-util",
- "mime",
- "pin-project-lite",
- "rustversion",
- "sync_wrapper",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -752,6 +692,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bridge"
+version = "0.1.0"
+dependencies = [
+ "quote",
+ "syn 2.0.118",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "brotli"
 version = "8.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -892,7 +841,7 @@ version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "585526cd672adc35918d8aea9bcb50669067904f36090caaffa9573d22fc7ade"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "burn-std",
  "burn-tensor",
  "bytes",
@@ -1124,7 +1073,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7238df1d59dcbb6880fe92ca0aa7b02b64d02394815e618da3d7933950bdaf39"
 dependencies = [
  "async-channel",
- "axum 0.8.9",
+ "axum",
  "burn-communication",
  "burn-ir",
  "burn-router",
@@ -1839,7 +1788,7 @@ version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ddef33a339a91ea89fb53151bd0a4689cfce27055c291dfa69945475d22c747"
 dependencies = [
- "time",
+ "time 0.3.51",
  "version_check",
 ]
 
@@ -1894,6 +1843,7 @@ dependencies = [
  "serde_json",
  "specta",
  "specta-typescript",
+ "time 0.1.0",
 ]
 
 [[package]]
@@ -3460,7 +3410,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "abbbfc1d6db2ac6220550e43cd490c830d51320e2ea51a06e596c3ae006d1c1f"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "fnrpc",
  "futures",
  "http-body",
@@ -4153,6 +4103,19 @@ name = "glob"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
+
+[[package]]
+name = "gloo-utils"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b5555354113b18c547c1d3a98fbf7fb32a9ff4f6fa112ce823a21641a0ba3aa"
+dependencies = [
+ "js-sys",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "web-sys",
+]
 
 [[package]]
 name = "glow"
@@ -5397,12 +5360,6 @@ checksum = "d1525a2a28c7f4fa0fc98bb91ae755d1e2d1505079e05539e35bc876b5d65ae9"
 dependencies = [
  "regex-automata",
 ]
-
-[[package]]
-name = "matchit"
-version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 
 [[package]]
 name = "matchit"
@@ -6706,7 +6663,7 @@ dependencies = [
  "indexmap 2.14.0",
  "quick-xml",
  "serde",
- "time",
+ "time 0.3.51",
 ]
 
 [[package]]
@@ -7206,7 +7163,7 @@ dependencies = [
  "lru",
  "paste",
  "strum 0.26.3",
- "time",
+ "time 0.3.51",
  "unicode-segmentation",
  "unicode-truncate",
  "unicode-width 0.2.0",
@@ -7543,35 +7500,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72f81bee8c8ef9b577d1681a70ebbc962c232461e397b22c208c43c04b67a155"
 dependencies = [
  "rmp",
- "serde",
-]
-
-[[package]]
-name = "rspc-axum"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d44b2311b5a7ac189594c3cdf30d35d64e1c5ab5c707747753cd9c56632ba9fa"
-dependencies = [
- "axum 0.7.9",
- "form_urlencoded",
- "futures",
- "mime",
- "rspc-procedure",
- "serde",
- "serde_json",
- "serde_urlencoded",
- "tokio",
-]
-
-[[package]]
-name = "rspc-procedure"
-version = "0.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a38372123154e54a6f36fa0f07d0d57de662bd3f1267e81ad2c3325cf2bfb323"
-dependencies = [
- "erased-serde",
- "futures-core",
- "pin-project-lite",
  "serde",
 ]
 
@@ -8148,7 +8076,7 @@ dependencies = [
  "serde_core",
  "serde_json",
  "serde_with_macros",
- "time",
+ "time 0.3.51",
 ]
 
 [[package]]
@@ -8942,7 +8870,7 @@ dependencies = [
  "libc",
  "mach2",
  "nom 7.1.3",
- "time",
+ "time 0.3.51",
  "winapi",
 ]
 
@@ -9113,7 +9041,7 @@ dependencies = [
  "syn 2.0.118",
  "tauri-utils",
  "thiserror 2.0.18",
- "time",
+ "time 0.3.51",
  "url",
  "uuid",
  "walkdir",
@@ -9169,19 +9097,6 @@ dependencies = [
  "url",
  "windows 0.61.3",
  "zbus",
-]
-
-[[package]]
-name = "tauri-plugin-rspc"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25d91f8fe67641f30fb9a6abfc1631c1b5a17b9b878c4ffc372cb8e0ab52146d"
-dependencies = [
- "rspc-procedure",
- "serde",
- "serde_json",
- "tauri",
- "tauri-plugin",
 ]
 
 [[package]]
@@ -9424,6 +9339,19 @@ dependencies = [
 
 [[package]]
 name = "time"
+version = "0.1.0"
+dependencies = [
+ "bridge",
+ "num-traits",
+ "serde",
+ "specta",
+ "specta-typescript",
+ "tsify-next",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "time"
 version = "0.3.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85c17d80feb7334b40c484e45ed1a5273dfd8bfda537c3be2e74a06a6686f327"
@@ -9591,18 +9519,6 @@ checksum = "1729aa945f29d91ba541258c8df89027d5792d85a8841fb65e8bf0f4ede4ef61"
 dependencies = [
  "rustls",
  "tokio",
-]
-
-[[package]]
-name = "tokio-tungstenite"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edc5f74e248dc973e0dbb7b74c7e0d6fcc301c694ff50049504004ef4d0cdcd9"
-dependencies = [
- "futures-util",
- "log",
- "tokio",
- "tungstenite 0.24.0",
 ]
 
 [[package]]
@@ -9979,7 +9895,7 @@ dependencies = [
  "crossbeam-channel",
  "symlink",
  "thiserror 2.0.18",
- "time",
+ "time 0.3.51",
  "tracing-subscriber",
 ]
 
@@ -10072,28 +9988,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
+name = "tsify-next"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d0f2208feeb5f7a6edb15a2389c14cd42480ef6417318316bb866da5806a61d"
+dependencies = [
+ "gloo-utils",
+ "serde",
+ "serde_json",
+ "tsify-next-macros",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "tsify-next-macros"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f81253930d0d388a3ab8fa4ae56da9973ab171ef833d1be2e9080fc3ce502bd6"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde_derive_internals",
+ "syn 2.0.118",
+]
+
+[[package]]
 name = "ttf-parser"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
-
-[[package]]
-name = "tungstenite"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18e5b8366ee7a95b16d32197d0b2604b43a0be89dc5fac9f8e96ccafbaedda8a"
-dependencies = [
- "byteorder",
- "bytes",
- "data-encoding",
- "http",
- "httparse",
- "log",
- "rand 0.8.6",
- "sha1",
- "thiserror 1.0.69",
- "utf-8",
-]
 
 [[package]]
 name = "tungstenite"
@@ -11908,7 +11831,7 @@ dependencies = [
  "hmac",
  "pbkdf2 0.11.0",
  "sha1",
- "time",
+ "time 0.3.51",
  "zstd 0.11.2+zstd.1.5.2",
 ]
 
@@ -11933,7 +11856,7 @@ dependencies = [
  "pbkdf2 0.12.2",
  "ppmd-rust",
  "sha1",
- "time",
+ "time 0.3.51",
  "typed-path",
  "zeroize",
  "zopfli",

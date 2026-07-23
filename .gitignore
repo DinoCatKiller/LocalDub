@@ -196,8 +196,7 @@ node_modules
 .hf_cache/
 pretrained_models/
 
-.agents/hardware.md
-
+.agents/*.local.md
 # Root-level model artifacts (download scripts often write to CWD)
 /*.onnx
 /*.onnx_data
@@ -213,7 +212,7 @@ packages/subtitle-ocr/.test-frames/
 **/results/**/*.json
 
 
-packages/cli/input.json 
+packages/cli/input.json
 tmp
 **/build2
 *.zip

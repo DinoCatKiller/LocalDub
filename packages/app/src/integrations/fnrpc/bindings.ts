@@ -18,19 +18,6 @@ export type Capabilities = {
 	openvino: boolean,
 };
 
-export type TaskCtx = {
-	task: Task,
-	stages: TaskStage[] | null,
-	pipeline: string,
-	last_run_pipeline: string | null,
-	input: unknown,
-	run_info: RunInfo | null,
-	video_source_path: string | null,
-	audio_source_path: string | null,
-	asr_language: string | null,
-	target_language: string | null,
-};
-
 export type CpuInfo = {
 	model: string,
 	cores: number,
@@ -52,6 +39,11 @@ export type DirEntry = {
 };
 
 export type FoundVia = "Mdns" | "Default" | "PortFile";
+
+export type FrameRate = {
+	numerator: number,
+	denominator: number,
+};
 
 export type GpuInfo = {
 	name: string,
@@ -109,12 +101,12 @@ export type ProbeResult = "Ok" | "Fail";
 
 /**
  *  An RPC error returned by any handler (query, mutate, subscribe).
- *
+ * 
  *  Maps to [`RpcError`](https://docs.rs/fnrpc-client/latest/fnrpc_client/class.RpcError.html)
  *  in the TypeScript client.
- *
+ * 
  *  # TS mirror
- *
+ * 
  *  ```typescript
  *  class RpcError extends Error {
  *    name: "RpcErr";
@@ -168,6 +160,20 @@ export type TaskBrief = {
 	started_at: string | null,
 	completed_at: string | null,
 	error_message: string | null,
+};
+
+export type TaskCtx = {
+	task: Task,
+	stages: TaskStage[] | null,
+	pipeline: string,
+	last_run_pipeline: string | null,
+	input: unknown,
+	frame_rate: FrameRate,
+	run_info: RunInfo | null,
+	video_source_path: string | null,
+	audio_source_path: string | null,
+	asr_language: string | null,
+	target_language: string | null,
 };
 
 export type TaskStage = {
