@@ -23,18 +23,18 @@ export function TimelineRuler(props: Props) {
       >
         <For each={Array.from({ length: tickCount() }, (_, i) => i)}>
           {(i) => {
-            const ms = i * props.rulerCfg.tickIntervalMs;
-            const isLabel = shouldShowLabel(ms, props.rulerCfg.labelIntervalMs);
+            const ms = () => i * props.rulerCfg.tickIntervalMs;
+            const isLabel = () => shouldShowLabel(ms(), props.rulerCfg.labelIntervalMs);
             return (
               <div
                 class="absolute border-l border-muted-foreground/20"
                 classList={{
-                  "top-0 h-full pl-0.5 leading-tight": isLabel,
-                  "top-1.5 h-1.5": !isLabel,
+                  "top-0 h-full pl-0.5 leading-tight": isLabel(),
+                  "top-1.5 h-1.5": !isLabel(),
                 }}
-                style={{ left: `${ms * props.pxPerMs}px` }}
+                style={{ left: `${ms() * props.pxPerMs}px` }}
               >
-                {isLabel ? msToRuler(ms, props.fps) : null}
+                {isLabel() ? msToRuler(ms(), props.fps) : null}
               </div>
             );
           }}
