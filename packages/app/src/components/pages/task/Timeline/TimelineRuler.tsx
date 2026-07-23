@@ -9,6 +9,7 @@ interface Props {
   pxPerMs: number;
   scrollLeft: number;
   viewportWidth: number;
+  fps: number;
   onRulerClick: (e: MouseEvent) => void;
 }
 
@@ -49,7 +50,7 @@ export function TimelineRuler(props: Props) {
                 }}
                 style={{ left: `${ms * props.pxPerMs}px` }}
               >
-                {isLabel ? msToRuler(ms) : null}
+                {isLabel ? msToRuler(ms, props.fps) : null}
               </div>
             );
           }}

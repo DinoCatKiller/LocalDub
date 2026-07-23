@@ -19,6 +19,7 @@ interface Props {
 
 export function Timeline(props: Props) {
   const [zoom, setZoom] = createSignal(1);
+  const fpsFloat = () => props.fps.numerator / props.fps.denominator;
   const pxPerMs = () => BASE_PX_PER_MS * zoom();
   const totalPx = () => props.duration * pxPerMs();
   const rc = () => rulerConfig(pxPerMs(), props.fps);
@@ -98,6 +99,7 @@ export function Timeline(props: Props) {
             pxPerMs={pxPerMs()}
             scrollLeft={scrollLeft()}
             viewportWidth={viewportWidth()}
+            fps={fpsFloat()}
             onRulerClick={onRulerClick}
           />
 

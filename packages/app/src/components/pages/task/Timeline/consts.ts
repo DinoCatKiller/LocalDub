@@ -96,7 +96,13 @@ export function shouldShowLabel(ms: number, labelIntervalMs: number): boolean {
   return Math.abs(ratio - Math.round(ratio)) < 0.001;
 }
 
-export function msToRuler(ms: number) {
+export function msToRuler(ms: number, fps?: number) {
+  const isSecondBoundary = Math.abs(ms % 1000) < 0.5;
+  if (fps !== undefined && !isSecondBoundary) {
+    const frameMs = 1000 / fps;
+    const frame = Math.round((ms % 1000) / frameMs);
+    return `${frame}f`;
+  }
   const s = Math.floor(ms / 1000);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
