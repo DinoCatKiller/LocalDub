@@ -32,10 +32,10 @@ export function TimelineRuler(props: Props) {
   const tickCount = () => Math.ceil(props.duration / props.interval) + 1;
 
   return (
-    <div ref={props.ref} class="overflow-hidden shrink-0 border-b bg-muted/20">
+    <div ref={props.ref} class="overflow-hidden shrink-0 h-5 border-b bg-muted/20">
       {/* inner: 实际可点击区域，高度 20px (h-5)，宽度铺满时间线 */}
       <div
-        class="relative h-5 text-[10px] text-muted-foreground cursor-pointer"
+        class="relative text-[10px] text-muted-foreground cursor-pointer"
         style={{ width: `${props.totalPx}px`, "min-width": "100%" }}
         onClick={props.onRulerClick}
       >
