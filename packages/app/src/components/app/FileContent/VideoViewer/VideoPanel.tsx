@@ -1,4 +1,5 @@
 import { mediaUrl } from "#/lib/utils/path.ts";
+import { useActivePath } from "../store/ContentPanel";
 
 export interface VideoPanelProps {
   path: string;
@@ -7,7 +8,6 @@ export interface VideoPanelProps {
 
 export function VideoPanel(props: VideoPanelProps) {
   let videoRef!: HTMLVideoElement;
-
   return (
     <div class="flex items-center justify-center bg-black h-full w-full overflow-hidden">
       <video

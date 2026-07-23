@@ -15,9 +15,7 @@ export const contentPanelStore = createStore<ContentPanelStore>({
   tabs: [],
 })
 
-// interface videoViewerStore {
-
-// }
+export const useActivePath = () => useSelector(contentPanelStore, (state) => state.activePath);
 
 export const setActivePath = (path: string | null) => {
   contentPanelStore.setState((state) => ({ ...state, activePath: path }));

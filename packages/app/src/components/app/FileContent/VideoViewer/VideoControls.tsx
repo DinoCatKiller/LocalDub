@@ -1,27 +1,36 @@
 import { Play, Pause } from "lucide-solid";
-import { srtTime } from "@repo/core/utils/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@repo/ui-solid/base/select";
 import { msToTimecodeFull } from "@repo/core/utils/timecode";
-import { FrameRate } from "@repo/core/context/context";
+import { EditableTimecode } from "#/components/ui/editable-timecode";
+import { useCurrentTime, useDuration, useFps, usePlaying, usePlaybackRate } from "../store/videoViewer";
 
 export interface VideoControlsProps {
-  playing: boolean;
-  currentTime: number;
-  fps: FrameRate
-  duration: number;
-  playbackRate: number;
   onTogglePlay: () => void;
   onRateChange: (rate: number) => void;
+  onTimeChange: (ms: number) => void;
 }
 
 const rateValues = ["0.5", "0.75", "1", "1.25", "1.5", "2"];
 const rateLabel = (v: string) => `${v}x`;
 
 export function VideoControls(props: VideoControlsProps) {
+  const currentTime = useCurrentTime();
+  const duration = useDuration();
+  const fps = useFps();
+  const playing = usePlaying();
+  const playbackRate = usePlaybackRate();
+
   return (
     <div class="flex items-center h-8 px-3 gap-3  border-t text-sm select-none">
-      <span class="text-xs text-muted-foreground  tabular-nums">
-        {srtTime(props.currentTime, '.')} / {msToTimecodeFull(props.duration, props.fps)}
+      <span class="text-xs text-muted-foreground tabular-nums flex items-center gap-0.5">
+        <EditableTimecode format="timecode" time={currentTime()} duration={duration()} fps={fps()} onTimeChange={props.onTimeChange} />
+        <span class="text-muted-foreground">(</span>
+        <EditableTimecode format="ms" time={currentTime()} duration={duration()} fps={fps()} onTimeChange={props.onTimeChange} />
+        <span class="text-muted-foreground">,</span>
+        <EditableTimecode format="full" time={currentTime()} duration={duration()} fps={fps()} onTimeChange={props.onTimeChange} />
+        <span class="text-muted-foreground">)</span>
+        <span class="text-muted-foreground">/</span>
+        {msToTimecodeFull(duration(), fps())}
       </span>
 
       <div class="flex-1 flex justify-center">
@@ -29,13 +38,13 @@ export function VideoControls(props: VideoControlsProps) {
           onClick={props.onTogglePlay}
           class="flex items-center justify-center w-8 h-8 rounded hover:bg-accent/50"
         >
-          {props.playing ? <Pause size={16} /> : <Play size={16} />}
+          {playing() ? <Pause size={16} /> : <Play size={16} />}
         </button>
       </div>
 
       <Select<string>
         options={rateValues}
-        value={String(props.playbackRate)}
+        value={String(playbackRate())}
         onChange={(v) => props.onRateChange(Number(v))}
         placeholder="1"
         itemComponent={(p) => (

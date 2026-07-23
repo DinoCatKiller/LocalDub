@@ -3,28 +3,61 @@ import { createEffect, createSignal } from "solid-js";
 import type { FrameRate } from "@repo/core/utils/timecode";
 import { msToTimecode, timecodeToMs } from "@repo/core/utils/timecode";
 
+export type EditableTimecodeFormat = 'timecode' | 'ms' | 'full';
+
 interface EditableTimecodeProps {
   time: number;
   duration: number;
   fps: FrameRate;
+  format?: EditableTimecodeFormat;
   onTimeChange?: (ms: number) => void;
   class?: string;
   disabled?: boolean;
 }
 
+const displayValue = (time: number, fps: FrameRate, format: EditableTimecodeFormat): string => {
+  switch (format) {
+    case 'timecode': return msToTimecode(time, fps);
+    case 'ms': return String(Math.round(time % 1000)).padStart(3, '0');
+    case 'full': return String(Math.round(time));
+  }
+};
+
+const parseValue = (input: string, currentTime: number, duration: number, fps: FrameRate, format: EditableTimecodeFormat): number | null => {
+  switch (format) {
+    case 'timecode': {
+      const parsed = timecodeToMs(input, fps);
+      if (parsed == null) return null;
+      return Math.max(0, Math.min(parsed, duration));
+    }
+    case 'ms': {
+      const v = parseInt(input, 10);
+      if (isNaN(v) || v < 0 || v > 999) return null;
+      const base = Math.floor(Math.max(0, currentTime) / 1000) * 1000;
+      return Math.max(0, Math.min(base + v, duration));
+    }
+    case 'full': {
+      const v = parseInt(input, 10);
+      if (isNaN(v) || v < 0) return null;
+      return Math.max(0, Math.min(v, duration));
+    }
+  }
+};
+
 export function EditableTimecode(props: EditableTimecodeProps) {
+  const format = () => props.format ?? 'timecode';
   const [isEditing, setIsEditing] = createSignal(false);
   const [inputValue, setInputValue] = createSignal("");
   const [hasError, setHasError] = createSignal(false);
   let inputRef: HTMLInputElement | undefined;
   let enterPressed = false;
 
-  const formatted = () => msToTimecode(props.time, props.fps);
+  const displayText = () => displayValue(props.time, props.fps, format());
 
   const startEditing = () => {
     if (props.disabled) return;
     setIsEditing(true);
-    setInputValue(formatted());
+    setInputValue(displayText());
     setHasError(false);
     enterPressed = false;
   };
@@ -37,13 +70,12 @@ export function EditableTimecode(props: EditableTimecodeProps) {
   };
 
   const applyEdit = () => {
-    const parsed = timecodeToMs(inputValue(), props.fps);
+    const parsed = parseValue(inputValue(), props.time, props.duration, props.fps, format());
     if (parsed == null) {
       setHasError(true);
       return;
     }
-    const clamped = Math.max(0, Math.min(parsed, props.duration));
-    props.onTimeChange?.(clamped);
+    props.onTimeChange?.(parsed);
     setIsEditing(false);
     setInputValue("");
     setHasError(false);
@@ -85,8 +117,8 @@ export function EditableTimecode(props: EditableTimecodeProps) {
             hasError() && "text-destructive focus:border-destructive",
             props.class,
           )}
-          style={{ width: `${formatted().length + 1}ch` }}
-          placeholder={formatted()}
+          style={{ width: `${displayText().length + 2}ch` }}
+          placeholder={displayText()}
         />
       ) : (
         <button
@@ -108,7 +140,7 @@ export function EditableTimecode(props: EditableTimecodeProps) {
           )}
           title={props.disabled ? undefined : "Click to edit time"}
         >
-          {formatted()}
+          {displayText()}
         </button>
       )}
     </>

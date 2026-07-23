@@ -64,5 +64,26 @@ export function msToTimecodeFull(ms: number, fps: FrameRate): string {
   const total = Math.max(0, ms);
   const remainingMs = total % 1000;
   const tc = msToTimecode(total, fps);
-  return `${tc}(${remainingMs},${total})`;
+  return `${tc}(${Math.round(remainingMs)},${Math.round(total)})`;
+}
+
+/**
+ * 将 HH:MM:SS:FF(mmm, full_ms) 完整格式解析为毫秒。
+ *
+ * 同时解析帧时间码和括号中的毫秒值，二者必须一致（误差 ≤ 1ms）。
+ *
+ * @param tc - 完整格式字符串 (e.g. "00:00:01:15(500, 1500)")
+ * @param fps - 有理数帧率 { numerator, denominator }
+ * @returns 毫秒值，解析或校验不通过返回 null
+ */
+export function timecodeFullToMs(tc: string, fps: FrameRate): number | null {
+  const m = tc.match(/^(\d{2}:\d{2}:\d{2}:\d{2})\((\d+),(\d+)\)$/);
+  if (!m) return null;
+  const tcParsed = timecodeToMs(m[1], fps);
+  if (tcParsed == null) return null;
+  const bracketMs1 = parseInt(m[2], 10);
+  const bracketMs2 = parseInt(m[3], 10);
+  if (isNaN(bracketMs1) || isNaN(bracketMs2)) return null;
+  if (Math.abs(tcParsed - bracketMs2) > 1) return null;
+  return bracketMs2;
 }

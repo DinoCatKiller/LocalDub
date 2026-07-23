@@ -6,6 +6,15 @@ import { TaskControlPanel } from "#/components/pages/task/TaskControlPanel/TaskC
 import { AiReviewPanel } from "#/components/pages/task/AiReviewPanel.tsx";
 import { ContentPanel } from "#/components/app/FileContent/ContentPanel";
 import { createQuery, useQuery } from "@tanstack/solid-query";
+import {
+  setCurrentTime,
+  setDuration,
+  setFps,
+  setPlaying,
+  setPlaybackRate,
+  useCurrentTime,
+  useDuration,
+} from "#/components/app/FileContent/store/videoViewer";
 
 interface Props {
   groupId: string;
@@ -16,19 +25,16 @@ export function TaskDetailPage(props: Props) {
   const taskDir = `workfolder/${props.groupId}/${props.taskId}`;
   const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(taskDir));
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
-  const [currentTime, setCurrentTime] = createSignal(0);
-  const [duration, setDuration] = createSignal(0);
-  const [playing, setPlaying] = createSignal(false);
-  const [playbackRate, setPlaybackRate] = createSignal(1);
 
   // 视频源地址（默认取 video_source.mp4）
-  const videoUrl = () => taskCtxQ.data?.video_source_path
-    ? `http://localhost:19110/media/${taskDir}/video_source.mp4`
-    : "";
+  // const videoUrl = () => taskCtxQ.data?.video_source_path
+  //   ? `http://localhost:19110/media/${taskDir}/video_source.mp4`
+  //   : "";
 
   const onVideoReady = (ref: HTMLVideoElement) => {
     setVideoRef(ref);
     setDuration(ref.duration * 1000);
+    if (taskCtxQ.data) setFps(taskCtxQ.data.frame_rate);
     ref.addEventListener("timeupdate", () => setCurrentTime(ref.currentTime * 1000));
     ref.addEventListener("play", () => setPlaying(true));
     ref.addEventListener("pause", () => setPlaying(false));
@@ -104,12 +110,15 @@ export function TaskDetailPage(props: Props) {
   };
 
   // ContentPanel 暴露给 FileTree 的 openFile 回调
-  const handleFileOpen = (_name: string, path: string) => {
-    // 如果点击的是当前项目的默认视频，自动用 VideoViewer 打开
-    if (path.includes('video_source.mp4') && videoUrl()) {
-      // 暂不处理：可以在后续通过 VideoViewer 路径直接渲染
-    }
-  };
+  // const handleFileOpen = (_name: string, path: string) => {
+  //   // 如果点击的是当前项目的默认视频，自动用 VideoViewer 打开
+  //   if (path.includes('video_source.mp4') && videoUrl()) {
+  //     // 暂不处理：可以在后续通过 VideoViewer 路径直接渲染
+  //   }
+  // };
+
+  const duration = useDuration();
+  const currentTime = useCurrentTime();
 
   return (
     <div class="flex flex-col h-full w-full min-w-0 max-w-full">
@@ -125,15 +134,11 @@ export function TaskDetailPage(props: Props) {
         </Show>
         <div class="flex-1 min-w-0 flex flex-col">
           <ContentPanel
-            onFileOpen={(name, path) => handleFileOpen(name, path)}
-            currentTime={currentTime()}
-            fps={taskCtxQ.data!.frame_rate}
-            duration={duration()}
-            playbackRate={playbackRate()}
-            playing={playing()}
+            // onFileOpen={(name, path) => handleFileOpen(name, path)}
+            onReady={onVideoReady}
             onTogglePlay={togglePlay}
             onRateChange={onRateChange}
-            onReady={onVideoReady}
+            onTimeChange={onSeek}
           />
         </div>
         <AiReviewPanel />

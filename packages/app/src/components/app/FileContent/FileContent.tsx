@@ -1,7 +1,7 @@
 import { Match, Switch, type JSX } from "solid-js";
 import { FileEditor } from "./FileEditor";
 import { ImageViewer } from "./ImageViewer";
-import { VideoViewer, VideoViewerProps } from "./VideoViewer/VideoViewer";
+import { VideoViewer } from "./VideoViewer/VideoViewer";
 import { effectLog } from "@repo/ui-solid/utils/log";
 
 /** 文件类型标识 */
@@ -27,13 +27,14 @@ export function detectType(path: string): FileType {
   return "unknown";
 }
 
-export interface FileContentProps extends VideoViewerProps {
-  /** 当前打开的文件路径（相对于 workfolder） */
+export interface FileContentProps {
   path: string;
-  /** 文件名，用于展示 */
   label: string;
-  /** 文件类型（由 detectType 得出，可传入避免重复计算） */
   fileType?: FileType;
+  onReady?: (ref: HTMLVideoElement) => void;
+  onTogglePlay?: () => void;
+  onRateChange?: (rate: number) => void;
+  onTimeChange?: (ms: number) => void;
 }
 
 /**
@@ -60,9 +61,13 @@ export function FileContent(props: FileContentProps): JSX.Element {
       <ImageViewer src={props.path} />
     </Match>
     <Match when={type() === 'video'}>
-      <VideoViewer path={props.path} currentTime={props.currentTime}
-        fps={props.fps}
-        duration={props.duration} playbackRate={props.playbackRate} onTogglePlay={props.onTogglePlay} onRateChange={props.onRateChange} onReady={props.onReady} playing={props.playing} />
+      <VideoViewer
+        path={props.path}
+        onReady={props.onReady!}
+        onTogglePlay={props.onTogglePlay!}
+        onRateChange={props.onRateChange!}
+        onTimeChange={props.onTimeChange!}
+      />
     </Match>
   </Switch>
 }

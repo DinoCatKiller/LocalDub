@@ -1,14 +1,17 @@
-import { createSignal, Show } from "solid-js";
+import { Show } from "solid-js";
 import { FileTab } from "./FileTab";
-import { FileContent, FileContentProps, detectType } from "./FileContent";
+import { FileContent } from "./FileContent";
 import { effectLog } from "@repo/ui-solid/utils/log";
 import { useSelector } from "@tanstack/solid-store";
-import { addTab, contentPanelStore, setActivePath, setTabs } from "./store/ContentPanel";
+import { contentPanelStore } from "./store/ContentPanel";
 
 
-interface Props extends Omit<FileContentProps, "label" | "path"> {
-  /** 从 FileTree 点击文件时调用 */
-  onFileOpen?: (name: string, path: string) => void;
+interface Props {
+  // onFileOpen?: (name: string, path: string) => void;
+  onReady?: (ref: HTMLVideoElement) => void;
+  onTogglePlay?: () => void;
+  onRateChange?: (rate: number) => void;
+  onTimeChange?: (ms: number) => void;
 }
 
 /**
@@ -74,14 +77,10 @@ export function ContentPanel(props: Props) {
         <FileContent
           path={activePath()!}
           label={tabs().find((t) => t.path === activePath())?.label ?? activePath()!}
-          currentTime={props.currentTime}
-          fps={props.fps}
-          duration={props.duration}
-          playbackRate={props.playbackRate}
+          onReady={props.onReady}
           onTogglePlay={props.onTogglePlay}
           onRateChange={props.onRateChange}
-          onReady={props.onReady}
-          playing={props.playing}
+          onTimeChange={props.onTimeChange}
         />
       </Show>
     </div>
