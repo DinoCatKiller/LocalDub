@@ -30,6 +30,7 @@ export function Timeline(props: Props) {
   const rc = () => rulerConfig(pxPerMs(), props.fps);
 
   let tracksRef!: HTMLDivElement;
+  const [tracksScrollEl, setTracksScrollEl] = createSignal<HTMLDivElement>();
   let rulerRef!: HTMLDivElement;
   let labelsRef!: HTMLDivElement;
 
@@ -99,12 +100,12 @@ export function Timeline(props: Props) {
             rulerCfg={rc()}
             pxPerMs={pxPerMs()}
             fps={fpsFloat()}
-            getTracksScrollElement={() => tracksRef}
+            getTracksScrollElement={tracksScrollEl}
             onSeek={props.onSeek}
           />
 
           <TimelineTracks
-            ref={(el) => tracksRef = el}
+            ref={(el) => { tracksRef = el; setTracksScrollEl(el); }}
             tracks={props.tracks}
             totalPx={totalPx()}
             pxPerMs={pxPerMs()}

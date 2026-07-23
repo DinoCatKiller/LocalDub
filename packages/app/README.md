@@ -15,7 +15,7 @@ This template should help get you started developing with Tauri, Solid and Types
 
 - [x] Step 1 — `rulerConfig(pxPerMs, fps)` frame-aware 间隔算法
 - [x] Step 2 — **两级刻度线**：label 间渲染小刻度 (tickIntervalMs)
-- [ ] **刻度视口虚拟化**：只渲染可见范围（用 TanStack Virtual 替换，或后续优化）
+- [x] **刻度视口虚拟化**：用 @tanstack/solid-virtual 实现，只渲染可见刻度
 - [x] **标签格式支持帧号**：缩放到帧级时显示 `+FF` 号而非纯 `M:SS`
 - [x] **Zoom 锚定到播放头** + 对数映射：缩放时播放头保持在视口内
 - [ ] **播放头吸附到帧**：`onSeek` / playhead drag 时对齐到帧边界
