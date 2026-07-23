@@ -60,7 +60,9 @@ export function FileContent(props: FileContentProps): JSX.Element {
       <ImageViewer src={props.path} />
     </Match>
     <Match when={type() === 'video'}>
-      <VideoViewer path={props.path} currentTime={props.currentTime} duration={props.duration} playbackRate={props.playbackRate} onTogglePlay={props.onTogglePlay} onRateChange={props.onRateChange} onReady={props.onReady} playing={props.playing} />
+      <VideoViewer path={props.path} currentTime={props.currentTime}
+        fps={props.fps}
+        duration={props.duration} playbackRate={props.playbackRate} onTogglePlay={props.onTogglePlay} onRateChange={props.onRateChange} onReady={props.onReady} playing={props.playing} />
     </Match>
   </Switch>
 }

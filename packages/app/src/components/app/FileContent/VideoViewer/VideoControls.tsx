@@ -1,10 +1,13 @@
 import { Play, Pause } from "lucide-solid";
 import { srtTime } from "@repo/core/utils/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@repo/ui-solid/base/select";
+import { msToTimecodeFull } from "@repo/core/utils/timecode";
+import { FrameRate } from "@repo/core/context/context";
 
 export interface VideoControlsProps {
   playing: boolean;
   currentTime: number;
+  fps: FrameRate
   duration: number;
   playbackRate: number;
   onTogglePlay: () => void;
@@ -18,7 +21,7 @@ export function VideoControls(props: VideoControlsProps) {
   return (
     <div class="flex items-center h-8 px-3 gap-3  border-t text-sm select-none">
       <span class="text-xs text-muted-foreground  tabular-nums">
-        {srtTime(props.currentTime, '.')} / {srtTime(props.duration, '.')}
+        {srtTime(props.currentTime, '.')} / {msToTimecodeFull(props.duration, props.fps)}
       </span>
 
       <div class="flex-1 flex justify-center">

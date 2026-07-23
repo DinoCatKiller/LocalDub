@@ -16,6 +16,7 @@ export function VideoViewer(props: VideoViewerProps) {
       {/* 内联控制条：play/pause + 倍速 */}
       <VideoControls
         currentTime={props.currentTime}
+        fps={props.fps}
         duration={props.duration}
         playbackRate={props.playbackRate}
         playing={props.playing}

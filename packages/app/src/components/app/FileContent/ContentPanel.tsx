@@ -75,6 +75,7 @@ export function ContentPanel(props: Props) {
           path={activePath()!}
           label={tabs().find((t) => t.path === activePath())?.label ?? activePath()!}
           currentTime={props.currentTime}
+          fps={props.fps}
           duration={props.duration}
           playbackRate={props.playbackRate}
           onTogglePlay={props.onTogglePlay}

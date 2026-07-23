@@ -127,6 +127,7 @@ export function TaskDetailPage(props: Props) {
           <ContentPanel
             onFileOpen={(name, path) => handleFileOpen(name, path)}
             currentTime={currentTime()}
+            fps={taskCtxQ.data!.frame_rate}
             duration={duration()}
             playbackRate={playbackRate()}
             playing={playing()}
