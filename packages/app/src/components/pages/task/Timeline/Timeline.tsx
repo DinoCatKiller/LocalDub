@@ -21,8 +21,8 @@ export function Timeline(props: Props) {
   const fpsFloat = () => props.fps.numerator / props.fps.denominator;
 
   const ZOOM_MIN = 0.1;
-  const ZOOM_MAX = 50;
-  const [sliderPos, setSliderPos] = createSignal(0.35);
+  const ZOOM_MAX = 100;
+  const [sliderPos, setSliderPos] = createSignal(0.38);
   const zoom = () => ZOOM_MIN * Math.pow(ZOOM_MAX / ZOOM_MIN, sliderPos());
 
   const pxPerMs = () => BASE_PX_PER_MS * zoom();

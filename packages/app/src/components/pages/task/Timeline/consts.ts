@@ -14,7 +14,7 @@ export interface Track {
   color?: string;
 }
 
-export const BASE_PX_PER_MS = 0.08;
+export const BASE_PX_PER_MS = 0.05;
 export const DEFAULT_COLORS = ["#3b82f6", "#22c55e", "#a855f7", "#f59e0b", "#ef4444", "#ec4899"];
 
 const LABEL_FRAME_INTERVALS = [2, 3, 5, 10, 15];
