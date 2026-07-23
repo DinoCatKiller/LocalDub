@@ -7,11 +7,27 @@ interface Props {
   duration: number;
   rulerCfg: RulerConfig;
   pxPerMs: number;
+  scrollLeft: number;
+  viewportWidth: number;
   onRulerClick: (e: MouseEvent) => void;
 }
 
 export function TimelineRuler(props: Props) {
-  const tickCount = () => Math.ceil(props.duration / props.rulerCfg.tickIntervalMs) + 1;
+  const tickIntervalMs = () => props.rulerCfg.tickIntervalMs;
+  const labelIntervalMs = () => props.rulerCfg.labelIntervalMs;
+
+  const bufferRatio = 0.15;
+  const visibleStartMs = () => props.scrollLeft / props.pxPerMs;
+  const visibleEndMs = () => (props.scrollLeft + props.viewportWidth) / props.pxPerMs;
+  const rangeStartMs = () => Math.max(0, visibleStartMs() - props.duration * bufferRatio);
+  const rangeEndMs = () => Math.min(props.duration, visibleEndMs() + props.duration * bufferRatio);
+
+  const startIndex = () => Math.floor(rangeStartMs() / tickIntervalMs());
+  const endIndex = () => Math.min(
+    Math.ceil(rangeEndMs() / tickIntervalMs()),
+    Math.ceil(props.duration / tickIntervalMs()),
+  );
+  const count = () => Math.max(0, endIndex() - startIndex() + 1);
 
   return (
     <div ref={props.ref} class="overflow-hidden shrink-0 border-b bg-muted/20">
@@ -20,10 +36,10 @@ export function TimelineRuler(props: Props) {
         style={{ width: `${props.totalPx}px`, "min-width": "100%" }}
         onClick={props.onRulerClick}
       >
-        <For each={Array.from({ length: tickCount() }, (_, i) => i)}>
+        <For each={Array.from({ length: count() }, (_, i) => startIndex() + i)}>
           {(i) => {
-            const ms = i * props.rulerCfg.tickIntervalMs;
-            const isLabel = shouldShowLabel(ms, props.rulerCfg.labelIntervalMs);
+            const ms = i * tickIntervalMs();
+            const isLabel = shouldShowLabel(ms, labelIntervalMs());
             return (
               <div
                 class="absolute border-l border-muted-foreground/20"
