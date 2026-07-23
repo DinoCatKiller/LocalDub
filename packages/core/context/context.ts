@@ -26,13 +26,17 @@ export interface Task extends TaskBrief {
   task_dir: string
   final_video_path?: string | null | undefined;
 }
+export interface FrameRate {
+  numerator: number; // 分子
+  denominator: number; // 分母
+}
 export interface TaskCtx {
   task: Task;
   stages?: TaskStage[]
   pipeline: 'dub' | 'subtitle';
   lastRunPipeline?: 'dub' | 'subtitle'; // 用于 detect pipeline 切换
   input: CliInput
-  frame_rate: number;
+   frame_rate: FrameRate;
   runInfo?: {
 		asr?: {
 			engine: string; // 'whisper-pytorch' | 'faster-whisper'

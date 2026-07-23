@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::fs;
 use std::path::PathBuf;
+use time::FrameRate;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
@@ -88,6 +89,7 @@ pub struct TaskCtx {
     pub last_run_pipeline: Option<String>,
     #[specta(type = specta_typescript::Unknown)]
     pub input: serde_json::Value,
+    pub frame_rate: FrameRate,
     pub run_info: Option<RunInfo>,
     pub video_source_path: Option<String>,
     pub audio_source_path: Option<String>,
@@ -154,6 +156,10 @@ pub fn read_ctx(task_dir: &str) -> Result<TaskCtx, String> {
             .get("target_language")
             .and_then(|v| v.as_str())
             .map(String::from),
+        frame_rate: json
+            .get("frame_rate")
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or(time::FrameRate::FPS_30),
     })
 }
 

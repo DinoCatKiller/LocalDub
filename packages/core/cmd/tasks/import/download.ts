@@ -21,7 +21,6 @@ import { WORKFOLDER } from '@repo/config/path/paths';
 import { probeFrameRate } from '../../../utils/ffmpeg.ts';
 
 
-
 export const importVideo = async (input: InputArgs) => {
 	const args = input.task ?? {};
 	const url = args.url
@@ -42,7 +41,7 @@ export const importVideo = async (input: InputArgs) => {
   );
  	// ✅ 探测视频帧率并写回 context
 	const frame_rate = probeFrameRate(videoPath);
-	emitLog(taskDir, `[Download] Video frame rate: ${frame_rate} FPS`);
+	emitLog(taskDir, `[Download] Video frame rate: ${frame_rate.numerator}/${frame_rate.denominator}`);
 
 	const stages = getStages(input.task.pipeline);
 	const ctx: TaskCtx = {

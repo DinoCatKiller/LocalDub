@@ -1,0 +1,17 @@
+[package]
+name = "time"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { workspace = true }
+specta = { workspace = true }
+specta-typescript.workspace = true
+num-traits = "0.2"
+bridge = { path = "../bridge" }
+wasm-bindgen = { version = "0.2", optional = true }
+tsify-next = { version = "0.5", features = ["wasm-bindgen"], optional = true }
+
+[features]
+default = []
+wasm = ["dep:wasm-bindgen", "dep:tsify-next"]
