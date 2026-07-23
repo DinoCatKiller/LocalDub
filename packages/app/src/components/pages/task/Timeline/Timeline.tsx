@@ -18,8 +18,13 @@ interface Props {
 }
 
 export function Timeline(props: Props) {
-  const [zoom, setZoom] = createSignal(1);
   const fpsFloat = () => props.fps.numerator / props.fps.denominator;
+
+  const ZOOM_MIN = 0.1;
+  const ZOOM_MAX = 50;
+  const [sliderPos, setSliderPos] = createSignal(0.35);
+  const zoom = () => ZOOM_MIN * Math.pow(ZOOM_MAX / ZOOM_MIN, sliderPos());
+
   const pxPerMs = () => BASE_PX_PER_MS * zoom();
   const totalPx = () => props.duration * pxPerMs();
   const rc = () => rulerConfig(pxPerMs(), props.fps);
@@ -41,6 +46,18 @@ export function Timeline(props: Props) {
   );
 
   const playheadLeft = () => props.currentTime * pxPerMs() - scrollLeft();
+
+  const onSliderChange = (v: number) => {
+    const oldZoom = zoom();
+    setSliderPos(v);
+    const newZoom = zoom();
+    // anchor playhead position in viewport
+    const playheadPx = props.currentTime * BASE_PX_PER_MS * oldZoom - scrollLeft();
+    const newScrollLeft = Math.max(0, props.currentTime * BASE_PX_PER_MS * newZoom - playheadPx);
+    requestAnimationFrame(() => {
+      if (tracksRef) tracksRef.scrollLeft = newScrollLeft;
+    });
+  };
 
   let rightRef!: HTMLDivElement;
   let playheadDragging = false;
@@ -81,7 +98,7 @@ export function Timeline(props: Props) {
 
   return (
     <div class="flex flex-col h-full  border-t select-none">
-      <TimelineToolbar zoom={zoom()} onZoomChange={setZoom} />
+      <TimelineToolbar zoom={zoom()} sliderValue={sliderPos()} onSliderChange={onSliderChange} />
 
       <div class="flex flex-1 overflow-hidden">
         <TimelineTrackSide
