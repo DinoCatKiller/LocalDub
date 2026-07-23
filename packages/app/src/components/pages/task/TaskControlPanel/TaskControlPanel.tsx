@@ -1,11 +1,11 @@
-import type { Context } from "#/integrations/fnrpc/bindings.ts";
+import type { TaskCtx } from "#/integrations/fnrpc/bindings.ts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui-solid/base/tabs";
 import { useParams } from "@tanstack/solid-router";
 import { For } from "solid-js";
 import { FileTree } from "./FileTree";
 
 export const TaskControlPanel = (p: {
-  ctx: Context;
+  ctx: TaskCtx;
   // onOpenFile: (name: string, path: string) => void;
 }) => {
   const params = useParams({from: '/group/$id/$taskId'});

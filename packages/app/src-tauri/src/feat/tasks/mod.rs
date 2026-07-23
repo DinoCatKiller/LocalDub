@@ -8,7 +8,7 @@ use core_rs::{
     cmd::tasks::get_task::GroupInfo,
     context::{
         self,
-        Context,
+        TaskCtx,
         // Task
     },
 };
@@ -19,7 +19,7 @@ pub async fn get_group_list() -> Result<Vec<GroupInfo>, String> {
 }
 
 #[fnrpc::rpc_query]
-pub async fn get_task_ctx(task_dir: String) -> Result<Context, String> {
+pub async fn get_task_ctx(task_dir: String) -> Result<TaskCtx, String> {
     let path = base_dir().join(&task_dir);
     context::read_ctx(
         &path

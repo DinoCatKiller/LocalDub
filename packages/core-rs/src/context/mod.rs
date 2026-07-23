@@ -81,7 +81,7 @@ pub struct RunInfo {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct Context {
+pub struct TaskCtx {
     pub task: Task,
     pub stages: Option<Vec<TaskStage>>,
     pub pipeline: String,
@@ -99,7 +99,7 @@ pub fn ctx_path(task_dir: &str) -> PathBuf {
     PathBuf::from(task_dir).join("ctx.json")
 }
 
-pub fn read_ctx(task_dir: &str) -> Result<Context, String> {
+pub fn read_ctx(task_dir: &str) -> Result<TaskCtx, String> {
     let path = ctx_path(task_dir);
     let raw = fs::read_to_string(&path)
         .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
@@ -119,7 +119,7 @@ pub fn read_ctx(task_dir: &str) -> Result<Context, String> {
             .collect()
     });
 
-    Ok(Context {
+    Ok(TaskCtx {
         task,
         stages,
         pipeline: json

@@ -26,7 +26,7 @@ export interface Task extends TaskBrief {
   task_dir: string
   final_video_path?: string | null | undefined;
 }
-export interface Context {
+export interface TaskCtx {
   task: Task;
   stages?: TaskStage[]
   pipeline: 'dub' | 'subtitle';
@@ -42,7 +42,7 @@ export interface Context {
 		};
   }
 	video_source_path?: string; //
-	audioSourcePath?: string; // 
+	audioSourcePath?: string; //
   asr_language?: string; // ASR 自动检测的语言
 	target_language?: TargetLang; // translate 阶段写入的目标语言: 如果 config 中没有指定 targetLang 则按照这个逻辑: 源语言: zh -> en, 否则 any -> zh
 }
@@ -69,14 +69,14 @@ export const readCtx = (taskDir: string) => {
 	const path = ctxPath(taskDir);
 	const raw = _readCtx(taskDir)
 	console.log(`[File] read ${path}`);
-	return raw 
+	return raw
 };
 export const _readCtx = (taskDir: string) => {
 	const path = ctxPath(taskDir);
 	const raw = JSON.parse(readFileSync(path, 'utf-8'));
-	return raw as Context;
+	return raw as TaskCtx;
 };
-export const writeCtx = (ctx: Context) => {
+export const writeCtx = (ctx: TaskCtx) => {
 	const path = ctxPath(ctx.task.task_dir);
 	const raw = JSON.stringify(ctx, null, 2);
 	writeFileSync(path, raw);
@@ -85,7 +85,7 @@ export const writeCtx = (ctx: Context) => {
 	console.log(`[${ctx.task.current_stage}] [File] write ${path} (${raw.length}B, ${lines} lines)`);
 	return ctx;
 };
-export const _writeCtx = (ctx: Context) => {
+export const _writeCtx = (ctx: TaskCtx) => {
 	const path = ctxPath(ctx.task.task_dir);
 	const raw = JSON.stringify(ctx, null, 2);
 	writeFileSync(path, raw);
@@ -93,15 +93,15 @@ export const _writeCtx = (ctx: Context) => {
 };
 export const _setCtx = (
 	taskDir: string,
-	patch: Partial<Context>,
+	patch: Partial<TaskCtx>,
  ) => {
-	const existing = _readCtx(taskDir) ?? ({} as Context);
+	const existing = _readCtx(taskDir) ?? ({} as TaskCtx);
 	const ctx = _writeCtx( { ...existing, ...patch });
 	return ctx;
 };
 export const setCtx = (
 	taskDir: string,
-	patch: Partial<Context>,
+	patch: Partial<TaskCtx>,
 ) => {
 	const ctx = _setCtx(taskDir,patch)
 	console.log(`[${ctx.task.current_stage}] setCtx ${ctxPath(taskDir)}:`, JSON.stringify(patch));
@@ -110,7 +110,7 @@ export const setCtx = (
 export const readTask = (taskDir: string) => {
 	const path = ctxPath(taskDir);
 	const raw = readFileSync(path, 'utf-8');
-	const ctx = JSON.parse(raw) as Context;
+	const ctx = JSON.parse(raw) as TaskCtx;
 	return ctx.task;
 }
 export const _writeTask = ( task: Task) => {

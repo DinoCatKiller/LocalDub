@@ -2,7 +2,7 @@ import { readJson, writeJson, ensureDir } from '@repo/core/utils/fileOps';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { emitLog, nowISO,  } from '@repo/core/stages/utils/utils.ts';
-import { Context, setStage } from '@repo/core/context/context.ts';
+import { TaskCtx, setStage } from '@repo/core/context/context.ts';
 import { chat_completions } from '@repo/core/ml/llm/openai.ts';
 import { ocrSegmentsToPrompt, buildOcrFixSystemPrompt } from '@repo/core/ml/llm/ocr_llm_fix.ts';
 import { parseLines } from '@repo/core/ml/llm/srt_shared.ts';
@@ -10,7 +10,7 @@ import { t } from '@repo/shared/i18n/server';
 import { srtTime } from '@repo/core/utils/utils';
 
 
-export async function stageOcrFix(ctx: Context) {
+export async function stageOcrFix(ctx: TaskCtx) {
   const taskId = ctx.task.id;
   const taskDir = ctx.task.task_dir
   const ocrFixDir = join(taskDir, 'ocr_fix');
@@ -32,7 +32,7 @@ export async function stageOcrFix(ctx: Context) {
 
   const args = ctx.input.stages.ocr_fix;
   const llmFix = args?.llmFix
-  
+
   emitLog(taskDir, `[ocr_fix] ${segments.length} segs, llmFix=${llmFix}`);
 
   // LLM correction
@@ -52,12 +52,12 @@ export async function stageOcrFix(ctx: Context) {
     emitLog(taskDir, `[ocr_fix] LLM fixing ${segments.length} segs (model=${llmModel})...`);
 
     const t0 = performance.now();
-    const fixed = await chat_completions(prompt, { 
-      model: llmModel, apiBase: llmApiBase, 
+    const fixed = await chat_completions(prompt, {
+      model: llmModel, apiBase: llmApiBase,
       systemPrompt: buildOcrFixSystemPrompt(
         sourceLangLabel,
         domainHint
-      ) 
+      )
     });
     const elapsedSec = ((performance.now() - t0) / 1000).toFixed(1);
 

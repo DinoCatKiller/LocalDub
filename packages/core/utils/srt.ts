@@ -1,4 +1,4 @@
-import { Context } from "../context/context";
+import { TaskCtx } from "../context/context";
 import { srtTime } from "./utils";
 import { writeFile } from "./fileOps";
 
@@ -118,7 +118,7 @@ function splitSubtitle(text: string): string[] {
 	return segs.length ? segs : [text.trim()];
 }
 
-/** 
+/**
  * 按 fragment 分配时间的写入逻辑（就是从原 writeSrt 抽出来的）
  * 先保留
  */
@@ -141,7 +141,7 @@ function writeSrtFragments(
   }
 }
 
-export function writeSrt(translation: any[], ctx: Context, outputPath: string, useSource?: boolean) {
+export function writeSrt(translation: any[], ctx: TaskCtx, outputPath: string, useSource?: boolean) {
 	console.log(`Writing SRT length: ${translation.length}...`);
 	const lines: string[] = [];
 	let idx = 1;

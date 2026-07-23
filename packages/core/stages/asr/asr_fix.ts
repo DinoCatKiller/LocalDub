@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readInputArgs } from '@repo/core/input/input';
 import { emitLog, nowISO,  } from '@repo/core/stages/utils/utils.ts';
-import { Context, setStage } from '@repo/core/context/context.ts';
+import { TaskCtx, setStage } from '@repo/core/context/context.ts';
 import { segmentsToPrompt,   buildAsrFixSystemPrompt } from '@repo/core/ml/llm/asr_llm_fix.ts';
 import { chat_completions} from '@repo/core/ml/llm/openai.ts';
 import { parseLines } from '@repo/core/ml/llm/srt_shared.ts';
@@ -51,7 +51,7 @@ function padSegments(segments: any[], startPad = 100, endPad = 300): any[] {
   });
 }
 
-export async function stageAsrFix(ctx: Context) {
+export async function stageAsrFix(ctx: TaskCtx) {
     const taskId = ctx.task.id;
   const taskDir = ctx.task.task_dir
 	const asrFixDir = join(taskDir, 'asr_fix');

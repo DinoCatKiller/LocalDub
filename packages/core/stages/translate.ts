@@ -11,7 +11,7 @@ import {
 	subtitleFilePath,
 	translationFilePath,
 } from '@repo/core/stages/utils/utils.ts';
-import { Context, setCtx, setStage } from '@repo/core/context/context.ts';
+import { TaskCtx, setCtx, setStage } from '@repo/core/context/context.ts';
 
 /**
  * translate.[dstLang].json 结构
@@ -31,7 +31,7 @@ export interface TranslateFile {
 		speaker: string;
 	}[];
 }
-export async function stageTranslate(ctx: Context) {
+export async function stageTranslate(ctx: TaskCtx) {
 	const taskId = ctx.task.id;
 	const taskDir = ctx.task.task_dir
 	// 解析目标语言: config > auto 推断

@@ -7,7 +7,7 @@ import { WHISPER_MODEL_DIR } from '@repo/config/path/models';
 
 
 /** Get the downloaded video source path for a session. */
-export function video_source_path(ctx: Context): string {
+export function video_source_path(ctx: TaskCtx): string {
 	if (!ctx.video_source_path) {
 		throw new Error(`video_source_path not set in context for session ${ctx.task.task_dir}`);
 	}
@@ -48,7 +48,7 @@ export function defaultFont(dstLang: string): string {
 	}
 }
 
-import { _readCtx, Context,  getTaskId,  listStage,  readCtx, Task, TaskStage } from '@repo/core/context/context.ts';
+import { _readCtx, TaskCtx,  getTaskId,  listStage,  readCtx, Task, TaskStage } from '@repo/core/context/context.ts';
 import { SubtitleSource, TargetLang } from '@repo/core/cmd/tasks/input';
 
 export function nowISO(): string {
@@ -164,7 +164,7 @@ export const LANG_NAMES: Record<string, string> = {
 	bn: 'Bengali',
 };
 
-export function readTaskLanguages(ctx: Context): {
+export function readTaskLanguages(ctx: TaskCtx): {
 	asrLanguage: string;
 	targetLanguage: TargetLang;
 } {
@@ -181,7 +181,7 @@ export function translationFilePath(taskDir: string, lang: string): string {
 	return join(taskDir, 'translate', `translation.${lang}.json`);
 }
 
-export function subtitleFilePath(ctx: Context,): string {
+export function subtitleFilePath(ctx: TaskCtx,): string {
   const src = ctx.input?.task?.subtitleSource ?? 'asr'
 
 	if (src === 'ocr') {

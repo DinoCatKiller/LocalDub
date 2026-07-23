@@ -5,12 +5,12 @@ import { newOcrEngine, type OCRRuntime } from '../../ml/subtitle_ocr/ocr.ts';
 import { ensureDir, writeJson, readJson } from '@repo/core/utils/fileOps';
 import { emitLog, nowISO, video_source_path } from '@repo/core/stages/utils/utils.ts';
 import { joinOcrLines, computeBoxYStats } from '../ocr/utils.ts';
-import { Context, setStage } from '@repo/core/context/context.ts';
+import { TaskCtx, setStage } from '@repo/core/context/context.ts';
 import { startLog } from '../utils/log.ts';
 import { FrameResult, Segment, SegmentWithAdjusted } from "@repo/core/ml/subtitle_ocr/types";
 import { probeVideoDuration } from '../../utils/ffmpeg.ts';
 
-export async function stageAsrOcr(ctx: Context) {
+export async function stageAsrOcr(ctx: TaskCtx) {
 	const taskDir = ctx.task.task_dir;
 	startLog(ctx.task.current_stage, ctx.task.id)
 	setStage(taskDir, 'asr_ocr', {

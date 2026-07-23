@@ -1,7 +1,7 @@
 import { readJson, writeFile, ensureDir, fileLog } from '@repo/core/utils/fileOps';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { Context, readCtx, setStage, setTask, } from '@repo/core/context/context.ts';
+import { TaskCtx, readCtx, setStage, setTask, } from '@repo/core/context/context.ts';
 import { alignmentToFfmpeg } from '@repo/core/input/types';
 import {
 	ffmpeg,
@@ -54,7 +54,7 @@ function probeStyle(
 	return `FontName=${font},FontSize=${fontSize},PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=${outline > 0 ? 1 : 0},Outline=${outline},Shadow=${shadow},Alignment=${alignment},MarginV=${marginV}`;
 }
 
-export async function stageMergeVideo(ctx: Context) {
+export async function stageMergeVideo(ctx: TaskCtx) {
 	startLog('merge_video', ctx.task.id);
 	const taskId = ctx.task.id;
 	const taskDir = ctx.task.task_dir;
@@ -86,7 +86,7 @@ export async function stageMergeVideo(ctx: Context) {
 		finalVideoDirPath,
 		`${taskId}.mp4`
 	);
-	
+
 
 	if (pipeline === 'subtitle') {
 		const vadAlign = ctx.input?.stages?.split_audio?.vadAlign;

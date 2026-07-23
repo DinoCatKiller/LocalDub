@@ -6,7 +6,7 @@ import { homedir } from 'node:os';
 
 import {  emitLog, ffmpeg, nowISO, readTaskLanguages, video_source_path, vocalsPath, mixedVocalsPath, gatedVocalsPath } from '@repo/core/stages/utils/utils.ts';
 import { ensureWhisperCpp, ensureVadModel, whisperCppBinaryPath } from '../ensure.ts';
-import { Context, setCtx, setStage } from '@repo/core/context/context.ts';
+import { TaskCtx, setCtx, setStage } from '@repo/core/context/context.ts';
 import { pythonBin } from '@repo/config/path/bin';
 import { REPO_ROOT } from '@repo/config/root';
 import { whisperCppModelPath } from '@repo/config/path/models';
@@ -57,7 +57,7 @@ function resolveVadModel(name: string): string {
 
 
 export async function asrWhisperCpp(
-	ctx: Context,
+	ctx: TaskCtx,
 	audioPath: string,
 	taskDir: string,
 	language: string,

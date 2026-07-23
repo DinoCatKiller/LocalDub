@@ -1,7 +1,7 @@
-import { Context } from "@repo/core/context/context";
+import { TaskCtx } from "@repo/core/context/context";
 
 export interface AsrOptions {
-	ctx: Context;
+	ctx: TaskCtx;
 	taskId: string;
 	audioPath: string;
 	taskDir: string;

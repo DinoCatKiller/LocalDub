@@ -1,4 +1,4 @@
-import { Context, writeCtx } from '../../../cli/src/feat/context/context';
+import { TaskCtx, writeCtx } from '@repo/core/context/context';
 import { stageSplitAudio } from '@repo/core/stages/split_audio';
 import { ensureDir } from '@repo/core/utils/fileOps';
 import { join, resolve } from 'node:path';
@@ -22,7 +22,7 @@ const ctx = {
   asr_language: 'zh',
   target_language: 'zh',
   input: { stages: { translate: { enabled: false }, split_audio: { vadAlign: false, vocalsFilePath: audioSource, sourceFilePath: audioSource } } },
-} as unknown as Context;
+} as unknown as TaskCtx;
 writeCtx(ctx);
 ensureDir(join(resultDir, 'segments', 'vocals'), ctx);
 

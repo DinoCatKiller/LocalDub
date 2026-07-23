@@ -6,7 +6,7 @@ import { writeWav } from '@repo/voxlab';
 
 import { emitLog, ffmpeg, nowISO, readTaskLanguages, split_audio_timings_filepath } from '@repo/core/stages/utils/utils.ts';
 import { TranslateFile } from '@repo/core/stages/translate';
-import { Context, setStage, setTask } from '@repo/core/context/context.ts';
+import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
 import { startLog } from './utils/log.ts';
 import { newVoxCPMEngine } from '@repo/core/ml/voxcpm/voxcpm';
 
@@ -37,7 +37,7 @@ function renderProgress(current: number, total: number, start: number) {
 }
 
 export async function stageTts(
-	ctx: Context,
+	ctx: TaskCtx,
 ) {
 	const taskId = ctx.task.id;
 	const taskDir = ctx.task.task_dir;
@@ -53,7 +53,7 @@ export async function stageTts(
 		throw new Error(`${timingsFile} not found`);
 	ensureDir(ttsWavDir, ctx);
 	if (ttsCfg.refAudioX2) {ensureDir(doubledDir, ctx);}
-	
+
 
 	const { translation } = await readJson<TranslateFile>(timingsFile, ctx);
 
@@ -63,13 +63,13 @@ export async function stageTts(
 			emitLog(taskDir, `[tts] Existing TTS segments found; will overwrite without deleting files`);
 		}
 	}
-	// Unified engine (handles all runtimes via createBackend) 
+	// Unified engine (handles all runtimes via createBackend)
 
 	emitLog(taskDir, `[tts] Using ${ttsCfg.runtime} backend`);
 	const engine = newVoxCPMEngine(ttsCfg);
 	await engine.load();
 
-	//  Generation loop 
+	//  Generation loop
 	const tqdmStart = Date.now();
 	let generated = 0, skipped = 0, errors = 0;
 	let genMs = 0;
@@ -93,7 +93,7 @@ export async function stageTts(
 		: '';
 
 	const isStart = ctx.input?.task.action === 'start';
-	const onlyIndices = isStart ? undefined : ttsCfg.onlyIndices 
+	const onlyIndices = isStart ? undefined : ttsCfg.onlyIndices
 	// 真正的 TTS 主循环。i 是 0-based 数组索引，idx = i + 1 是 1-based 文件名（0001.wav ~ 000N.wav）
 	for (const [i, item] of translation.entries()) {
 		const idx = String(i + 1).padStart(4, '0');

@@ -6,7 +6,7 @@ import { getStages } from '@repo/core/stages/utils/stages';
 // import { taskStages, tasks } from './../../feat/tasks/table.ts';
 import { readInputArgs } from '@repo/core/input/input';
 import { STAGE_HANDLERS } from '../stages/index';
-import { Context, 	readCtx,
+import { TaskCtx, 	readCtx,
 	readPipeline,
 	readTask,
 	setCtx,
@@ -27,7 +27,7 @@ import {
 function snapshotConfig(taskDir: string) {
 	const args = readInputArgs();
 
-	const snap: NonNullable<Context['input']> = {
+	const snap: NonNullable<TaskCtx['input']> = {
 		...args,
 		timestamp: new Date().toISOString(),
 		pipeline: args.task.pipeline ?? 'dub',
@@ -36,7 +36,7 @@ function snapshotConfig(taskDir: string) {
 	setCtx(taskDir, { input: snap });
 }
 
-export async function runPipeline(ctx: Context) {
+export async function runPipeline(ctx: TaskCtx) {
 	const taskId= ctx.task.id
 	const taskDir = ctx.task.task_dir
 	let task = readTask(taskDir);
@@ -102,7 +102,7 @@ export async function runPipeline(ctx: Context) {
 }
 
 export async function resumePipeline(
-	ctx: Context,
+	ctx: TaskCtx,
 ) {
 	const taskDir = ctx.task.task_dir
 	const resumeFrom = ctx.input?.task?.resumeFrom
@@ -251,7 +251,7 @@ export async function resumePipeline(
 }
 
 export async function rerunSingleStage(
-	ctx: Context,
+	ctx: TaskCtx,
 ) {
 	const taskId= ctx.task.id
 	const taskDir = ctx.task.task_dir

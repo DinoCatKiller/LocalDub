@@ -7,12 +7,12 @@ import { emitLog, ffmpeg, nowISO,  probeVideoResolution, video_source_path } fro
 
 import {  mergeFrames } from "@repo/core/stages/ocr/ocrMerge";
 import { joinOcrLines, computeBoxYStats, computeSegmentAdjustments } from "./utils.ts";
-import { Context, setStage } from "@repo/core/context/context.ts";
+import { TaskCtx, setStage } from "@repo/core/context/context.ts";
 import {  srtTime } from "@repo/core/utils/utils";
 import { FrameResult } from "@repo/core/ml/subtitle_ocr/types";
 import { probeVideoDuration } from "../../utils/ffmpeg.ts";
 
-export async function stageOcr(ctx: Context) {
+export async function stageOcr(ctx: TaskCtx) {
 		const taskId = ctx.task.id;
 		const taskDir = ctx.task.task_dir
 	await setStage(taskDir, "ocr", {

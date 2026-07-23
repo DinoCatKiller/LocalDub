@@ -2,9 +2,9 @@ import { readJson, writeJson, writeFile, ensureDir } from '@repo/core/utils/file
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readTaskLanguages, ffmpeg, nowISO, probeSampleRate, probeDuration, split_audio_timings_filepath, timings_filepath } from '@repo/core/stages/utils/utils.ts';
-import { Context, setStage, setTask } from '@repo/core/context/context.ts';
+import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
 
-export async function stageMergeAudio(ctx: Context) {
+export async function stageMergeAudio(ctx: TaskCtx) {
   const taskId = ctx.task.id;
   const taskDir = ctx.task.task_dir
   const { targetLanguage: dstLangCode } = readTaskLanguages(ctx);

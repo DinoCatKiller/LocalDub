@@ -10,7 +10,7 @@ import {
 	readInputArgs,
 } from '@repo/core/input/input';
 import { emitLog, nowISO, probeDuration, separateDir, video_source_path } from '@repo/core/stages/utils/utils.ts';
-import { Context, setStage } from '@repo/core/context/context.ts';
+import { TaskCtx, setStage } from '@repo/core/context/context.ts';
 import { startLog } from './utils/log.ts';
 import { separateBurn } from '../ml/demucs/cli/burn_cli.ts';
 import { separateGgml } from '../ml/demucs/cli/ggml_cli.ts';
@@ -19,7 +19,7 @@ import { findServer } from '@repo/core/servers/discovery';
 import { REPO_ROOT } from '@repo/config/root';
 
 export async function stageSeparate(
-	ctx: Context,
+	ctx: TaskCtx,
 ) {
 	startLog('separate', ctx.task.id);
 	const taskId = ctx.task.id;
@@ -213,4 +213,3 @@ async function separatePytorch(
 		proc.on('error', reject);
 	});
 }
-

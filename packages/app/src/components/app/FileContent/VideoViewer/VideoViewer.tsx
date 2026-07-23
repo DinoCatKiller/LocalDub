@@ -9,7 +9,7 @@ export interface VideoViewerProps extends VideoPanelProps, VideoControlsProps  {
 export function VideoViewer(props: VideoViewerProps) {
 
   return (
-    <div class="flex flex-col h-full bg-black">
+    <div class="flex flex-col h-full">
       <div class="flex-1 min-h-0">
         <VideoPanel path={props.path} onReady={props.onReady} />
       </div>

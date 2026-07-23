@@ -6,7 +6,7 @@ import { emitLog, nowISO, probeVideoResolution, video_source_path } from '@repo/
 import { fixOverlap, mergeFrames, toOcrFiltered } from '@repo/core/stages/ocr/ocrMerge';
 import { computeBoxYStats, computeSegmentAdjustments, build_ocr_frames_line_adjust, get_ocr_frames_line_filtered, joinOcrLines, YStats } from '../ocr/utils.ts';
 import { newOcrEngine, type OCRRuntime } from '../../ml/subtitle_ocr/ocr.ts';
-import { Context, setStage } from '@repo/core/context/context.ts';
+import { TaskCtx, setStage } from '@repo/core/context/context.ts';
 import { FrameResult, Segment } from '@repo/core/ml/subtitle_ocr/types';
 import { LineAdjustedArgs } from '@repo/core/ml/subtitle_ocr/input';
 import { t } from '@repo/shared/i18n/server';
@@ -18,7 +18,7 @@ import { AsrResult } from '../asr/types.ts';
 
 
 
-export async function stageAsrOcrFix(ctx: Context) {
+export async function stageAsrOcrFix(ctx: TaskCtx) {
 	const taskDir = ctx.task.task_dir;
 	const args = ctx.input?.stages?.asr_ocr_fix;
 	await setStage(taskDir, 'asr_ocr_fix', {
@@ -208,7 +208,7 @@ export async function stageAsrOcrFix(ctx: Context) {
 		ctx,
 	);
 
-	// asr_ocr_merged.json：复用 ocr_filtered.json 的 segments，时间边界对齐到 ASR 
+	// asr_ocr_merged.json：复用 ocr_filtered.json 的 segments，时间边界对齐到 ASR
 	// 对每个 OCR segment，找到时间上最重叠的 ASR segment，用 ASR 的 start/end 作为新边界
 	const asrOcrSegs: Segment[] = ocrSegsMerged.map(seg => {
 		let bestAsr: Segment | undefined = undefined;
@@ -298,12 +298,12 @@ export async function stageAsrOcrFix(ctx: Context) {
 		emitLog(taskDir, `[asr_ocr_fix] LLM fixing ${segments.length} segs (model=${llmModel})...`);
 
 		const t0 = performance.now();
-		const fixed = await chat_completions(prompt, { 
-			model: llmModel, apiBase: llmApiBase, 
+		const fixed = await chat_completions(prompt, {
+			model: llmModel, apiBase: llmApiBase,
 			systemPrompt: buildOcrFixSystemPrompt(
 				sourceLangLabel,
 				domainHint
-			) 
+			)
 		});
 		const elapsedSec = ((performance.now() - t0) / 1000).toFixed(1);
 

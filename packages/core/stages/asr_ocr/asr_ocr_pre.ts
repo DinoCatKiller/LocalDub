@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 import { ensureDir, writeJson, readJson } from '@repo/core/utils/fileOps';
 import { emitLog, nowISO,  video_source_path } from '@repo/core/stages/utils/utils.ts';
 import type { Segment } from '@repo/core/ml/subtitle_ocr/types';
-import { Context, setStage, setTask } from '@repo/core/context/context.ts';
+import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
 import { srtTime } from '@repo/core/utils/utils';
 
 // Split long ASR segments by punctuation using word-level timestamps
@@ -89,7 +89,7 @@ function splitAsrByWords(segs: { text: string; start: number; end: number; words
 	});
 }
 
-export async function stageAsrOcrPre(ctx: Context) {
+export async function stageAsrOcrPre(ctx: TaskCtx) {
 	const taskDir = ctx.task.task_dir;
 
 

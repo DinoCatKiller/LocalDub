@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { translationFilePath, ffmpeg, nowISO, emitLog, readTaskLanguages, subtitleFilePath, split_audio_timings_filepath, video_source_path, vocalsPath } from '@repo/core/stages/utils/utils.ts';
 import { env } from '@repo/config/env';
-import { Context, setStage } from '@repo/core/context/context.ts';
+import { TaskCtx, setStage } from '@repo/core/context/context.ts';
 
 function probeDuration(file: string): number {
   const r = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file], { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -110,7 +110,7 @@ type SplitAudioTiming = {
     end: number;
 		speaker: string;
 }
-export async function stageSplitAudio(ctx: Context) {
+export async function stageSplitAudio(ctx: TaskCtx) {
   const taskId = ctx.task.id;
   const taskDir = ctx.task.task_dir
   const srtFilePath = subtitleFilePath(ctx);

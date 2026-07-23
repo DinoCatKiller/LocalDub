@@ -12,7 +12,7 @@ import {
 	ffmpeg,
 	nowISO,
 } from '@repo/core/stages/utils/utils.ts';
-import { Context, readCtx, setCtx, setStage, setTask, writeCtx } from '@repo/core/context/context.ts';
+import { TaskCtx, readCtx, setCtx, setStage, setTask, writeCtx } from '@repo/core/context/context.ts';
 import { startLog } from '../../../stages/utils/log.ts';
 import { getStages } from '@repo/core/stages/utils/stages';
 import { InputArgs } from '@repo/core/input/input';
@@ -32,7 +32,7 @@ export const importVideo = async (input: InputArgs) => {
 	const taskDir = join(WORKFOLDER, groupId, taskId);
 	mkdirSync(taskDir, { recursive: true });
 	const stages = getStages(input.task.pipeline);
-	const ctx: Context = {
+	const ctx: TaskCtx = {
 		task: {
 			id: taskId,
 			status: 'queued',
@@ -60,7 +60,7 @@ export const importVideo = async (input: InputArgs) => {
 	return {ctx, ytDlpExtArgs}
 }
 export async function downloadVideo(
-	ctx: Context,
+	ctx: TaskCtx,
 	ytDlpExtArgs: string[]
 ) {
 	const videoPath = ctx.video_source_path!
@@ -75,7 +75,7 @@ export async function downloadVideo(
 		} else if (ctx.task.source === 'remote') {
 		  rawVideoPath =	await	downloadRemoteVideo(url, taskDir);
 		}
-		
+
 		emitLog(taskDir, '[Download] Importing local video...');
 
 		const t0 = Date.now();
@@ -121,7 +121,7 @@ export async function downloadVideo(
 		if (dlErr) throw new Error(`yt-dlp: ${dlErr.message}`);
 		if (r.status !== 0) {
 			const stderr = r.stderr.toString();
-	
+
 			console.warn(`[Download] yt-dlp failed:`, stderr);
 			if (/^ERROR:/im.test(stderr)) {
 				throw new Error(`yt-dlp exit ${r.status}: ${stderr}`);

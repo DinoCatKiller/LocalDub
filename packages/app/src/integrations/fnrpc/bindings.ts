@@ -18,7 +18,7 @@ export type Capabilities = {
 	openvino: boolean,
 };
 
-export type Context = {
+export type TaskCtx = {
 	task: Task,
 	stages: TaskStage[] | null,
 	pipeline: string,
@@ -109,12 +109,12 @@ export type ProbeResult = "Ok" | "Fail";
 
 /**
  *  An RPC error returned by any handler (query, mutate, subscribe).
- * 
+ *
  *  Maps to [`RpcError`](https://docs.rs/fnrpc-client/latest/fnrpc_client/class.RpcError.html)
  *  in the TypeScript client.
- * 
+ *
  *  # TS mirror
- * 
+ *
  *  ```typescript
  *  class RpcError extends Error {
  *    name: "RpcErr";
@@ -209,7 +209,7 @@ export type Procedures = {
   watch_task_log: { kind: "subscribe"; method: "GET"; input: string; output: string; error: RpcErr };
   tick: { kind: "subscribe"; method: "GET"; input: bigint; output: bigint; error: RpcErr };
   get_group_list: { kind: "query"; method: "GET"; input: null; output: GroupInfo[]; error: RpcErr };
-  get_task_ctx: { kind: "query"; method: "GET"; input: string; output: Context; error: RpcErr };
+  get_task_ctx: { kind: "query"; method: "GET"; input: string; output: TaskCtx; error: RpcErr };
   health_check: { kind: "query"; method: "GET"; input: null; output: string; error: RpcErr };
   get_count: { kind: "query"; method: "GET"; input: null; output: string; error: RpcErr };
   reset_count: { kind: "mutate"; method: "POST"; input: null; output: null; error: RpcErr };

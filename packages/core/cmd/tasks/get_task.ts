@@ -1,6 +1,6 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { Context, readCtx, readTask, TaskBrief } from '@repo/core/context/context';
+import { TaskCtx, readCtx, readTask, TaskBrief } from '@repo/core/context/context';
 import { workfolder } from '@repo/config/env';
 
 
@@ -75,6 +75,6 @@ export const get_group_list = async () => {
   return groups
 };
 
-export const getTaskCtx = (taskDir: string): Context => {
+export const getTaskCtx = (taskDir: string): TaskCtx => {
   return readCtx(taskDir);
 };

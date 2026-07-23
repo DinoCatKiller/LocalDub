@@ -61,7 +61,7 @@ export async function asrFasterWhisper(opts: AsrOptions) {
 		if (asr.detected_language) {
 			setCtx(taskDir, {
 				asr_language: asr.detected_language,
-				runInfo: {
+        runInfo: {
 					asr: {
 						engine: 'faster-whisper',
 						device: actualDevice,

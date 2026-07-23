@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { emitLog, ffmpeg, nowISO, separateDir, separateAfterDir } from '@repo/core/stages/utils/utils.ts';
-import { Context, setStage } from '@repo/core/context/context.ts';
+import { TaskCtx, setStage } from '@repo/core/context/context.ts';
 
-export async function stageSeparateAfter(ctx: Context) {
+export async function stageSeparateAfter(ctx: TaskCtx) {
 	const taskDir = ctx.task.task_dir;
 	const taskId = ctx.task.id;
 

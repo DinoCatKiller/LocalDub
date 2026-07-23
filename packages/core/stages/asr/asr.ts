@@ -8,7 +8,7 @@ import { runStage, getTorchServerUrl } from '../../servers/client.ts';
 import {  emitLog, ffmpeg, nowISO, readTaskLanguages,video_source_path, vocalsPath, mixedVocalsPath, gatedVocalsPath } from '@repo/core/stages/utils/utils';
 import { AsrOptions } from './types.ts';
 import { parseAsrOutput } from './utils.ts';
-import { Context, setCtx, setStage } from '@repo/core/context/context.ts';
+import { TaskCtx, setCtx, setStage } from '@repo/core/context/context.ts';
 import { pythonBin } from '@repo/config/path/bin';
 import { findServer } from '@repo/core/servers/discovery';
 import { REPO_ROOT } from '@repo/config/root';
@@ -18,7 +18,7 @@ import { asrFasterWhisper } from '../../ml/whisper/runtime/faster_whisper_py.ts'
 
 
 export async function stageAsr(
-	ctx: Context,
+	ctx: TaskCtx,
 ) {
 	const taskId = ctx.task.id;
   const taskDir = ctx.task.task_dir

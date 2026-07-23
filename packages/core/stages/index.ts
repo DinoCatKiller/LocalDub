@@ -12,7 +12,7 @@ import { stageSplitAudio } from './split_audio';
 import { stageTts } from './tts';
 import { stageMergeAudio } from './merge_audio';
 import { stageMergeVideo } from './merge_video';
-import { Context, readCtx, Task } from '@repo/core/context/context.ts';
+import { TaskCtx, readCtx, Task } from '@repo/core/context/context.ts';
 
 
 export type StageHandler = (sp: string) => Promise<void>;
