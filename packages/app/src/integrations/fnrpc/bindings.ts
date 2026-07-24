@@ -136,6 +136,8 @@ export type ServerInfo = {
 /**  Server type identifiers for mDNS discovery. */
 export type ServerType = "VoxcpmTorchGradio" | "DemucsTorchServer";
 
+export type StageStatus = "Pending" | "Running" | "Success" | "Failed";
+
 export type Task = {
 	id: string,
 	source: VideoSource,
@@ -179,7 +181,7 @@ export type TaskCtx = {
 export type TaskStage = {
 	name: string,
 	label: string,
-	status: string,
+	status: StageStatus,
 	progress: number | null,
 	started_at: string | null,
 	completed_at: string | null,

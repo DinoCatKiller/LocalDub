@@ -75,7 +75,7 @@ export async function stageAsrOcr(ctx: TaskCtx) {
 	}
 
 	setStage(taskDir, 'asr_ocr', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 	});

@@ -154,5 +154,5 @@ export async function stageMergeAudio(ctx: TaskCtx) {
     dubbingFile]); // 输出到 `merge_audio/audio_dubbing.wav
 
   writeJson(timings_filepath(taskDir), { translation: newTranslation }, ctx);
-  await setStage(taskDir, 'merge_audio', { status: 'succeeded', completed_at: nowISO(), progress: 100, last_message: 'Merged' });
+  await setStage(taskDir, 'merge_audio', { status: 'success', completed_at: nowISO(), progress: 100, last_message: 'Merged' });
 }

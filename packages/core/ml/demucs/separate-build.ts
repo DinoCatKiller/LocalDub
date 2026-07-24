@@ -8,7 +8,7 @@ import { cmakeBin, findCmakePath, setCmakePath } from '@repo/config/path/bin';
 
 /**
  * Attempt to build the GGML binary from demucs.cpp submodule.
- * Returns true if build succeeded, false otherwise.
+ * Returns true if build success, false otherwise.
  */
 export async function tryBuildGgml(taskDir: string): Promise<boolean> {
 	const log = (msg: string) => { emitLog(taskDir, msg); };

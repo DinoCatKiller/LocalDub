@@ -243,5 +243,5 @@ export async function stageSplitAudio(ctx: TaskCtx) {
 	ensureDir(splitAudioDir, ctx);
 	writeJson(timingsFile, { translation: timings }, ctx);
 
-  setStage(taskDir, 'split_audio', { status: 'succeeded', completed_at: nowISO(), progress: 100, last_message: 'Split' });
+  setStage(taskDir, 'split_audio', { status: 'success', completed_at: nowISO(), progress: 100, last_message: 'Split' });
 }

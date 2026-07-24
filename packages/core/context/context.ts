@@ -1,9 +1,10 @@
-import { CliInput, CliInputInput } from "../input/types";
+import { CliInput,} from "../input/types";
 import { readFileSync, writeFileSync } from 'node:fs';
-import { delimiter, join } from 'node:path';
+import {  join } from 'node:path';
 
-import { fileLog, getLastSegment } from '../utils/fileOps.ts';
+import { getLastSegment } from '../utils/fileOps.ts';
 import { TargetLang } from "@repo/core/cmd/tasks/input";
+import { TaskStage } from "./types.ts";
 
 export const getTaskId = (taskDir: string) => getLastSegment(taskDir)
 
@@ -36,7 +37,7 @@ export interface TaskCtx {
   pipeline: 'dub' | 'subtitle';
   lastRunPipeline?: 'dub' | 'subtitle'; // 用于 detect pipeline 切换
   input: CliInput
-   frame_rate: FrameRate;
+  frame_rate: FrameRate;
   runInfo?: {
 		asr?: {
 			engine: string; // 'whisper-pytorch' | 'faster-whisper'
@@ -53,16 +54,7 @@ export interface TaskCtx {
 }
 
 
-export interface TaskStage {
-  completed_at?: string | null | undefined;
-  error_message?: string | null | undefined;
-  label: string;
-  last_message?: string | null | undefined;
-  name: string;
-  progress?: number | null | undefined;
-  started_at?: string | null | undefined;
-  status: string;
-}
+
 
 export const ctxPath = (taskDir: string) =>
 	join(taskDir, 'ctx.json');
@@ -126,8 +118,8 @@ export const writeTask = ( task: Task) => {
 			console.log(`[${task.current_stage}] setTask ${ctxPath(task.task_dir)}:`, JSON.stringify(task));
 }
 export const setTask = (taskDir: string, patch: Partial<Task>) => {
-	// If marking succeeded, clear any previous error_message to avoid stale failure state
-	if (patch.status === 'succeeded') {
+	// If marking success, clear any previous error_message to avoid stale failure state
+	if (patch.status === 'success') {
 		patch.error_message = null;
 	}
 	const existing = readTask(taskDir) ?? ({} as Task);
@@ -159,7 +151,7 @@ export const setStage = (taskDir: string, stage: string, patch: Partial<TaskStag
 	_readCtx(taskDir)
 	const existing = readStage(taskDir, stage) ?? ({} as TaskStage);
 	const updated = { ...existing, ...patch };
-	if (updated.status === 'succeeded') updated.error_message = null as any;
+	if (updated.status === 'success') updated.error_message = null as any;
 	writeStage(taskDir, stage, updated);
 	console.log(`[${_readCtx(taskDir).task.current_stage}] setStage: ${stage}`, JSON.stringify(patch));
 }

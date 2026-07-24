@@ -18,6 +18,7 @@ import {
 } from "#/components/app/FileContent/store/videoViewer";
 import { TranslateFile } from "@repo/core/stages/05_translate/type";
 import { AsrResult } from "@repo/core/stages/asr/types";
+import { stages_to_map } from "@repo/core/stages/utils/filtering";
 
 interface Props {
   groupId: string;
@@ -27,6 +28,7 @@ interface Props {
 export function TaskDetailPage(props: Props) {
   const taskDir = `workfolder/${props.groupId}/${props.taskId}`;
   const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(taskDir));
+  const stage_map = () => stages_to_map(taskCtxQ.data?.stages ?? []);
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
 
   const onVideoReady = (ref: HTMLVideoElement) => {
@@ -57,7 +59,9 @@ export function TaskDetailPage(props: Props) {
 
   // ASR 字幕段
   const asrQuery = useQuery(
-    () => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`),
+    () => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`, {
+      // enabled: stage_map().asr.status
+    }),
   );
 
   const asrSegments = () => {
@@ -107,14 +111,6 @@ export function TaskDetailPage(props: Props) {
     return result;
   };
 
-  // ContentPanel 暴露给 FileTree 的 openFile 回调
-  // const handleFileOpen = (_name: string, path: string) => {
-  //   // 如果点击的是当前项目的默认视频，自动用 VideoViewer 打开
-  //   if (path.includes('video_source.mp4') && videoUrl()) {
-  //     // 暂不处理：可以在后续通过 VideoViewer 路径直接渲染
-  //   }
-  // };
-
   const duration = useDuration();
   const currentTime = useCurrentTime();
   const fps = useFps();
@@ -128,12 +124,10 @@ export function TaskDetailPage(props: Props) {
         </Show>
         <Show when={taskCtxQ.isSuccess} >
           <TaskControlPanel ctx={taskCtxQ.data!}
-            // onOpenFile={(name, path) => handleFileOpen(name, path)}
           />
         </Show>
         <div class="flex-1 min-w-0 flex flex-col">
           <ContentPanel
-            // onFileOpen={(name, path) => handleFileOpen(name, path)}
             onReady={onVideoReady}
             onTogglePlay={togglePlay}
             onRateChange={onRateChange}

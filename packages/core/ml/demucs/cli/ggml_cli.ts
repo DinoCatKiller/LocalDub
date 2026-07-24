@@ -24,7 +24,7 @@ export async function separateGgml(
 
 	emitLog(taskDir, `[Separate] runtime=ggml device=${device} binary=${ggmlBin}`);
 
-	// Extract audio to WAV 
+	// Extract audio to WAV
 	if (!existsSync(audioPath)) throw new Error('audio_source.wav not found (run download stage)');
 
 	const isWin = process.platform === 'win32';
@@ -43,7 +43,7 @@ export async function separateGgml(
 				+ `Or set separate.runtime to "ort" or "pytorch" in config to use ONNX or Python instead.`,
 			);
 		}
-		emitLog(taskDir, `[Separate] Auto-build succeeded`);
+		emitLog(taskDir, `[Separate] Auto-build success`);
 	}
 
 	if (!existsSync(ggmlModel)) {

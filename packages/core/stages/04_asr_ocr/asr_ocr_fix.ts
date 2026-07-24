@@ -333,7 +333,7 @@ export async function stageAsrOcrFix(ctx: TaskCtx) {
 	emitLog(taskDir, `[asr_ocr_fix] ${ocrSegs.length} OCR segs (dropped ${dropped} below textScore=${textScore}) → ${asrRawLen} ASR → ${asrSegs.length} split → ${asrOcrSegs.length} merged, ${fix.length} fused`);
 
 	await setStage(taskDir, 'asr_ocr_fix', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 	});

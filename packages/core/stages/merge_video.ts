@@ -201,7 +201,7 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 	fileLog(ctx, 'write', finalVideo);
 
 	await setStage(taskDir, 'merge_video', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: 'Merged',

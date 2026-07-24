@@ -146,7 +146,7 @@ export async function stageAsr(
 	}
 
 	await setStage(taskDir, 'asr', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: 'Transcribed',

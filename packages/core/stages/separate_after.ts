@@ -95,7 +95,7 @@ export async function stageSeparateAfter(ctx: TaskCtx) {
 	}
 
 	await setStage(taskDir, 'separate_after', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: 'Done',

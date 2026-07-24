@@ -124,7 +124,7 @@ export async function stageAsrFix(ctx: TaskCtx) {
   emitLog(taskDir, `[ASR Fix] Written ${segments.length} segs to asr_fix.json`);
 
   await setStage(taskDir, 'asr_fix', {
-    status: 'succeeded', completed_at: nowISO(), progress: 100,
+    status: 'success', completed_at: nowISO(), progress: 100,
     last_message: llmFix ? `LLM fixed ${segments.length} segs` : 'Fixed',
   });
 }

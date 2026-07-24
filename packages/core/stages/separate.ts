@@ -33,7 +33,7 @@ export async function stageSeparate(
 			'[Separate] Skipped (subtitle pipeline, set separate.always=true to force)',
 		);
 		await setStage(taskDir, 'separate', {
-			status: 'succeeded',
+			status: 'success',
 			completed_at: nowISO(),
 			progress: 100,
 			last_message: 'Skipped (subtitle pipeline)',
@@ -101,7 +101,7 @@ export async function stageSeparate(
 	}
 
 	await setStage(taskDir, 'separate', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: 'Separated',

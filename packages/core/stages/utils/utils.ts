@@ -5,12 +5,13 @@ import { env,} from '@repo/config/env';
 import { getStages } from './stages';
 import { WHISPER_MODEL_DIR } from '@repo/config/path/models';
 
-import { _readCtx, TaskCtx,  getTaskId,  listStage,  readCtx, Task, TaskStage } from '@repo/core/context/context.ts';
+import { _readCtx, TaskCtx,  getTaskId,  listStage,  readCtx, Task,  } from '@repo/core/context/context.ts';
 import { SubtitleSource, TargetLang } from '@repo/core/cmd/tasks/input';
 import { readJson } from '../../utils/fileOps';
 import { TranslateFile } from '../05_translate/type';
 import { SplitAudioFile } from '../06_split_audio/types';
 import { TimingsFile } from '../merge_audio';
+import { TaskStage } from '../../context/types';
 
 /** Get the downloaded video source path for a session. */
 export function video_source_path(ctx: TaskCtx): string {
@@ -320,7 +321,7 @@ function buildSummary(
 	stages: ReturnType<typeof enrichStage>[],
 	task: Task
 ): string {
-	const done = stages.filter((s) => s.status === 'completed').length;
+	const done = stages.filter((s) => s.status === 'success').length;
 	const total = stages.length;
 	const elapsedMs = msDiff(new Date().toISOString(), task.created_at) ?? 0;
 	const elapsed = fmtDuration(elapsedMs);

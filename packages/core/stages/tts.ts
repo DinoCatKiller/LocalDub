@@ -183,7 +183,7 @@ export async function stageTts(
 	emitLog(taskDir, `[TTS] Batch complete: ${generated} generated, ${skipped} skipped, ${errors} errors`);
 	emitLog(taskDir, `[VoxCPM] Generated in ${genSec.toFixed(1)}s | RTF ${rtf.toFixed(3)}`);
 	await setStage(taskDir, 'tts', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: 'TTS done',

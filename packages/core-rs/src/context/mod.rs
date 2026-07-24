@@ -3,6 +3,8 @@ use specta::Type;
 use std::fs;
 use std::path::PathBuf;
 use time::FrameRate;
+pub mod types;
+use types::TaskStage;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
@@ -53,18 +55,6 @@ impl From<Task> for TaskBrief {
             error_message: t.error_message,
         }
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct TaskStage {
-    pub name: String,
-    pub label: String,
-    pub status: String,
-    pub progress: Option<f64>,
-    pub started_at: Option<String>,
-    pub completed_at: Option<String>,
-    pub last_message: Option<String>,
-    pub error_message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]

@@ -190,7 +190,7 @@ export async function stageTranslate(ctx: TaskCtx) {
 	writeJson(translationFile, { translation }, ctx);
 
 	await setStage(taskDir, 'translate', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: 'Translated',
