@@ -4,8 +4,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { writeWav } from '@repo/voxlab';
 
-import { emitLog, ffmpeg, nowISO, readTaskLanguages, split_audio_timings_filepath } from '@repo/core/stages/utils/utils.ts';
-import { TranslateFile } from './translate/translate.ts';
+import { emitLog, ffmpeg, nowISO, read_split_audio_timings, readTaskLanguages, split_audio_timings_filepath } from '@repo/core/stages/utils/utils.ts';
 import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
 import { startLog } from './utils/log.ts';
 import { newVoxCPMEngine } from '@repo/core/ml/voxcpm/voxcpm';
@@ -44,18 +43,15 @@ export async function stageTts(
 	startLog(taskDir, taskId);
 
 	const ttsCfg = ctx.input?.stages?.tts!;
-	const timingsFile = split_audio_timings_filepath(taskDir);
 	const vocalsDir = join(taskDir, 'split_audio', 'vocals');
 	const ttsWavDir = join(taskDir, 'tts', 'wavs');
 	const doubledDir = join(taskDir, 'tts', 'ref_doubled');
 
-	if (!existsSync(timingsFile))
-		throw new Error(`${timingsFile} not found`);
 	ensureDir(ttsWavDir, ctx);
 	if (ttsCfg.refAudioX2) {ensureDir(doubledDir, ctx);}
 
 
-	const { translation } = await readJson<TranslateFile>(timingsFile, ctx);
+	const { translation } = await read_split_audio_timings(ctx);
 
 	if (!ttsCfg.skipExisting) {
 		const anyTts = readdirSync(ttsWavDir).find((f) => f.endsWith('.wav'));

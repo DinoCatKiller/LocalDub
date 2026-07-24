@@ -16,6 +16,7 @@ import {
   useDuration,
   useFps,
 } from "#/components/app/FileContent/store/videoViewer";
+import { TranslateFile } from "@repo/core/stages/05_translate/type";
 import { AsrResult } from "@repo/core/stages/asr/types";
 
 interface Props {
@@ -83,12 +84,12 @@ export function TaskDetailPage(props: Props) {
   const transSegments = () => {
     if (!transQuery.data) return [];
     try {
-      const data = JSON.parse(transQuery.data);
-      return (data.translation || []).map((item: any, i: number) => ({
+      const data: TranslateFile = JSON.parse(transQuery.data);
+      return (data.translation || []).map((item, i: number) => ({
         index: i,
         text: item.dst || '',
-        startMs: item.start_time * 1000,
-        endMs: item.end_time * 1000,
+        startMs: item.start,
+        endMs: item.end,
       }));
     } catch { return []; }
   };

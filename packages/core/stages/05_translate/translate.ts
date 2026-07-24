@@ -8,6 +8,7 @@ import {
 	LANG_NAMES,
 	nowISO,
 	readTaskLanguages,
+	SrtJson,
 	subtitleFilePath,
 	translationFilePath,
 } from '@repo/core/stages/utils/utils.ts';
@@ -15,25 +16,9 @@ import { TaskCtx, setCtx, setStage } from '@repo/core/context/context.ts';
 import { buildPreprocessPrompt, buildTranslateSystem, resolveTargetLanguage } from './utils';
 import { chat_completions } from '../../ml/llm/openai';
 import { to } from '@repo/shared/lib/utils/try';
+import { TranslateFile } from './type';
 
-/**
- * translate.[dstLang].json 结构
- *
- * 由 translate 阶段写入，split_audio/tts/merge_audio/merge_video 读取。
- * 时间戳源自 srt.json（秒→毫秒），文本是 LLM 翻译结果。
- * 此文件在此阶段后冻结，split_audio 不修改它，而是创建 timings.json。
- */
-export interface TranslateFile {
-	translation: {
-		src: string;
-		dst: string;
-		src_lang: string;
-		dst_lang: string;
-		start_time: number;
-		end_time: number;
-		speaker: string;
-	}[];
-}
+
 export async function stageTranslate(ctx: TaskCtx) {
 	const taskId = ctx.task.id;
 	const taskDir = ctx.task.task_dir
@@ -45,7 +30,7 @@ export async function stageTranslate(ctx: TaskCtx) {
 	const dstLangName = LANG_NAMES[dstLangCode] || dstLangCode;
 
 	const srtFile = subtitleFilePath(ctx);
-	const data = await readJson(srtFile, ctx);
+	const data = await readJson<SrtJson>(srtFile, ctx);
 	const segments = data.result.segments;
 	const texts = segments.map((u: any) => (u.text || '').trim());
 	const fullText = (data.result.text || '').trim() || texts.join(' ');
@@ -190,13 +175,13 @@ export async function stageTranslate(ctx: TaskCtx) {
 		});
 	}
 
-	const translation = segments.map((u: any, idx: number) => ({
+	const translation: TranslateFile['translation'] = segments.map((u: any, idx: number) => ({
 		src: texts[idx],
 		dst: dsts[idx]?.replace(/——/g, '，') || '',
 		src_lang: srcLangCode,
 		dst_lang: dstLangCode,
-		start_time: u.start,
-		end_time: u.end,
+		start: u.start,
+		end: u.end,
 		speaker: '1',
 	}));
 

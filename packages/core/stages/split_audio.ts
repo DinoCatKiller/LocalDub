@@ -2,9 +2,10 @@ import { readJson, writeJson, ensureDir, removeFile } from '@repo/core/utils/fil
 import { existsSync, readdirSync, statSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { translationFilePath, ffmpeg, nowISO, emitLog, readTaskLanguages, subtitleFilePath, split_audio_timings_filepath, video_source_path, vocalsPath } from '@repo/core/stages/utils/utils.ts';
+import { translationFilePath, ffmpeg, nowISO, emitLog, readTaskLanguages, subtitleFilePath, split_audio_timings_filepath, video_source_path, vocalsPath, readTranslationResult } from '@repo/core/stages/utils/utils.ts';
 import { env } from '@repo/config/env';
 import { TaskCtx, setStage } from '@repo/core/context/context.ts';
+import { SplitAudioTiming } from './06_split_audio/types';
 
 function probeDuration(file: string): number {
   const r = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file], { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -98,18 +99,7 @@ function padSegments(segments: any[], startPad = 100, endPad = 300): any[] {
   });
 }
 
-type SplitAudioTiming = {
-  		seg_idx: number;
-		src: string;
-		dst: string;
-		src_lang: string;
-		dst_lang: string;
-		start_time: number;
-		end_time: number;
-    start: number;
-    end: number;
-		speaker: string;
-}
+
 export async function stageSplitAudio(ctx: TaskCtx) {
   const taskId = ctx.task.id;
   const taskDir = ctx.task.task_dir
@@ -135,9 +125,7 @@ export async function stageSplitAudio(ctx: TaskCtx) {
 	const translateEnabled = ctx.input?.stages?.translate?.enabled ?? true;
 	let timings: SplitAudioTiming[];
 	if (translateEnabled) {
-		if (!existsSync(translationFile))
-			throw new Error(`translation file not found: ${translationFile}`);
-		const transData = await readJson(translationFile, ctx);
+		const transData = await readTranslationResult(ctx);
 		const translation = transData.translation;
 		if (!translation?.length) throw new Error('translation.json has no segments');
 		if (segmentsSrc.length !== translation.length) {

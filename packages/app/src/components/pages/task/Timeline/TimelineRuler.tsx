@@ -16,9 +16,7 @@ export function TimelineRuler(props: Props) {
 
   const onRulerClick = (e: MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const parent = (e.currentTarget as HTMLElement).parentElement;
-    const scrollLeft = parent?.scrollLeft ?? 0;
-    const x = e.clientX - rect.left + scrollLeft;
+    const x = e.clientX - rect.left;
     const ms = x / props.pxPerMs;
     props.onSeek(Math.max(0, Math.min(ms, props.duration)));
   };
