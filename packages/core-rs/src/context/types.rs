@@ -2,13 +2,13 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type, Default)]
-// #[serde(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum StageStatus {
     #[default]
-    #[serde(rename = "pending")]
+    // #[serde(rename = "pending")]
     Pending,
     Running,
-    #[serde(rename = "success")]
+    // #[serde(rename = "success")]
     Success,
     Failed,
 }

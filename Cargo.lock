@@ -3388,9 +3388,8 @@ dependencies = [
 
 [[package]]
 name = "fnrpc"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c642b14de6d4e7e24eccf8f0140ce2d624ef0bd6f3a88d800142aa3d81575180"
+version = "0.4.0"
+source = "git+https://github.com/Nahida-aa/fnrpc.git#578bf8287a50865cfa3194137d8c74dda33b0ae5"
 dependencies = [
  "fnrpc-macros",
  "futures",
@@ -3398,16 +3397,17 @@ dependencies = [
  "serde",
  "serde_json",
  "specta",
+ "specta-serde",
  "specta-typescript",
+ "specta-util",
  "tracing",
  "xitca-router",
 ]
 
 [[package]]
 name = "fnrpc-axum"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abbbfc1d6db2ac6220550e43cd490c830d51320e2ea51a06e596c3ae006d1c1f"
+version = "0.4.0"
+source = "git+https://github.com/Nahida-aa/fnrpc.git#578bf8287a50865cfa3194137d8c74dda33b0ae5"
 dependencies = [
  "async-trait",
  "axum",
@@ -3421,9 +3421,8 @@ dependencies = [
 
 [[package]]
 name = "fnrpc-macros"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8f196fe27943381240d407c70219282e57f6d0a4a98a21f39cda2773b14c80d"
+version = "0.4.0"
+source = "git+https://github.com/Nahida-aa/fnrpc.git#578bf8287a50865cfa3194137d8c74dda33b0ae5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3432,9 +3431,8 @@ dependencies = [
 
 [[package]]
 name = "fnrpc-tauri"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f71addfff8d3e189f3a1bc3f75fe9741150a980a421384e35f2a1e58b0cdba47"
+version = "0.4.0"
+source = "git+https://github.com/Nahida-aa/fnrpc.git#578bf8287a50865cfa3194137d8c74dda33b0ae5"
 dependencies = [
  "fnrpc",
  "futures",
@@ -8362,9 +8360,8 @@ dependencies = [
 
 [[package]]
 name = "specta"
-version = "2.0.0-rc.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38f9a30cbcbb7011f1da7d73483983bf838af123883e45f2b36ed76328df9c50"
+version = "2.0.0-rc.26"
+source = "git+https://github.com/specta-rs/specta.git?rev=3c535739ea7bd8737ecdbff6c3aef9b7330da706#3c535739ea7bd8737ecdbff6c3aef9b7330da706"
 dependencies = [
  "rustc_version",
  "serde_json",
@@ -8373,9 +8370,8 @@ dependencies = [
 
 [[package]]
 name = "specta-macros"
-version = "2.0.0-rc.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ce14957ecc2897f1f848b8255b6531d13ddf49cbcf506b7c2c9fb1d005593bb"
+version = "2.0.0-rc.26"
+source = "git+https://github.com/specta-rs/specta.git?rev=3c535739ea7bd8737ecdbff6c3aef9b7330da706#3c535739ea7bd8737ecdbff6c3aef9b7330da706"
 dependencies = [
  "Inflector",
  "proc-macro2",
@@ -8384,12 +8380,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "specta-serde"
+version = "0.0.13"
+source = "git+https://github.com/specta-rs/specta.git?rev=3c535739ea7bd8737ecdbff6c3aef9b7330da706#3c535739ea7bd8737ecdbff6c3aef9b7330da706"
+dependencies = [
+ "specta",
+ "specta-macros",
+]
+
+[[package]]
 name = "specta-typescript"
-version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "639404ee95557f2f8b7e4cb773ffefd45304c7ab8ba21ac83b69051595e083c0"
+version = "0.0.13"
+source = "git+https://github.com/specta-rs/specta.git?rev=3c535739ea7bd8737ecdbff6c3aef9b7330da706#3c535739ea7bd8737ecdbff6c3aef9b7330da706"
 dependencies = [
  "serde",
+ "specta",
+]
+
+[[package]]
+name = "specta-util"
+version = "0.0.13"
+source = "git+https://github.com/specta-rs/specta.git?rev=3c535739ea7bd8737ecdbff6c3aef9b7330da706#3c535739ea7bd8737ecdbff6c3aef9b7330da706"
+dependencies = [
  "specta",
 ]
 
