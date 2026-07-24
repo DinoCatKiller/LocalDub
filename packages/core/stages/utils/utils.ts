@@ -177,6 +177,8 @@ export function readTaskLanguages(ctx: TaskCtx): {
 	return { asrLanguage: 'en', targetLanguage: 'zh' };
 }
 
+
+
 export function translationFilePath(taskDir: string, lang: string): string {
 	return join(taskDir, 'translate', `translation.${lang}.json`);
 }

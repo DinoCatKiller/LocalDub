@@ -1,3 +1,6 @@
+import { TargetLang } from "../../cmd/tasks/input";
+import { setCtx, TaskCtx } from "../../context/context";
+import { readTaskLanguages } from "../utils/utils";
 
 export interface MetaView {
   title: string;
@@ -74,3 +77,21 @@ export const buildPreprocessPrompt = ({
 
 # 转录文本
 ${fullText.slice(0, 10000)}`
+
+
+/*
+ * 解析目标语言: input > auto 推断, 由翻译步骤调用, 此时 ctx 中不存在目标语言
+ */
+export function resolveTargetLanguage(ctx: TaskCtx): TargetLang {
+ 	// 解析目标语言: input > auto 推断
+	const input_target_lang = ctx.input.stages?.translate?.targetLang;
+	const { asrLanguage: srcLangCode, targetLanguage: existingDstLang } =
+		readTaskLanguages(ctx);
+	const resolvedDstLang =
+		input_target_lang ?? (srcLangCode === 'zh' ? 'en' : 'zh');
+
+	if (resolvedDstLang !== existingDstLang) {
+		setCtx(ctx.task.task_dir, { target_language: resolvedDstLang });
+  }
+  return resolvedDstLang
+}

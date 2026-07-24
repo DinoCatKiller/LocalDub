@@ -12,7 +12,7 @@ import {
 	translationFilePath,
 } from '@repo/core/stages/utils/utils.ts';
 import { TaskCtx, setCtx, setStage } from '@repo/core/context/context.ts';
-import { buildPreprocessPrompt, buildTranslateSystem } from './utils';
+import { buildPreprocessPrompt, buildTranslateSystem, resolveTargetLanguage } from './utils';
 import { chat_completions } from '../../ml/llm/openai';
 import { to } from '@repo/shared/lib/utils/try';
 
@@ -37,18 +37,9 @@ export interface TranslateFile {
 export async function stageTranslate(ctx: TaskCtx) {
 	const taskId = ctx.task.id;
 	const taskDir = ctx.task.task_dir
-	// 解析目标语言: input > 已有设置 > auto 推断
-	const inputTargetLang = readInputArgs().stages?.translate?.targetLang;
-	const { asrLanguage: srcLangCode, targetLanguage: existingDstLang } =
-		readTaskLanguages(ctx);
-	const resolvedDstLang =
-		inputTargetLang ?? ctx.target_language ?? (srcLangCode === 'zh' ? 'en' : 'zh');
+	const { asrLanguage: srcLangCode, } = readTaskLanguages(ctx);
 
-	if (resolvedDstLang !== existingDstLang) {
-		setCtx(taskDir, { target_language: resolvedDstLang });
-	}
-
-	const dstLangCode = resolvedDstLang;
+	const dstLangCode = resolveTargetLanguage(ctx);
 	const translationFile = translationFilePath(taskDir, dstLangCode);
 	const srcLangName = LANG_NAMES[srcLangCode] || srcLangCode;
 	const dstLangName = LANG_NAMES[dstLangCode] || dstLangCode;
