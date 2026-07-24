@@ -16,6 +16,7 @@ import {
 	video_source_path,
     timings_filepath,
     split_audio_timings_filepath,
+    read_timings,
 } from '@repo/core/stages/utils/utils';
 import { startLog } from './utils/log.ts';
 import { writeSrt } from '@repo/core/utils/srt';
@@ -61,9 +62,7 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 	const video_file_path = video_source_path(ctx)
 	const mergeVideoDir = join(taskDir, 'merge_video');
 	ensureDir(mergeVideoDir, ctx);
-	const tmpDir = join(taskDir, 'tmp');
 	const srtPath = ctx.input?.stages?.merge_video?.srtPath
-	const subtitleSource = ctx.input?.task?.subtitleSource;
 	if (!existsSync(video_file_path)) throw new Error('video_source.mp4 not found');
 
 	const pipeline = readCtx(taskDir)?.pipeline || 'dub';
@@ -86,7 +85,6 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 		finalVideoDirPath,
 		`${taskId}.mp4`
 	);
-
 
 	if (pipeline === 'subtitle') {
 		const vadAlign = ctx.input?.stages?.split_audio?.vadAlign;
@@ -144,13 +142,11 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 		const dubbingFile = join(taskDir, 'merge_audio', 'audio_dubbing.wav');
 		const ctxBgmPath = ctx.input?.stages?.merge_video?.bgmPath;
 		const bgmFile = ctxBgmPath ? ctxBgmPath : bgmPath(taskDir);
-		const timingsFile = timings_filepath(taskDir);
 
 		if (!existsSync(dubbingFile))
 			throw new Error('audio_dubbing.wav not found');
-		if (!existsSync(timingsFile)) throw new Error('timings.json not found');
 
-		const data = await readJson(timingsFile, ctx);
+		const data = await read_timings(ctx)
 		const dstLang = dstLangFromTranslation(data.translation);
 		const subPath = join(mergeVideoDir, `subtitles.${dstLang}.srt`);
 		writeSrt(data.translation, ctx, subPath);
@@ -211,6 +207,6 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 		last_message: 'Merged',
 	});
 
-	const finalPath = `/api/video/${taskId}`;
-	await setTask(taskDir, { final_video_path: finalPath });
+	// const finalPath = `/api/video/${taskId}`;
+	// await setTask(taskDir, { final_video_path: finalPath });
 }

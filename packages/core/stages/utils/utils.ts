@@ -10,6 +10,7 @@ import { SubtitleSource, TargetLang } from '@repo/core/cmd/tasks/input';
 import { readJson } from '../../utils/fileOps';
 import { TranslateFile } from '../05_translate/type';
 import { SplitAudioFile } from '../06_split_audio/types';
+import { TimingsFile } from '../merge_audio';
 
 /** Get the downloaded video source path for a session. */
 export function video_source_path(ctx: TaskCtx): string {
@@ -230,8 +231,17 @@ export function read_split_audio_timings(ctx: TaskCtx) {
   const filepath = split_audio_timings_filepath(ctx.task.task_dir);
   return readJson<SplitAudioFile>(filepath, ctx);
 }
+
+/**
+ * 目前修改此文件不会影响配音结果, 但重新运行 merge_video 时会改变生成的字幕时间位置
+ */
 export function timings_filepath(taskDir: string): string {
 	return join(taskDir, 'merge_audio', 'timings.json');
+}
+export function read_timings(ctx: TaskCtx) {
+  const filepath = timings_filepath(ctx.task.task_dir);
+  if (!existsSync(filepath)) throw new Error(`timings file not found: ${filepath}`);
+  return readJson<TimingsFile>(filepath, ctx);
 }
 
 export function mixedVocalsPath(taskDir: string): string {

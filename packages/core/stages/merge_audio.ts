@@ -13,8 +13,8 @@ export interface Timing extends SplitAudioTiming {
   drift_ms: number; //
   advance_ms: number // 从前面间隙借的时间（实际比 start_time 提前
   delay_ms: number; // 从后面间隙借的时间（实际比 end_time 延后
-  actual_start_time: number; // 实际开始时间（考虑了前面间隙的提前）
-  actual_end_time: number; // 实际结束时间（考虑了后面间隙的延后）
+  actual_start: number; // 实际开始时间（考虑了前面间隙的提前）
+  actual_end: number; // 实际结束时间（考虑了后面间隙的延后）
 }
 export interface TimingsFile {
   translation: Timing[];
@@ -131,8 +131,8 @@ export async function stageMergeAudio(ctx: TaskCtx) {
       drift_ms : Math.round(drift * 1000),
       advance_ms : advanceMs,
       delay_ms : delayMs,
-      actual_start_time : Math.floor(realStartMs),
-      actual_end_time : realEndMs,
+      actual_start : Math.floor(realStartMs),
+      actual_end : realEndMs,
       tts_duration_ms : Math.round(ttsSec * 1000),
       stretched_duration_ms : Math.round(stretchedSec * 1000),
       stretch_ratio : parseFloat((trimmedSec <= slotSec ? 1.0 : speed).toFixed(4)),
@@ -144,7 +144,14 @@ export async function stageMergeAudio(ctx: TaskCtx) {
 
   const concatFile = join(mergeAudioDir, 'concat_list.txt');
   writeFile(concatFile, segmentInputs.map(f => `file '${f}'`).join('\n'), ctx);
-  ffmpeg(['-f', 'concat', '-safe', '0', '-i', concatFile, '-acodec', 'pcm_s16le', '-ar', String(sampleRate), '-ac', '1', dubbingFile]);
+  // 连接所有配音片段并输出最终配音音频
+  ffmpeg(['-f', 'concat', // 使用 concat 分离器
+    '-safe', '0', // 允许文件路径中的特殊字符
+    '-i', concatFile, // 输入文件列表（每行 `file 'path'`）
+    '-acodec', 'pcm_s16le', // 输出编码：16-bit 有符号小端 PCM（WAV
+    '-ar', String(sampleRate), // 采样率，沿用 TTS 的采样率
+    '-ac', '1', // 单声道
+    dubbingFile]); // 输出到 `merge_audio/audio_dubbing.wav
 
   writeJson(timings_filepath(taskDir), { translation: newTranslation }, ctx);
   await setStage(taskDir, 'merge_audio', { status: 'succeeded', completed_at: nowISO(), progress: 100, last_message: 'Merged' });
