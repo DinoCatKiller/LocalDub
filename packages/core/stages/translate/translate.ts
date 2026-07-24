@@ -14,6 +14,7 @@ import {
 import { TaskCtx, setCtx, setStage } from '@repo/core/context/context.ts';
 import { buildPreprocessPrompt, buildTranslateSystem } from './utils';
 import { chat_completions } from '../../ml/llm/openai';
+import { to } from '@repo/shared/lib/utils/try';
 
 /**
  * translate.[dstLang].json 结构
@@ -36,12 +37,12 @@ export interface TranslateFile {
 export async function stageTranslate(ctx: TaskCtx) {
 	const taskId = ctx.task.id;
 	const taskDir = ctx.task.task_dir
-	// 解析目标语言: input > auto 推断
+	// 解析目标语言: input > 已有设置 > auto 推断
 	const inputTargetLang = readInputArgs().stages?.translate?.targetLang;
 	const { asrLanguage: srcLangCode, targetLanguage: existingDstLang } =
 		readTaskLanguages(ctx);
 	const resolvedDstLang =
-		inputTargetLang ?? (srcLangCode === 'zh' ? 'en' : 'zh');
+		inputTargetLang ?? ctx.target_language ?? (srcLangCode === 'zh' ? 'en' : 'zh');
 
 	if (resolvedDstLang !== existingDstLang) {
 		setCtx(taskDir, { target_language: resolvedDstLang });
@@ -97,16 +98,14 @@ export async function stageTranslate(ctx: TaskCtx) {
       apiBase: transArgs.apiBase,
       model: transArgs.model,
 			temperature: 0.2,
-		});
-		try {
-			return JSON.parse(raw);
-		} catch {
-			const m = raw.match(/\{.*\}/s);
-			if (m) return JSON.parse(m[0]);
-			throw new Error(
-				`Failed to parse JSON from LLM response: ${raw.slice(0, 300)}`,
-			);
-		}
+    });
+    const [ret, err] = to(() => JSON.parse(raw))
+    if (ret) return ret
+    const m = raw.match(/\{.*\}/s);
+    if (m) return JSON.parse(m[0]);
+    throw new Error(
+			`Failed to parse JSON from LLM response: ${raw.slice(0, 300)}`,
+		);
 	}
 
 	let summary = '',
