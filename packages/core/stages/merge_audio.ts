@@ -1,13 +1,27 @@
 import { readJson, writeJson, writeFile, ensureDir } from '@repo/core/utils/fileOps';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { readTaskLanguages, ffmpeg, nowISO, probeSampleRate, probeDuration, split_audio_timings_filepath, timings_filepath } from '@repo/core/stages/utils/utils.ts';
+import { readTaskLanguages, ffmpeg, nowISO, probeSampleRate, probeDuration, split_audio_timings_filepath, timings_filepath, read_split_audio_timings } from '@repo/core/stages/utils/utils.ts';
 import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
+import { SplitAudioTiming } from './06_split_audio/types';
 
+export interface Timing extends SplitAudioTiming {
+  original_duration_ms: number;//end_time - start_time(原始时间槽长度
+  tts_duration_ms: number; // TTS 生成的音频时长
+  stretched_duration_ms: number; // 去尾静音 + rubberband 拉伸后时长
+  stretch_ratio: number; // 加速(拉伸)比例(>1.0 = 加速)
+  drift_ms: number; //
+  advance_ms: number // 从前面间隙借的时间（实际比 start_time 提前
+  delay_ms: number; // 从后面间隙借的时间（实际比 end_time 延后
+  actual_start_time: number; // 实际开始时间（考虑了前面间隙的提前）
+  actual_end_time: number; // 实际结束时间（考虑了后面间隙的延后）
+}
+export interface TimingsFile {
+  translation: Timing[];
+}
 export async function stageMergeAudio(ctx: TaskCtx) {
   const taskId = ctx.task.id;
   const taskDir = ctx.task.task_dir
-  const { targetLanguage: dstLangCode } = readTaskLanguages(ctx);
   const mergeAudioDir = join(taskDir, 'merge_audio');
   const ttsDir = join(taskDir, 'tts', 'wavs');
   const stretchedDir = join(mergeAudioDir, 'stretched');
@@ -18,10 +32,8 @@ export async function stageMergeAudio(ctx: TaskCtx) {
   ensureDir(mergeAudioDir, ctx);
 
   const dubbingFile = join(mergeAudioDir, 'audio_dubbing.wav');
-  const timingsFile = split_audio_timings_filepath(taskDir);
-  if (!existsSync(timingsFile)) throw new Error(`timings.json not found: ${timingsFile}`);
 
-  const data = await readJson(timingsFile, ctx);
+  const data = await read_split_audio_timings(ctx)
   const translation = data.translation;
   const ttsFiles = translation.map((_: any, i: number) => join(ttsDir, `${String(i + 1).padStart(4, '0')}.wav`));
 
@@ -38,9 +50,9 @@ export async function stageMergeAudio(ctx: TaskCtx) {
   const maxSpeed = ctx.input?.stages?.merge_audio?.maxSpeed ?? 1.35;
   const maxAdvanceMs = ctx.input?.stages?.merge_audio?.maxAdvanceMs ?? 500;
   const maxDelayMs = ctx.input?.stages?.merge_audio?.maxDelayMs ?? 500;
-
-  for (let i = 0; i < translation.length; i++) {
-    const segment = translation[i];
+  const newTranslation: Timing[] = [];
+  for (const [i, item] of translation.entries()) {
+    // const segment = translation[i];
     const ttsFile = ttsFiles[i];
     const idx = String(i + 1).padStart(4, '0');
     const stretchedFile = join(stretchedDir, `${idx}.wav`);
@@ -57,7 +69,7 @@ export async function stageMergeAudio(ctx: TaskCtx) {
     const trimmedSec = probeDuration(trimmedFile);
 
     // Determine advance — conservative for segments that already fit
-    const originalSlotBaseSec = (segment.end_time - segment.start_time) / 1000;
+    const originalSlotBaseSec = (item.end_time - item.start_time) / 1000;
     let advanceMs = 0;
     if (trimmedSec <= originalSlotBaseSec) {
       const surplusNoAdvanceSec = drift + (originalSlotBaseSec - trimmedSec);
@@ -71,13 +83,13 @@ export async function stageMergeAudio(ctx: TaskCtx) {
       advanceMs = Math.min(maxAdvanceMs, Math.max(0, Math.round(drift * 1000)));
     }
 
-    const realStartMs = Math.max(segment.start_time - advanceMs, lastEndMs, 0);
-    advanceMs = Math.max(0, segment.start_time - realStartMs);
+    const realStartMs = Math.max(item.start_time - advanceMs, lastEndMs, 0);
+    advanceMs = Math.max(0, item.start_time - realStartMs);
     const effectiveDrift = drift - advanceMs / 1000;
 
     // Determine delay — borrow time from the next segment's gap
-    const nextStartMs = (i < translation.length - 1) ? translation[i + 1].start_time : segment.end_time;
-    const gapMs = Math.max(0, nextStartMs - segment.end_time);
+    const nextStartMs = (i < translation.length - 1) ? translation[i + 1].start_time : item.end_time;
+    const gapMs = Math.max(0, nextStartMs - item.end_time);
     const delayMs = Math.min(gapMs, maxDelayMs);
 
     if (realStartMs > lastEndMs) {
@@ -87,7 +99,7 @@ export async function stageMergeAudio(ctx: TaskCtx) {
       segmentInputs.push(silenceFile);
     }
 
-    const originalSlotSec = (segment.end_time + delayMs - realStartMs) / 1000;
+    const originalSlotSec = (item.end_time + delayMs - realStartMs) / 1000;
     // floor at 50ms so speed calc never goes negative
     const slotSec = Math.max(0.05, originalSlotSec + effectiveDrift);
 
@@ -113,16 +125,19 @@ export async function stageMergeAudio(ctx: TaskCtx) {
 
     const realEndMs = Math.floor(realStartMs + stretchedSec * 1000);
     lastEndMs = realEndMs;
-
-    segment.original_duration_ms = segment.end_time - segment.start_time;
-    segment.drift_ms = Math.round(drift * 1000);
-    segment.advance_ms = advanceMs;
-    segment.delay_ms = delayMs;
-    segment.actual_start_time = Math.floor(realStartMs);
-    segment.actual_end_time = realEndMs;
-    segment.tts_duration_ms = Math.round(ttsSec * 1000);
-    segment.stretched_duration_ms = Math.round(stretchedSec * 1000);
-    segment.stretch_ratio = parseFloat((trimmedSec <= slotSec ? 1.0 : speed).toFixed(4));
+    const segment: Timing = {
+      ...item,
+      original_duration_ms : item.end_time - item.start_time,
+      drift_ms : Math.round(drift * 1000),
+      advance_ms : advanceMs,
+      delay_ms : delayMs,
+      actual_start_time : Math.floor(realStartMs),
+      actual_end_time : realEndMs,
+      tts_duration_ms : Math.round(ttsSec * 1000),
+      stretched_duration_ms : Math.round(stretchedSec * 1000),
+      stretch_ratio : parseFloat((trimmedSec <= slotSec ? 1.0 : speed).toFixed(4)),
+    }
+    newTranslation.push(segment);
   }
 
   if (segmentInputs.length === 0) throw new Error('No audio segments to merge');
@@ -131,6 +146,6 @@ export async function stageMergeAudio(ctx: TaskCtx) {
   writeFile(concatFile, segmentInputs.map(f => `file '${f}'`).join('\n'), ctx);
   ffmpeg(['-f', 'concat', '-safe', '0', '-i', concatFile, '-acodec', 'pcm_s16le', '-ar', String(sampleRate), '-ac', '1', dubbingFile]);
 
-  writeJson(timings_filepath(taskDir), { translation }, ctx);
+  writeJson(timings_filepath(taskDir), { translation: newTranslation }, ctx);
   await setStage(taskDir, 'merge_audio', { status: 'succeeded', completed_at: nowISO(), progress: 100, last_message: 'Merged' });
 }

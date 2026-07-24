@@ -4,8 +4,8 @@ export type SplitAudioTiming = {
 	dst: string;
 	src_lang: string;
 	dst_lang: string;
-	start_time: number;
-	end_time: number;
+	start_time: number; // 视频意图起点
+	end_time: number; // 视频意图终点
   start: number;
   end: number;
 	speaker: string;
