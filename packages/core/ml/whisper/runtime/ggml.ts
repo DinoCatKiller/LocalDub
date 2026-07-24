@@ -60,7 +60,7 @@ export async function asrWhisperCpp(
 	ctx: TaskCtx,
 	audioPath: string,
 	taskDir: string,
-	language: string,
+	language: string='auto',
 ) {
 	const whisperCli = whisperCppBinaryPath();
 	const model = whisperCppModelPath()

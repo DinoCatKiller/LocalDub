@@ -16,6 +16,7 @@ import {
   useDuration,
   useFps,
 } from "#/components/app/FileContent/store/videoViewer";
+import { AsrResult } from "@repo/core/stages/asr/types";
 
 interface Props {
   groupId: string;
@@ -26,11 +27,6 @@ export function TaskDetailPage(props: Props) {
   const taskDir = `workfolder/${props.groupId}/${props.taskId}`;
   const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(taskDir));
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
-
-  // 视频源地址（默认取 video_source.mp4）
-  // const videoUrl = () => taskCtxQ.data?.video_source_path
-  //   ? `http://localhost:19110/media/${taskDir}/video_source.mp4`
-  //   : "";
 
   const onVideoReady = (ref: HTMLVideoElement) => {
     setVideoRef(ref);
@@ -66,7 +62,7 @@ export function TaskDetailPage(props: Props) {
   const asrSegments = () => {
     if (!asrQuery.data) return [];
     try {
-      const data = JSON.parse(asrQuery.data);
+      const data: AsrResult = JSON.parse(asrQuery.data);
       return (data.result?.segments || []).map((s: any, i: number) => ({
         index: i,
         text: (s.text || '').trim(),
