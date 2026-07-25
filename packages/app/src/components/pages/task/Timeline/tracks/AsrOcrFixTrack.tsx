@@ -159,7 +159,7 @@ export function AsrOcrFixTrack(props: Props) {
 
   const handleDelete = async (segIndex: number) => {
     const newSegments = deleteAt(track.segments, segIndex);
-    await client.write_app_file_text.call([props.filePath, serializeSegments(newSegments)]);
+    await mutation.mutateAsync([props.filePath, serializeSegments(newSegments)]);
   };
 
   return (
