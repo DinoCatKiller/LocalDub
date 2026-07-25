@@ -131,6 +131,7 @@ export function TaskDetailPage(props: Props) {
       text: item.dst || '',
       startMs: item.start,
       endMs: item.end,
+      raw: item,
     }));
   };
   const split_audio_q = useQuery(
@@ -147,6 +148,7 @@ export function TaskDetailPage(props: Props) {
       text: item.dst || '',
       startMs: item.start,
       endMs: item.end,
+      raw: item,
     }));
   };
   const asr_ocr_fix_llm_q = useQuery(
@@ -179,7 +181,7 @@ export function TaskDetailPage(props: Props) {
     }
     const split_audio_data = split_audio();
     if (split_audio_data.length) {
-      result.push({ id: 'split_audio', label: 'split_audio/split_audio.json', segments: split_audio_data, color: '#3b82f6' });
+      result.push({ id: 'split_audio', label: 'split_audio/split_audio.json', segments: split_audio_data, color: '#f59e0b', filePath: `${taskDir}/split_audio/split_audio.json` });
     }
     const trans = transSegments();
     if (trans.length) {

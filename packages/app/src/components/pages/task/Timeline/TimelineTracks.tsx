@@ -1,6 +1,7 @@
 import { For, type Component } from "solid-js";
 import type { Track } from "./consts";
 import { AsrOcrFixTrack } from "./tracks/AsrOcrFixTrack";
+import { SplitAudioTrack } from "./tracks/SplitAudioTrack";
 
 interface Props {
   ref: (el: HTMLDivElement) => void;
@@ -25,6 +26,7 @@ interface TrackComponentProps {
 
 const trackComponents: Record<string, Component<TrackComponentProps>> = {
   asr_ocr_fix: AsrOcrFixTrack,
+  split_audio: SplitAudioTrack,
 };
 
 function DefaultTrack(props: TrackComponentProps) {
