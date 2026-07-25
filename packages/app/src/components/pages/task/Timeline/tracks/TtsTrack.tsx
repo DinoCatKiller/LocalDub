@@ -22,7 +22,7 @@ export function TtsTrack(props: Props) {
     const seg = track.segments[segIndex];
     if (!seg) return;
     const raw = seg.raw as TtsSegment | undefined;
-    if (!raw || raw.status !== "success") return;
+    if (!raw || raw.status === "error" || raw.status === "empty") return;
     const idx = String(segIndex + 1).padStart(4, "0");
     const url = mediaUrl(`${taskDir}/tts/wavs/${idx}.wav`);
     const label = `#${segIndex + 1} ${seg.text}`;
@@ -77,7 +77,7 @@ export function TtsTrack(props: Props) {
             <ContextMenuContent>
               <ContextMenuItem
                 onSelect={() => handlePlay(seg.index)}
-                disabled={status !== "success"}
+                disabled={status === "error" || status === "empty"}
               >
                 播放 TTS 音频
               </ContextMenuItem>
