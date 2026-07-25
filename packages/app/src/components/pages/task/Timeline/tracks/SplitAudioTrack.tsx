@@ -181,9 +181,9 @@ export function SplitAudioTrack(props: Props) {
                 "border-color": `${color}55`,
               }}
               onClick={() => onSeek(seg.startMs)}
-              title={seg.text}
+              title={(seg.raw as SplitAudioTiming | undefined)?.src || seg.text}
             >
-              {seg.text}
+              {(seg.raw as SplitAudioTiming | undefined)?.src || seg.text}
             </div>
           </ContextMenuTrigger>
           <ContextMenuContent>

@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { stageMergeAudio } from '@repo/core/stages/merge_audio';
+import { stageMergeAudio } from '@repo/core/stages/merge_audio/merge_audio';
 import type { TaskCtx } from '@repo/core/context/context';
 
 const label = process.argv[2];

@@ -3,8 +3,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { readTaskLanguages, ffmpeg, nowISO, probeSampleRate, probeDuration, split_audio_path, timings_filepath, read_split_audio, read_split_audio_timings } from '@repo/core/stages/utils/utils.ts';
 import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
-import { SplitAudioTiming } from './06_split_audio/types';
-import { Timing } from './merge_audio/types';
+import { SplitAudioTiming } from '../06_split_audio/types';
+import { Timing } from './types';
 
 /**
  * `merge_audio.ts` 负责把 TTS 生成的各段音频合并成一条完整配音轨，同时做 timing 微调使配音与原视频时间线对齐。
