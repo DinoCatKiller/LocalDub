@@ -126,6 +126,19 @@ export async function stageMergeAudio(ctx: TaskCtx) {
     segmentInputs.push(stretchedFile);
 
     const realEndMs = Math.floor(realStartMs + stretchedSec * 1000);
+
+    if (realEndMs <= realStartMs) {
+      throw new Error(
+        `[merge_audio] #${i + 1} (${item.src?.slice(0, 30) || '?'}) 生成了零时长段: ` +
+        `tts_file=${ttsFile}, ` +
+        `item.start=${item.start}ms, item.end=${item.end}ms (slot=${(item.end - item.start).toFixed(0)}ms), ` +
+        `tts_duration=${(ttsSec * 1000).toFixed(0)}ms, trimmed=${(trimmedSec * 1000).toFixed(0)}ms, ` +
+        `advance=${advanceMs}ms, delay=${delayMs}ms, ` +
+        `stretched=${(stretchedSec * 1000).toFixed(0)}ms, drift=${drift.toFixed(3)}s\n` +
+        `可能原因: TTS 生成了空音频 (检查 tts/tts.json 该段 status) 或原始时间槽为 0`
+      );
+    }
+
     lastEndMs = realEndMs;
     const segment: Timing = {
       ...item,
