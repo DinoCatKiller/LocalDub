@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { writeWav } from '@repo/voxlab';
 import type { TtsSegment } from './07_tts/types';
 
-import { emitLog, ffmpeg, nowISO, probeDuration, read_split_audio, readTaskLanguages, split_audio_path, tts_filepath } from '@repo/core/stages/utils/utils.ts';
+import { emitLog, ffmpeg, nowISO, probeDuration, read_split_audio_timings, readTaskLanguages, tts_filepath } from '@repo/core/stages/utils/utils.ts';
 import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
 import { startLog } from './utils/log.ts';
 import { newVoxCPMEngine } from '@repo/core/ml/voxcpm/voxcpm';
@@ -51,7 +51,7 @@ export async function stageTts(
 	ensureDir(ttsWavDir, ctx);
 	if (ttsCfg.refAudioX2) {ensureDir(doubledDir, ctx);}
 
-	const { translation } = await read_split_audio(ctx);
+	const { translation } = await read_split_audio_timings(ctx);
 
 	if (!ttsCfg.skipExisting) {
 		const anyTts = readdirSync(ttsWavDir).find((f) => f.endsWith('.wav'));
