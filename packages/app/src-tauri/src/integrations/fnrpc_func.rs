@@ -4,7 +4,10 @@ use crate::{
     ctx::Ctx,
     feat::{
         demo::tick,
-        file_op::{list_app_directory, read_app_file_bin, read_app_file_text, write_app_file_text},
+        file_op::{
+            list_app_directory, read_app_file_bin, read_app_file_json, read_app_file_text,
+            write_app_file_json, write_app_file_text,
+        },
         other::device_info,
         servers::{check_torch, find_server, start_torch, start_voxcpm, stop_torch, stop_voxcpm},
         tasks::{get_group_list, get_task_ctx, log::watch_task_log, tree::watch_task_tree},
@@ -34,6 +37,8 @@ pub fn build_fn_rpc_router() -> fnrpc::router::RpcRouter<Ctx> {
     fnrpc::router::RpcRouterBuilder::<Ctx>::new()
         .route_fn(read_app_file_text)
         .route_fn(write_app_file_text)
+        .route_fn(read_app_file_json)
+        .route_fn(write_app_file_json)
         .route_fn(read_app_file_bin)
         .route_fn(list_app_directory)
         .subscribe(watch_task_log)

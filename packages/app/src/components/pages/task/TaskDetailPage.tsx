@@ -23,6 +23,7 @@ import { TimingsFile } from "@repo/core/stages/merge_audio";
 import { to } from "@repo/shared/lib/utils/try";
 import { SplitAudioFile, SplitAudioTiming, SplitAudioTimingFile } from "@repo/core/stages/06_split_audio/types";
 import { AsrOcrFile } from "@repo/core/ml/subtitle_ocr/types";
+import type { TtsFile } from "@repo/core/stages/07_tts/types";
 
 interface Props {
   groupId: string;
@@ -151,16 +152,16 @@ export function TaskDetailPage(props: Props) {
       raw: item,
     }));
   };
-  const asr_ocr_fix_llm_q = useQuery(
-    () => client.read_app_file_text.queryOptions(`${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json`, {
-      enabled: stage_map().asr_ocr_fix.status === 'success',
+  const ttsQ = useQuery(
+    () => client.read_app_file_text.queryOptions(`${taskDir}/tts/tts.json`, {
+      enabled: stage_map().tts.status === 'success',
     }),
   );
-  const asr_ocr_fix_llm = () => {
-    if (!asr_ocr_fix_llm_q.data) return [];
-    const [data, err] = to<AsrOcrFile>(() => JSON.parse(asr_ocr_fix_llm_q.data))
+  const ttsSegments = () => {
+    if (!ttsQ.data) return [];
+    const [data, err] = to<TtsFile>(() => JSON.parse(ttsQ.data))
     if (err) return []
-    return (data.result.segments || []).map((item, i: number) => ({
+    return (data.segments || []).map((item, i: number) => ({
       index: i,
       text: item.text,
       startMs: item.start,
@@ -169,11 +170,31 @@ export function TaskDetailPage(props: Props) {
     }));
   };
 
+
+  const asr_ocr_fix_llm_q = useQuery(
+    () => client.read_app_file_json.queryOptions(`${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json`, {
+      enabled: stage_map().asr_ocr_fix.status === 'success',
+    }),
+  );
+  const asr_ocr_fix_llm = () => {
+    if (!asr_ocr_fix_llm_q.data) return [];
+    return (asr_ocr_fix_llm_q.data as object as AsrOcrFile).result.segments.map((item, i: number) => ({
+      index: i,
+      text: item.text,
+      startMs: item.start,
+      endMs: item.end,
+      raw: item,
+    }));
+  };
   const tracks = (): Track[] => {
     const result: Track[] = [];
     const merge_audio = merge_audio_segments();
     if (merge_audio.length) {
       result.push({ id: 'merge_audio', label: 'merge_audio/timings.json', segments: merge_audio, color: '#3b82f6' });
+    }
+    const tts = ttsSegments();
+    if (tts.length) {
+      result.push({ id: 'tts', label: 'tts/tts.json', segments: tts, color: '#f43f5e', filePath: `${taskDir}/tts/tts.json` });
     }
     const split_audio_timings_data = split_audio_timings();
     if (split_audio_timings_data.length) {
@@ -191,6 +212,7 @@ export function TaskDetailPage(props: Props) {
     if (asr_ocr_fix_llm_.length) {
       result.push({ id: 'asr_ocr_fix', label: 'asr_ocr_fix/asr_ocr_fused_llm_fix.json', segments: asr_ocr_fix_llm_, color: '#a855f7', filePath: `${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json` });
     }
+
     const asr = asrSegments();
     if (asr.length) {
       result.push({ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6' });

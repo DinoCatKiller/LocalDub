@@ -252,6 +252,10 @@ export function read_timings(ctx: TaskCtx) {
   return readJson<TimingsFile>(filepath, ctx);
 }
 
+export function tts_filepath(taskDir: string): string {
+	return join(taskDir, 'tts', 'tts.json');
+}
+
 export function mixedVocalsPath(taskDir: string): string {
 	return join(taskDir, 'separate_after', 'target_3_vocals_mixed.wav');
 }

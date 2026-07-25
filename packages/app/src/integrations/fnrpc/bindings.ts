@@ -247,6 +247,8 @@ export type TaskStage = {
 	error_message: string | null,
 };
 
+export type Value = "Null" | ({ Bool: boolean }) & { Array?: never; Number?: never; Object?: never; String?: never } | ({ Number: ({ f64: number | null }) & { i64?: never; u64?: never } | ({ i64: bigint }) & { f64?: never; u64?: never } | ({ u64: bigint }) & { f64?: never; i64?: never } }) & { Array?: never; Bool?: never; Object?: never; String?: never } | ({ String: string }) & { Array?: never; Bool?: never; Number?: never; Object?: never } | ({ Array: Value[] }) & { Bool?: never; Number?: never; Object?: never; String?: never } | ({ Object: { [key in string]: Value } }) & { Array?: never; Bool?: never; Number?: never; String?: never };
+
 export type Vendor = "amd" | "nvidia" | "intel" | "unknown";
 
 export type VideoSource = "youtube" | "bilibili" | "local" | "remote" | "unknown";
@@ -281,6 +283,8 @@ export type VulkanHeaps = {
 export type Procedures = {
   read_app_file_text: { kind: "query"; method: "GET"; input: string; output: string; error: RpcErr };
   write_app_file_text: { kind: "mutate"; method: "POST"; input: [string, string]; output: null; error: RpcErr };
+  read_app_file_json: { kind: "query"; method: "GET"; input: string; output: Value; error: RpcErr };
+  write_app_file_json: { kind: "mutate"; method: "POST"; input: [string, Value]; output: null; error: RpcErr };
   read_app_file_bin: { kind: "query"; method: "GET"; input: string; output: number[]; error: RpcErr };
   list_app_directory: { kind: "query"; method: "GET"; input: string; output: DirEntry[]; error: RpcErr };
   watch_task_log: { kind: "subscribe"; method: "GET"; input: string; output: string; error: RpcErr };
@@ -303,6 +307,8 @@ export type Procedures = {
 export const __procedureMeta = {
   read_app_file_text: { kind: "query", method: "GET" },
   write_app_file_text: { kind: "mutate", method: "POST" },
+  read_app_file_json: { kind: "query", method: "GET" },
+  write_app_file_json: { kind: "mutate", method: "POST" },
   read_app_file_bin: { kind: "query", method: "GET" },
   list_app_directory: { kind: "query", method: "GET" },
   watch_task_log: { kind: "subscribe", method: "GET" },

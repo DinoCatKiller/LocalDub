@@ -1,10 +1,11 @@
 import { spawnSync } from 'node:child_process';
-import { readJson, writeFile, ensureDir, writeFileSync, rmSync } from '@repo/core/utils/fileOps';
+import { readJson, writeJson, writeFile, ensureDir, writeFileSync, rmSync } from '@repo/core/utils/fileOps';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { writeWav } from '@repo/voxlab';
+import type { TtsSegment } from './07_tts/types';
 
-import { emitLog, ffmpeg, nowISO, read_split_audio, readTaskLanguages, split_audio_path } from '@repo/core/stages/utils/utils.ts';
+import { emitLog, ffmpeg, nowISO, probeDuration, read_split_audio, readTaskLanguages, split_audio_path, tts_filepath } from '@repo/core/stages/utils/utils.ts';
 import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
 import { startLog } from './utils/log.ts';
 import { newVoxCPMEngine } from '@repo/core/ml/voxcpm/voxcpm';
@@ -68,6 +69,7 @@ export async function stageTts(
 	const tqdmStart = Date.now();
 	let generated = 0, skipped = 0, errors = 0;
 	let genMs = 0;
+	const ttsSegments: TtsSegment[] = [];
 
 	// Find fallback reference for segments without usable reference audio
 	/**
@@ -97,6 +99,15 @@ export async function stageTts(
 		// onlyIndices: 只处理指定索引，同时删除旧文件强制重新生成
 		if (onlyIndices?.length) {
 			if (!onlyIndices.includes(i + 1)) {
+				ttsSegments.push({
+					seg_idx: i + 1,
+					text: item.dst || '',
+					start: item.start,
+					end: item.start,
+					slot_end: item.end,
+					tts_duration_ms: 0,
+					status: 'skipped',
+				});
 				skipped += 1;
 				renderProgress(i + 1, translation.length, tqdmStart);
 				continue;
@@ -114,6 +125,16 @@ export async function stageTts(
 		const refMtime = refWav && existsSync(refWav) ? statSync(refWav).mtimeMs : 0;
 
 		if (ttsCfg.skipExisting && existsSync(outPath) && statSync(outPath).mtimeMs > refMtime) {
+			const durMs = Math.round(probeDuration(outPath) * 1000);
+			ttsSegments.push({
+				seg_idx: i + 1,
+				text: item.dst || '',
+				start: item.start,
+				end: item.start + durMs,
+				slot_end: item.end,
+				tts_duration_ms: durMs,
+				status: 'skipped',
+			});
 			skipped += 1;
 			renderProgress(i + 1, translation.length, tqdmStart);
 			continue;
@@ -122,6 +143,15 @@ export async function stageTts(
 		const text = item.dst || '';
 		if (!text.trim()) {
 			writeFile(outPath, Buffer.alloc(44), ctx);
+			ttsSegments.push({
+				seg_idx: i + 1,
+				text: '',
+				start: item.start,
+				end: item.start,
+				slot_end: item.end,
+				tts_duration_ms: 0,
+				status: 'empty',
+			});
 			skipped += 1;
 			renderProgress(i + 1, translation.length, tqdmStart);
 			continue;
@@ -130,6 +160,15 @@ export async function stageTts(
 		if (!refWav || !existsSync(refWav)) {
 			emitLog(taskDir, `[WARN] [TTS] No reference for segment ${idx}, skipping`);
 			writeFile(outPath, Buffer.alloc(44), ctx);
+			ttsSegments.push({
+				seg_idx: i + 1,
+				text: item.dst || '',
+				start: item.start,
+				end: item.start,
+				slot_end: item.end,
+				tts_duration_ms: 0,
+				status: 'skipped',
+			});
 			skipped += 1;
 			renderProgress(i + 1, translation.length, tqdmStart);
 			continue;
@@ -160,16 +199,30 @@ export async function stageTts(
 		renderProgress(i + 1, translation.length, tqdmStart);
 
 		const t1 = performance.now();
+		let ttsDurationMs = 0;
+		let ttsOk = false;
 		try {
 			const samples = await engine.synthesize(text, refWav, item.src);
 			genMs += performance.now() - t1;
 			writeWav(samples, outPath, 48000);
+			ttsDurationMs = Math.round(probeDuration(outPath) * 1000);
 			generated += 1;
+			ttsOk = true;
 		} catch (e) {
 			errors += 1;
 			emitLog(taskDir, `[tts] [ERROR] Segment ${idx} failed: ${JSON.stringify(e)}`);
 			writeFile(outPath, Buffer.alloc(44), ctx);
 		}
+
+		ttsSegments.push({
+			seg_idx: i + 1,
+			text: item.dst || '',
+			start: item.start,
+			end: item.start + ttsDurationMs,
+			slot_end: item.end,
+			tts_duration_ms: ttsDurationMs,
+			status: ttsOk ? 'success' : 'error',
+		});
 	}
 
 	await engine.release();
@@ -181,6 +234,9 @@ export async function stageTts(
 
 	emitLog(taskDir, `[TTS] Batch complete: ${generated} generated, ${skipped} skipped, ${errors} errors`);
 	emitLog(taskDir, `[VoxCPM] Generated in ${genSec.toFixed(1)}s | RTF ${rtf.toFixed(3)}`);
+
+	ensureDir(join(taskDir, 'tts'), ctx);
+	writeJson(tts_filepath(taskDir), { segments: ttsSegments }, ctx);
 	await setStage(taskDir, 'tts', {
 		status: 'success',
 		completed_at: nowISO(),
