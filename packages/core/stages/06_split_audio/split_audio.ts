@@ -160,6 +160,8 @@ export async function stageSplitAudio(ctx: TaskCtx) {
 		}));
 	}
 
+  const intentTimings = timings.map(t => ({ ...t }));
+
 	timings = padSegments(timings);
 
   // Total audio duration
@@ -168,7 +170,7 @@ export async function stageSplitAudio(ctx: TaskCtx) {
 
   ensureDir(vocalsSegmentDir, ctx);
  	// Write timings.json (always refresh to pick up updated OCR/OCR-fix timestamps)
-	ensureDir(splitAudioDir, ctx);
+ 	ensureDir(splitAudioDir, ctx);
   // ---- Segment cutting (dub only) ----
   if (hasVocals) {
     const anySeg = readdirSync(vocalsSegmentDir).find(f => f.endsWith('.wav'));
@@ -210,41 +212,40 @@ export async function stageSplitAudio(ctx: TaskCtx) {
       const endMs = timings[i].end;
       if (startMs >= endMs) continue;
 
-      // Detect leading non-speech content (breath/silence) in ms
       const wavPath = join(vocalsSegmentDir, `${String(i + 1).padStart(4, '0')}.wav`);
       const removedMs = existsSync(wavPath)
         ? detectSpeechStartMs(wavPath)
         : detectSpeechStartMsSeek(sourceAudio, Math.max(0, startMs - 80), Math.min(totalMs, endMs + 160), vocalsSegmentDir);
       if (removedMs <= 500) continue;
 
-      const newStartMs = startMs + removedMs - 80;
-      if (newStartMs >= endMs) {
-        emitLog(taskDir, `vadAlign #${i + 1}: would exceed end (${newStartMs} >= ${endMs}), truncating`);
+      const cutStartMs = timings[i].start;
+      const newCutStartMs = cutStartMs + removedMs - 80;
+      if (newCutStartMs >= endMs) {
+        emitLog(taskDir, `vadAlign #${i + 1}: would exceed end (${newCutStartMs} >= ${endMs}), truncating`);
         continue;
       }
 
-      emitLog(taskDir, `vadAlign #${i + 1}: start ${startMs} → ${newStartMs} (removed ${removedMs}ms)`);
+      emitLog(taskDir, `vadAlign #${i + 1}: start ${cutStartMs} → ${newCutStartMs} (removed ${removedMs}ms)`);
 
-      // Re-cut WAV with corrected timing (dub only)
       if (hasVocals) {
         const newEnd = Math.min(totalMs, endMs + 160);
-        if (newEnd > newStartMs) {
-          ffmpeg(['-i', sourceAudio, '-ss', String(newStartMs / 1000), '-to', String(newEnd / 1000), '-c', 'copy', wavPath]);
+        if (newEnd > newCutStartMs) {
+          ffmpeg(['-i', sourceAudio, '-ss', String(newCutStartMs / 1000), '-to', String(newEnd / 1000), '-c', 'copy', wavPath]);
         }
       }
 
-      // Update timings in memory (will be written to timings.json below)
-      timings[i].start = newStartMs;
+      timings[i].start = newCutStartMs;
+      intentTimings[i].start = Math.max(0, intentTimings[i].start + removedMs - 80);
       corrected = true;
     }
 
     if (corrected) {
-      writeJson(timingsFile, { translation: timings }, ctx);
+      writeJson(splitAudioTimingsFile, { translation: timings }, ctx);
+      writeJson(timingsFile, { translation: intentTimings }, ctx);
     }
   }
 
-
-	writeJson(timingsFile, { translation: timings }, ctx);
+	writeJson(timingsFile, { translation: intentTimings }, ctx);
 
   setStage(taskDir, 'split_audio', { status: 'success', completed_at: nowISO(), progress: 100, last_message: 'Split' });
 }
