@@ -112,9 +112,9 @@ export function TaskDetailPage(props: Props) {
     if (err) return []
     return (data.translation || []).map((item, i: number) => ({
       index: i,
-      text: item.dst || '',
-      startMs: item.start,
-      endMs: item.end,
+      text: item.dst,
+      startMs: item.actual_start,
+      endMs: item.actual_end ,
     }));
   };
   const split_audio_timings_q = useQuery(
@@ -163,6 +163,7 @@ export function TaskDetailPage(props: Props) {
       text: item.text,
       startMs: item.start,
       endMs: item.end,
+      raw: item,
     }));
   };
 
@@ -186,7 +187,7 @@ export function TaskDetailPage(props: Props) {
     }
     const asr_ocr_fix_llm_ = asr_ocr_fix_llm();
     if (asr_ocr_fix_llm_.length) {
-      result.push({ id: 'asr_ocr_fix_llm', label: 'asr_ocr_fix/asr_ocr_fused_llm_fix.json', segments: asr_ocr_fix_llm_, color: '#3b82f6' });
+      result.push({ id: 'asr_ocr_fix', label: 'asr_ocr_fix/asr_ocr_fused_llm_fix.json', segments: asr_ocr_fix_llm_, color: '#a855f7', filePath: `${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json` });
     }
     const asr = asrSegments();
     if (asr.length) {
@@ -229,6 +230,7 @@ export function TaskDetailPage(props: Props) {
           currentTime={currentTime()}
           fps={fps()}
           onSeek={onSeek}
+          taskDir={taskDir}
         />
       </div>
     </div>

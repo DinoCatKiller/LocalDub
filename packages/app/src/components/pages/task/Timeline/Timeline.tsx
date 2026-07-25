@@ -15,6 +15,7 @@ interface Props {
   currentTime: number;
   fps: FrameRate;
   onSeek: (ms: number) => void;
+  taskDir?: string;
 }
 
 export function Timeline(props: Props) {
@@ -110,6 +111,7 @@ export function Timeline(props: Props) {
             onSeek={props.onSeek}
             trackColor={trackColor}
             onScroll={handleTrackScroll}
+            taskDir={props.taskDir}
           />
 
           {/* Playhead */}

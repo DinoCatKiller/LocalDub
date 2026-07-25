@@ -26,6 +26,13 @@ function filterSubPath(subPath: string): string {
 	return subPath.replace(/\\/g, '/').replace(/:/g, '\\:');
 }
 
+// 构造 subtitles 滤镜参数。用 filename= 显式包裹路径，
+// 让 libass 明确整段是文件路径；并对路径内单引号转义。
+function subFilterArg(subPath: string, style: string): string {
+	const escaped = filterSubPath(subPath).replace(/'/g, "\\'");
+	return `subtitles=filename='${escaped}':force_style='${style}'`;
+}
+
 function dstLangFromTranslation(translation: any[]): string {
 	return translation.find((t: any) => t.dst_lang)?.dst_lang || 'zh';
 }
@@ -119,7 +126,7 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 				'-i',
 				video_file_path,
 				'-vf',
-				`subtitles='${filterSubPath(subPath)}':force_style='${style}'`,
+				subFilterArg(subPath, style),
 				'-map',
 				'0:v:0',
 				'-map',
@@ -148,7 +155,7 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 
 		const data = await read_timings(ctx)
 		const dstLang = dstLangFromTranslation(data.translation);
-		const subPath = join(mergeVideoDir, `subtitles.${dstLang}.srt`);
+		const subPath = join(mergeVideoDir, `${dstLang}.srt`);
 		writeSrt(data.translation, ctx, subPath);
 		const style = probeStyle(video_file_path, dstLang, probeOverrides);
 
@@ -176,7 +183,7 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 				'-i',
 				mixedAudio,
 				'-vf',
-				`subtitles='${filterSubPath(subPath)}':force_style='${style}'`,
+				subFilterArg(subPath, style),
 				'-map',
 				'0:v:0',
 				'-map',

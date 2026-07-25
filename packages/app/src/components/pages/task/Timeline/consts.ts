@@ -5,6 +5,7 @@ export interface TrackSegment {
   text: string;
   startMs: number;
   endMs: number;
+  raw?: unknown;
 }
 
 export interface Track {
@@ -12,6 +13,7 @@ export interface Track {
   label: string;
   segments: TrackSegment[];
   color?: string;
+  filePath?: string;
 }
 
 export const BASE_PX_PER_MS = 0.05;
