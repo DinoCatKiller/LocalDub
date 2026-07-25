@@ -3,7 +3,7 @@ import { readJson, writeJson, writeFile, ensureDir, writeFileSync, rmSync } from
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { writeWav } from '@repo/voxlab';
-import type { TtsSegment } from './07_tts/types';
+import type { TtsFile, TtsSegment } from './07_tts/types';
 
 import { emitLog, ffmpeg, nowISO, probeDuration, read_split_audio_timings, readTaskLanguages, tts_filepath } from '@repo/core/stages/utils/utils.ts';
 import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
@@ -91,14 +91,25 @@ export async function stageTts(
 
 	const isStart = ctx.input?.task.action === 'start';
 	const onlyIndices = isStart ? undefined : ttsCfg.onlyIndices
-	// 真正的 TTS 主循环。i 是 0-based 数组索引，idx = i + 1 是 1-based 文件名（0001.wav ~ 000N.wav）
+
+	let existingSegments: Map<number, TtsSegment> | undefined;
+	if (onlyIndices?.length) {
+		const existingPath = tts_filepath(taskDir);
+		if (existsSync(existingPath)) {
+			const existing = await readJson<TtsFile>(existingPath, ctx);
+			existingSegments = new Map(existing.segments.map(s => [s.seg_idx, s]));
+		}
+	}
+
 	for (const [i, item] of translation.entries()) {
 		const idx = String(i + 1).padStart(4, '0');
 		const outPath = resolve(ttsWavDir, `${idx}.wav`);
 
-		// onlyIndices: 只处理指定索引，同时删除旧文件强制重新生成
-		if (onlyIndices?.length) {
-			if (!onlyIndices.includes(i + 1)) {
+		if (onlyIndices?.length && !onlyIndices.includes(i + 1)) {
+			const existing = existingSegments?.get(i + 1);
+			if (existing) {
+				ttsSegments.push(existing);
+			} else {
 				ttsSegments.push({
 					seg_idx: i + 1,
 					text: item.dst || '',
@@ -108,14 +119,14 @@ export async function stageTts(
 					tts_duration_ms: 0,
 					status: 'skipped',
 				});
-				skipped += 1;
-				renderProgress(i + 1, translation.length, tqdmStart);
-				continue;
 			}
-			// 在列表里 删除指定 {idx}.wav 文件
-			if (existsSync(outPath)) {
-				rmSync(outPath, { force: true });
-			}
+			skipped += 1;
+			renderProgress(i + 1, translation.length, tqdmStart);
+			continue;
+		}
+
+		if (onlyIndices?.length && existsSync(outPath)) {
+			rmSync(outPath, { force: true });
 		}
 
 		let refWav = join(vocalsDir, `${idx}.wav`);

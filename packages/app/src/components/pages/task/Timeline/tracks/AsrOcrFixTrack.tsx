@@ -73,15 +73,24 @@ function deleteAt(segments: TrackSegment[], index: number): TrackSegment[] {
 
 export function AsrOcrFixTrack(props: Props) {
   const { track, pxPerMs, onSeek, color } = props;
-
+  const mutation = useMutation(() => client.write_app_file_text.mutationOptions({
+    onMutate: (variables, context) => {
+      context.client.setQueryData(client.read_app_file_text.queryKey(variables[0]), variables[1])
+    },
+    onSuccess: (data, variables, onMutateResult, context) => {
+      context.client.invalidateQueries({
+        queryKey: client.read_app_file_text.queryKey(variables[0])
+      })
+    },
+  }));
   const handleInsertBefore = async (segIndex: number) => {
     const newSegments = insertAt(track.segments, segIndex, false);
-    await client.write_app_file_text.call([props.filePath, serializeSegments(newSegments)]);
+    await mutation.mutateAsync([props.filePath, serializeSegments(newSegments)]);
   };
 
   const handleInsertAfter = async (segIndex: number) => {
     const newSegments = insertAt(track.segments, segIndex, true);
-    await client.write_app_file_text.call([props.filePath, serializeSegments(newSegments)]);
+    await mutation.mutateAsync([props.filePath, serializeSegments(newSegments)]);
   };
 
   const handleEdit = (segIndex: number) => {
@@ -93,13 +102,7 @@ export function AsrOcrFixTrack(props: Props) {
       const [text, setText] = createSignal(seg.text);
       const [startMs, setStartMs] = createSignal(seg.startMs);
       const [endMs, setEndMs] = createSignal(seg.endMs);
-      const mutation = useMutation(() => client.write_app_file_text.mutationOptions({
-        onSuccess: (data, variables, onMutateResult, context) => {
-          context.client.invalidateQueries({
-            queryKey: client.read_app_file_text.queryKey(variables[0])
-          })
-        },
-      }));
+
       const onSave = async () => {
         const newSegments = track.segments.map((s, i) =>
           i === segIndex ? { ...s, text: text(), startMs: startMs(), endMs: endMs() } : s,

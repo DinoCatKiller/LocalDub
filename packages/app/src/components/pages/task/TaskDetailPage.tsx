@@ -170,15 +170,16 @@ export function TaskDetailPage(props: Props) {
     }));
   };
 
-
   const asr_ocr_fix_llm_q = useQuery(
-    () => client.read_app_file_json.queryOptions(`${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json`, {
+    () => client.read_app_file_text.queryOptions(`${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json`, {
       enabled: stage_map().asr_ocr_fix.status === 'success',
     }),
   );
   const asr_ocr_fix_llm = () => {
     if (!asr_ocr_fix_llm_q.data) return [];
-    return (asr_ocr_fix_llm_q.data as object as AsrOcrFile).result.segments.map((item, i: number) => ({
+    const [data, err] = to<AsrOcrFile>(() => JSON.parse(asr_ocr_fix_llm_q.data))
+    if (err) return []
+    return data.result.segments.map((item, i: number) => ({
       index: i,
       text: item.text,
       startMs: item.start,
