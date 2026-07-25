@@ -34,7 +34,7 @@ export function TaskDetailPage(props: Props) {
   const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(taskDir));
   const stage_map = () => stages_to_map(taskCtxQ.data?.stages ?? []);
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
-
+  const watch_task_tree_q = useQuery(() => client.watch_task_tree.streamedOptions(`${props.groupId}/${props.taskId}`))
   const onVideoReady = (ref: HTMLVideoElement) => {
     setVideoRef(ref);
     setDuration(ref.duration * 1000);

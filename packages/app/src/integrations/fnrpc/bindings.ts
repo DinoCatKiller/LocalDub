@@ -120,6 +120,19 @@ export type OrtInfo = {
 	backends: OrtBackend[],
 };
 
+/**  A single filesystem change delivered to a watcher. */
+export type PathEvent = {
+	path: string,
+	kind: PathEventKind | null,
+};
+
+/**
+ *  What happened to a watched path. Mirrors the subset of `notify::EventKind`
+ *  we care about; `Rescan` is emitted when the OS watcher loses sync and the
+ *  consumer should re-read state from disk rather than trust incremental events.
+ */
+export type PathEventKind = "Removed" | "Created" | "Changed" | "Rescan";
+
 export type PlatformInfo = PlatformInfo_Serialize | PlatformInfo_Deserialize;
 
 export type PlatformInfo_Deserialize = {
@@ -271,6 +284,7 @@ export type Procedures = {
   read_app_file_bin: { kind: "query"; method: "GET"; input: string; output: number[]; error: RpcErr };
   list_app_directory: { kind: "query"; method: "GET"; input: string; output: DirEntry[]; error: RpcErr };
   watch_task_log: { kind: "subscribe"; method: "GET"; input: string; output: string; error: RpcErr };
+  watch_task_tree: { kind: "subscribe"; method: "GET"; input: string; output: PathEvent; error: RpcErr };
   tick: { kind: "subscribe"; method: "GET"; input: bigint; output: bigint; error: RpcErr };
   get_group_list: { kind: "query"; method: "GET"; input: null; output: GroupInfo[]; error: RpcErr };
   get_task_ctx: { kind: "query"; method: "GET"; input: string; output: TaskCtx; error: RpcErr };
@@ -292,6 +306,7 @@ export const __procedureMeta = {
   read_app_file_bin: { kind: "query", method: "GET" },
   list_app_directory: { kind: "query", method: "GET" },
   watch_task_log: { kind: "subscribe", method: "GET" },
+  watch_task_tree: { kind: "subscribe", method: "GET" },
   tick: { kind: "subscribe", method: "GET" },
   get_group_list: { kind: "query", method: "GET" },
   get_task_ctx: { kind: "query", method: "GET" },
