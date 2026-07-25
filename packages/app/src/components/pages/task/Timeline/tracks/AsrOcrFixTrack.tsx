@@ -83,14 +83,14 @@ export function AsrOcrFixTrack(props: Props) {
       })
     },
   }));
-  const handleInsertBefore = async (segIndex: number) => {
+  const handleInsertBefore =  (segIndex: number) => {
     const newSegments = insertAt(track.segments, segIndex, false);
-    await mutation.mutateAsync([props.filePath, serializeSegments(newSegments)]);
+     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
 
-  const handleInsertAfter = async (segIndex: number) => {
+  const handleInsertAfter =  (segIndex: number) => {
     const newSegments = insertAt(track.segments, segIndex, true);
-    await mutation.mutateAsync([props.filePath, serializeSegments(newSegments)]);
+     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
 
   const handleEdit = (segIndex: number) => {
@@ -103,12 +103,11 @@ export function AsrOcrFixTrack(props: Props) {
       const [startMs, setStartMs] = createSignal(seg.startMs);
       const [endMs, setEndMs] = createSignal(seg.endMs);
 
-      const onSave = async () => {
+      const onSave = () => {
         const newSegments = track.segments.map((s, i) =>
           i === segIndex ? { ...s, text: text(), startMs: startMs(), endMs: endMs() } : s,
         );
-        await mutation.mutateAsync([props.filePath, serializeSegments(newSegments)]);
-
+         mutation.mutate([props.filePath, serializeSegments(newSegments)]);
         closeModal();
       };
 
@@ -157,9 +156,9 @@ export function AsrOcrFixTrack(props: Props) {
     }, { title: "编辑片段" });
   };
 
-  const handleDelete = async (segIndex: number) => {
+  const handleDelete =  (segIndex: number) => {
     const newSegments = deleteAt(track.segments, segIndex);
-    await mutation.mutateAsync([props.filePath, serializeSegments(newSegments)]);
+    mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
 
   return (
