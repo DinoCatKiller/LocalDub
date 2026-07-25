@@ -1,7 +1,7 @@
 import { TaskCtx } from "../context/context";
 import { srtTime } from "./utils";
 import { writeFile } from "./fileOps";
-import { Timing } from "../stages/merge_audio";
+import { Timing } from "../stages/merge_audio/types";
 
 /**
  *  按标点切分长句（,, ,, 。, ? 等），但保护配对符号（《》、「」 里的内容不被切开）

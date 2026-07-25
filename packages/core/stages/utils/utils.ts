@@ -10,8 +10,8 @@ import { SubtitleSource, TargetLang } from '@repo/core/cmd/tasks/input';
 import { readJson } from '../../utils/fileOps';
 import { TranslateFile } from '../05_translate/type';
 import { SplitAudioFile, SplitAudioTimingFile } from '../06_split_audio/types';
-import { TimingsFile } from '../merge_audio';
 import { TaskStage } from '../../context/types';
+import { TimingsFile } from '../merge_audio/types';
 
 /** Get the downloaded video source path for a session. */
 export function video_source_path(ctx: TaskCtx): string {

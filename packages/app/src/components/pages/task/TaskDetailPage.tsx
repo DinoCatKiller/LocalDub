@@ -19,11 +19,11 @@ import {
 import { TranslateFile } from "@repo/core/stages/05_translate/type";
 import { AsrResult } from "@repo/core/stages/asr/types";
 import { stages_to_map } from "@repo/core/stages/utils/filtering";
-import { TimingsFile } from "@repo/core/stages/merge_audio";
 import { to } from "@repo/shared/lib/utils/try";
 import { SplitAudioFile, SplitAudioTiming, SplitAudioTimingFile } from "@repo/core/stages/06_split_audio/types";
 import { AsrOcrFile } from "@repo/core/ml/subtitle_ocr/types";
 import type { TtsFile } from "@repo/core/stages/07_tts/types";
+import { TimingsFile } from "@repo/core/stages/merge_audio/types";
 
 interface Props {
   groupId: string;

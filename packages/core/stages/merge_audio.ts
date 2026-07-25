@@ -4,21 +4,23 @@ import { join } from 'node:path';
 import { readTaskLanguages, ffmpeg, nowISO, probeSampleRate, probeDuration, split_audio_path, timings_filepath, read_split_audio, read_split_audio_timings } from '@repo/core/stages/utils/utils.ts';
 import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
 import { SplitAudioTiming } from './06_split_audio/types';
+import { Timing } from './merge_audio/types';
 
-export interface Timing extends SplitAudioTiming {
-  original_duration_ms: number;//end_time - start_time(原始时间槽长度
-  tts_duration_ms: number; // TTS 生成的音频时长
-  stretched_duration_ms: number; // 去尾静音 + rubberband 拉伸后时长
-  stretch_ratio: number; // 加速(拉伸)比例(>1.0 = 加速)
-  drift_ms: number; //
-  advance_ms: number // 从前面间隙借的时间（实际比 start_time 提前
-  delay_ms: number; // 从后面间隙借的时间（实际比 end_time 延后
-  actual_start: number; // 实际开始时间（考虑了前面间隙的提前）
-  actual_end: number; // 实际结束时间（考虑了后面间隙的延后）
-}
-export interface TimingsFile {
-  translation: Timing[];
-}
+/**
+ * `merge_audio.ts` 负责把 TTS 生成的各段音频合并成一条完整配音轨，同时做 timing 微调使配音与原视频时间线对齐。
+ * **流程：**
+ 1. 读 `split_audio/timings.json` 得到每段的视频意图起止时间，构建 TTS wav 路径
+ 2. 逐段处理：
+    - 去尾静音（`areverse + silenceremove` 反向去尾，不伤内部停顿）
+    - 计算 **advance**（从前间隙借时间，让段略微提前开始）和 **delay**（从后间隙借时间）
+    - 若 TTS 时长 ≤ 可用槽位 → 直接复制；超了则 `rubberband` 加速（上限 `maxSpeed` 1.35x）
+    - **drift** 累加传到下一段，防止误差累积偏移
+ 3. 各段之间如果有空隙，插入静音填充
+ 4. 用 ffmpeg concat 合并所有片段为 `merge_audio/audio_dubbing.wav`
+ 5. 输出 `merge_audio/timings.json` 含每段实际起止时间、拉伸比、drift 等
+
+ 核心设计点：drift 传播 + advance/delay 借间隙时间，让配音节奏自然而不破坏整体同步。
+ */
 export async function stageMergeAudio(ctx: TaskCtx) {
   const taskId = ctx.task.id;
   const taskDir = ctx.task.task_dir
