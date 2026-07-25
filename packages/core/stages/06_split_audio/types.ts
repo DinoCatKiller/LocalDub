@@ -17,6 +17,6 @@ export interface SplitAudioTiming extends SplitAudioItem {
 export interface SplitAudioFile {
   translation: SplitAudioItem[]
 }
-export interface SplitAudioWithVadFile {
+export interface SplitAudioTimingFile {
   translation: SplitAudioTiming[]
 }

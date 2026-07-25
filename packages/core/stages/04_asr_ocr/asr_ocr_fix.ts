@@ -43,7 +43,6 @@ export async function stageAsrOcrFix(ctx: TaskCtx) {
 	const asrSplitData = await readJson(asrSplitFile, ctx);
 	const ocrFramesData = await readJson(ocrFramesFile, ctx);
 
-
 	const asrSegs: Segment[] = (asrSplitData.result?.segments ?? []).map((s: any) => ({
 		text: s.text,
 		start: s.start,

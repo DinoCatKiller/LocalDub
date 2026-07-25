@@ -9,7 +9,7 @@ import { _readCtx, TaskCtx,  getTaskId,  listStage,  readCtx, Task,  } from '@re
 import { SubtitleSource, TargetLang } from '@repo/core/cmd/tasks/input';
 import { readJson } from '../../utils/fileOps';
 import { TranslateFile } from '../05_translate/type';
-import { SplitAudioFile } from '../06_split_audio/types';
+import { SplitAudioFile, SplitAudioTimingFile } from '../06_split_audio/types';
 import { TimingsFile } from '../merge_audio';
 import { TaskStage } from '../../context/types';
 
@@ -237,7 +237,7 @@ export function read_split_audio(ctx: TaskCtx) {
 }
 export function read_split_audio_timings(ctx: TaskCtx) {
   const filepath = split_audio_timings_path(ctx.task.task_dir);
-  return readJson<SplitAudioFile>(filepath, ctx);
+  return readJson<SplitAudioTimingFile>(filepath, ctx);
 }
 
 /**

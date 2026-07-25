@@ -21,6 +21,8 @@ import { AsrResult } from "@repo/core/stages/asr/types";
 import { stages_to_map } from "@repo/core/stages/utils/filtering";
 import { TimingsFile } from "@repo/core/stages/merge_audio";
 import { to } from "@repo/shared/lib/utils/try";
+import { SplitAudioFile, SplitAudioTiming, SplitAudioTimingFile } from "@repo/core/stages/06_split_audio/types";
+import { AsrOcrFile } from "@repo/core/ml/subtitle_ocr/types";
 
 interface Props {
   groupId: string;
@@ -115,15 +117,76 @@ export function TaskDetailPage(props: Props) {
       endMs: item.end,
     }));
   };
+  const split_audio_timings_q = useQuery(
+    () => client.read_app_file_text.queryOptions(`${taskDir}/split_audio/timings.json`, {
+      enabled: stage_map().split_audio.status === 'success',
+    }),
+  );
+  const split_audio_timings = () => {
+    if (!split_audio_timings_q.data) return [];
+    const [data, err] = to<SplitAudioTimingFile>(() => JSON.parse(split_audio_timings_q.data))
+    if (err) return []
+    return (data.translation || []).map((item, i: number) => ({
+      index: i,
+      text: item.dst || '',
+      startMs: item.start,
+      endMs: item.end,
+    }));
+  };
+  const split_audio_q = useQuery(
+    () => client.read_app_file_text.queryOptions(`${taskDir}/split_audio/split_audio.json`, {
+      enabled: stage_map().split_audio.status === 'success',
+    }),
+  );
+  const split_audio = () => {
+    if (!split_audio_q.data) return [];
+    const [data, err] = to<SplitAudioFile>(() => JSON.parse(split_audio_q.data))
+    if (err) return []
+    return (data.translation || []).map((item, i: number) => ({
+      index: i,
+      text: item.dst || '',
+      startMs: item.start,
+      endMs: item.end,
+    }));
+  };
+  const asr_ocr_fix_llm_q = useQuery(
+    () => client.read_app_file_text.queryOptions(`${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json`, {
+      enabled: stage_map().asr_ocr_fix.status === 'success',
+    }),
+  );
+  const asr_ocr_fix_llm = () => {
+    if (!asr_ocr_fix_llm_q.data) return [];
+    const [data, err] = to<AsrOcrFile>(() => JSON.parse(asr_ocr_fix_llm_q.data))
+    if (err) return []
+    return (data.result.segments || []).map((item, i: number) => ({
+      index: i,
+      text: item.text,
+      startMs: item.start,
+      endMs: item.end,
+    }));
+  };
+
   const tracks = (): Track[] => {
     const result: Track[] = [];
     const merge_audio = merge_audio_segments();
     if (merge_audio.length) {
       result.push({ id: 'merge_audio', label: 'merge_audio/timings.json', segments: merge_audio, color: '#3b82f6' });
     }
+    const split_audio_timings_data = split_audio_timings();
+    if (split_audio_timings_data.length) {
+      result.push({ id: 'split_audio_timings_data', label: 'split_audio/timings.json', segments: split_audio_timings_data, color: '#3b82f6' });
+    }
+    const split_audio_data = split_audio();
+    if (split_audio_data.length) {
+      result.push({ id: 'split_audio', label: 'split_audio/split_audio.json', segments: split_audio_data, color: '#3b82f6' });
+    }
     const trans = transSegments();
     if (trans.length) {
       result.push({ id: 'translation', label: `translation.${transLang()}.json`, segments: trans, color: '#22c55e' });
+    }
+    const asr_ocr_fix_llm_ = asr_ocr_fix_llm();
+    if (asr_ocr_fix_llm_.length) {
+      result.push({ id: 'asr_ocr_fix_llm', label: 'asr_ocr_fix/asr_ocr_fused_llm_fix.json', segments: asr_ocr_fix_llm_, color: '#3b82f6' });
     }
     const asr = asrSegments();
     if (asr.length) {
