@@ -57,7 +57,7 @@ export async function stageAsrOcrFix(ctx: TaskCtx) {
 
 	// --- Re-sample: supplement frames around high-confidence single-frame gaps ---
 	const RESAMPLE_CONF_THRESH = 0.6;
-	const RESAMPLE_STEP_MS = 100;
+	const RESAMPLE_STEP_MS = 200;
 	const RESAMPLE_RANGE_MS = 500;
 
 	const isolatedInfos: string[] = [];

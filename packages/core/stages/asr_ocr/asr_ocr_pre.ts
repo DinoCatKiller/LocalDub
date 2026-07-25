@@ -166,11 +166,11 @@ export async function stageAsrOcrPre(ctx: TaskCtx) {
 			while (fwd <= bwd) {
 				allTimestamps.add(fwd);
 				if (fwd !== bwd) allTimestamps.add(bwd);
-				fwd += 100;
-				bwd -= 100;
+				fwd += 250;
+				bwd -= 250;
 			}
 		} else {
-			for (let t = Math.round(seg.end); t >= seg.start; t -= 500) {
+			for (let t = Math.round(seg.end); t >= seg.start; t -= 1000) {
 				allTimestamps.add(Math.round(t));
 			}
 		}
