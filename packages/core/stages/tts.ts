@@ -171,6 +171,8 @@ export async function stageTts(
 			writeWav(samples, outPath, 48000);
 			generated += 1;
 		} catch (e) {
+			emitLog(taskDir, `[tts] [ERROR] Segment ${idx} failed: ${e instanceof Error ? e.message : String(e)}`);
+
 			errors += 1;
 			emitLog(taskDir, `[tts] [ERROR] Segment ${idx} failed: ${JSON.stringify(e)}`);
 			writeFile(outPath, Buffer.alloc(44), ctx);

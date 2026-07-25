@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "packages/benchmark/ocr/oar-rs", "packages/bridge", "packages/config-rs", "packages/core-rs", "packages/device-rs",
-    "packages/separate/demucs_burn", "packages/subtitle-rust", "packages/time", "packages/voxcpm-burn", "packages/app/src-tauri"
+    "packages/subtitle-rust", "packages/time", "packages/app/src-tauri"
 ]
 resolver = "3"
 
@@ -15,6 +15,6 @@ specta-typescript = "0.0.12"
 lto = "fat"
 codegen-units = 1
 
-[patch.crates-io]
-burn-cubecl = { path = "submodule/voxcpm-rs/vendor/patched/burn-cubecl" }
-cubecl-spirv = { path = "submodule/voxcpm-rs/vendor/patched/cubecl-spirv" }
+# [patch.crates-io] — commented out: needs submodule/voxcpm-rs (git@github.com: SSH only)
+# burn-cubecl = { path = "submodule/voxcpm-rs/vendor/patched/burn-cubecl" }
+# cubecl-spirv = { path = "submodule/voxcpm-rs/vendor/patched/cubecl-spirv" }

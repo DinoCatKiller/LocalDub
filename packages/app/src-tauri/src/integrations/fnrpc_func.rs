@@ -7,7 +7,7 @@ use crate::{
         file_op::{list_app_directory, read_app_file_bin, read_app_file_text, write_app_file_text},
         other::device_info,
         servers::{check_torch, find_server, start_torch, start_voxcpm, stop_torch, stop_voxcpm},
-        tasks::{get_group_list, get_task_ctx, log::watch_task_log},
+        tasks::{get_group_list, get_task_ctx, resume_task, log::watch_task_log},
     },
 };
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -50,8 +50,10 @@ pub fn build_fn_rpc_router() -> fnrpc::router::RpcRouter<Ctx> {
         .route_fn(start_voxcpm)
         .route_fn(stop_voxcpm)
         .route_fn(device_info)
+        .route_fn(resume_task)
         .layer(TracingLayer)
         .build()
+
     // .query(crate::feat::demo::func::greet)
     // .query(crate::feat::demo::func::add)
     // .query(crate::feat::demo::func::get_user)

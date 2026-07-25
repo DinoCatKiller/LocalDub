@@ -25,6 +25,7 @@ export function TaskDetailPage(props: Props) {
   const taskDir = `workfolder/${props.groupId}/${props.taskId}`;
   const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(taskDir));
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
+  const [resumeFromStage, setResumeFromStage] = createSignal<string | null>(null);
 
   // 视频源地址（默认取 video_source.mp4）
   // const videoUrl = () => taskCtxQ.data?.video_source_path
@@ -97,17 +98,21 @@ export function TaskDetailPage(props: Props) {
   };
 
   const tracks = (): Track[] => {
-    const result: Track[] = [];
-    const asr = asrSegments();
-    if (asr.length) {
-      result.push({ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6' });
+    if (!resumeFromStage()) return [];
+
+    // asr_ocr_pre 的重跑依赖上一阶段 asr 的输出
+    if (resumeFromStage() === 'asr_ocr_pre') {
+      const asr = asrSegments();
+      return asr.length
+          ? [{ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6' }]
+          : [];
     }
-    const trans = transSegments();
-    if (trans.length) {
-      result.push({ id: 'translation', label: `translation.${transLang()}.json`, segments: trans, color: '#22c55e' });
-    }
-    return result;
+
+    // 后续其他阶段在此扩展，例如：
+    // if (resumeFromStage() === 'translate') { ... }
+    return [];
   };
+
 
   // ContentPanel 暴露给 FileTree 的 openFile 回调
   // const handleFileOpen = (_name: string, path: string) => {
@@ -128,9 +133,13 @@ export function TaskDetailPage(props: Props) {
           <p>Loading...</p>
         </Show>
         <Show when={taskCtxQ.isSuccess} >
-          <TaskControlPanel ctx={taskCtxQ.data!}
-            // onOpenFile={(name, path) => handleFileOpen(name, path)}
+          <TaskControlPanel
+              ctx={taskCtxQ.data!}
+              resumeFromStage={resumeFromStage()}
+              onResumeFrom={setResumeFromStage}
           />
+
+
         </Show>
         <div class="flex-1 min-w-0 flex flex-col">
           <ContentPanel
@@ -145,14 +154,19 @@ export function TaskDetailPage(props: Props) {
       </div>
 
       {/* 下层：时间线轨道 */}
+
+      <Show when={resumeFromStage() === 'asr_ocr_pre'}>
       <div class="flex-1">
-        <Timeline
-          tracks={tracks()}
-          duration={duration()}
-          currentTime={currentTime()}
-          onSeek={onSeek}
-        />
-      </div>
+          <Timeline
+              tracks={tracks()}
+              duration={duration()}
+              currentTime={currentTime()}
+              onSeek={onSeek}
+          />
+        </div>
+      </Show>
+
+
     </div>
   );
 }
