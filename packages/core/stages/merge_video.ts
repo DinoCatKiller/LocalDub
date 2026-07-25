@@ -15,7 +15,7 @@ import {
 	defaultFont,
 	video_source_path,
     timings_filepath,
-    split_audio_timings_filepath,
+    split_audio_path,
     read_timings,
 } from '@repo/core/stages/utils/utils';
 import { startLog } from './utils/log.ts';
@@ -91,7 +91,7 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 		const translateEnabled = ctx.input?.stages?.translate?.enabled ?? true;
 		let data: { translation: any[] };
 		if (vadAlign) {
-			data = await readJson(split_audio_timings_filepath(taskDir), ctx);
+			data = await readJson(split_audio_path(taskDir), ctx);
 		} else if (translateEnabled) {
 			const { targetLanguage: dstLangCode } = readTaskLanguages(ctx);
 			const trFile = translationFilePath(taskDir, dstLangCode);

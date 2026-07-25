@@ -1,5 +1,5 @@
 import { TaskCtx, writeCtx } from '@repo/core/context/context';
-import { stageSplitAudio } from '@repo/core/stages/split_audio';
+import { stageSplitAudio } from '@repo/core/stages/06_split_audio/split_audio';
 import { ensureDir } from '@repo/core/utils/fileOps';
 import { join, resolve } from 'node:path';
 import { existsSync } from 'node:fs';

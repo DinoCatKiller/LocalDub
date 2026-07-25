@@ -19,6 +19,8 @@ import {
 import { TranslateFile } from "@repo/core/stages/05_translate/type";
 import { AsrResult } from "@repo/core/stages/asr/types";
 import { stages_to_map } from "@repo/core/stages/utils/filtering";
+import { TimingsFile } from "@repo/core/stages/merge_audio";
+import { to } from "@repo/shared/lib/utils/try";
 
 interface Props {
   groupId: string;
@@ -60,7 +62,7 @@ export function TaskDetailPage(props: Props) {
   // ASR 字幕段
   const asrQuery = useQuery(
     () => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`, {
-      // enabled: stage_map().asr.status
+      enabled: stage_map().asr.status === 'success'
     }),
   );
 
@@ -78,10 +80,9 @@ export function TaskDetailPage(props: Props) {
   };
 
   const transLang = () => taskCtxQ.data?.target_language;
-
   const transQuery = useQuery(
     () => client.read_app_file_text.queryOptions(`${taskDir}/translate/translation.${transLang()}.json`, {
-      enabled: !!transLang(),
+      enabled: stage_map().translate.status === 'success',
     }),
   );
 
@@ -98,15 +99,35 @@ export function TaskDetailPage(props: Props) {
     } catch { return []; }
   };
 
+  const merge_audio_q = useQuery(
+    () => client.read_app_file_text.queryOptions(`${taskDir}/merge_audio/timings.json`, {
+      enabled: stage_map().merge_audio.status === 'success',
+    }),
+  );
+  const merge_audio_segments = () => {
+    if (!merge_audio_q.data) return [];
+    const [data, err] = to<TimingsFile>(() => JSON.parse(merge_audio_q.data))
+    if (err) return []
+    return (data.translation || []).map((item, i: number) => ({
+      index: i,
+      text: item.dst || '',
+      startMs: item.start,
+      endMs: item.end,
+    }));
+  };
   const tracks = (): Track[] => {
     const result: Track[] = [];
-    const asr = asrSegments();
-    if (asr.length) {
-      result.push({ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6' });
+    const merge_audio = merge_audio_segments();
+    if (merge_audio.length) {
+      result.push({ id: 'merge_audio', label: 'merge_audio/timings.json', segments: merge_audio, color: '#3b82f6' });
     }
     const trans = transSegments();
     if (trans.length) {
       result.push({ id: 'translation', label: `translation.${transLang()}.json`, segments: trans, color: '#22c55e' });
+    }
+    const asr = asrSegments();
+    if (asr.length) {
+      result.push({ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6' });
     }
     return result;
   };

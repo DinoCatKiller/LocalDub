@@ -4,7 +4,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { writeWav } from '@repo/voxlab';
 
-import { emitLog, ffmpeg, nowISO, read_split_audio_timings, readTaskLanguages, split_audio_timings_filepath } from '@repo/core/stages/utils/utils.ts';
+import { emitLog, ffmpeg, nowISO, read_split_audio, readTaskLanguages, split_audio_path } from '@repo/core/stages/utils/utils.ts';
 import { TaskCtx, setStage, setTask } from '@repo/core/context/context.ts';
 import { startLog } from './utils/log.ts';
 import { newVoxCPMEngine } from '@repo/core/ml/voxcpm/voxcpm';
@@ -50,8 +50,7 @@ export async function stageTts(
 	ensureDir(ttsWavDir, ctx);
 	if (ttsCfg.refAudioX2) {ensureDir(doubledDir, ctx);}
 
-
-	const { translation } = await read_split_audio_timings(ctx);
+	const { translation } = await read_split_audio(ctx);
 
 	if (!ttsCfg.skipExisting) {
 		const anyTts = readdirSync(ttsWavDir).find((f) => f.endsWith('.wav'));
@@ -177,7 +176,7 @@ export async function stageTts(
 	process.stdout.write('\n');
 
 	const genSec = genMs / 1000;
-	const audioSec = translation.reduce((s, t) => s + (t.end_time - t.start_time), 0) / 1000;
+	const audioSec = translation.reduce((s, t) => s + (t.end - t.start), 0) / 1000;
 	const rtf = audioSec > 0 && genSec > 0 ? genSec / audioSec : 0;
 
 	emitLog(taskDir, `[TTS] Batch complete: ${generated} generated, ${skipped} skipped, ${errors} errors`);
