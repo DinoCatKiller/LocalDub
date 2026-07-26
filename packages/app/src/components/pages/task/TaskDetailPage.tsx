@@ -46,10 +46,8 @@ export function TaskDetailPage(props: Props) {
     const onRateChange = (rate: number) => { const v = videoRef(); if (v) v.playbackRate = rate; setPlaybackRate(rate); };
     const onSeek = (ms: number) => { const v = videoRef(); if (v) v.currentTime = ms / 1000; };
 
-    const asrQuery = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`, {
-      enabled: stage_map().asr?.status === 'success'
+    const asrQuery = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`));
 
-    }));
     const asrSegments = () => {
         if (!asrQuery.data) return [];
         try {
@@ -168,11 +166,11 @@ export function TaskDetailPage(props: Props) {
                 </div>
                 <AiReviewPanel />
             </div>
-
+            <Show when={resumeFromStage() === 'asr_ocr_pre'}>
                 <div class="flex-1">
-
                     <Timeline tracks={tracks()} duration={duration()} currentTime={currentTime()} fps={fps()} onSeek={onSeek} taskDir={taskDir} />
                 </div>
+            </Show>
 
 
         </div>

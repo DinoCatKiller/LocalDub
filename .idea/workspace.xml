@@ -8,82 +8,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2551b379-47ce-4525-9b26-520d4341f0ed" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/.agents/skills/solidjs-reactivity/SKILL.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/app/src-tauri/src/feat/tasks/tree.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/tracks/AsrOcrFixTrack.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/tracks/AsrTrack.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/tracks/SplitAudioTrack.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/tracks/TtsTrack.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/app/src/components/ui/audio-player.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/app/todo.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/core-rs/src/context/types.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/core/context/types.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/core/stages/05_translate/type.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/core/stages/05_translate/utils.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/core/stages/06_split_audio/types.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/core/stages/07_tts/types.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/core/stages/merge_audio/types.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/core/stages/utils/filtering.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/fs/Cargo.toml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/fs/src/event.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/fs/src/lib.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/fs/src/watcher.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/packages/ui-solid/base/context-menu.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/bun.lock" beforeDir="false" afterPath="$PROJECT_DIR$/bun.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src-tauri/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src-tauri/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src-tauri/src/bin/gen_fnrpc.rs" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src-tauri/src/bin/gen_fnrpc.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src-tauri/src/feat/file_op.rs" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src-tauri/src/feat/file_op.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src-tauri/src/feat/tasks/log.rs" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src-tauri/src/feat/tasks/log.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src-tauri/src/feat/tasks/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src-tauri/src/feat/tasks/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src-tauri/src/func.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src-tauri/src/integrations/fnrpc_func.rs" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src-tauri/src/integrations/fnrpc_func.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src-tauri/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src-tauri/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src/components/app/settings/DeviceInfo.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/components/app/settings/DeviceInfo.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src/components/pages/home/IndexPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/components/pages/home/IndexPage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/packages/app/src/components/pages/task/TaskDetailPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/TaskDetailPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/Timeline.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/Timeline.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/TimelineRuler.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/TimelineRuler.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/TimelineToolbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/TimelineToolbar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/TimelineTrackSide.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/TimelineTrackSide.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/TimelineTracks.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/TimelineTracks.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/consts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/components/pages/task/Timeline/consts.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src/integrations/fnrpc/bindings.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/integrations/fnrpc/bindings.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/src/routes/__root.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/src/routes/__root.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/app/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/packages/app/tsconfig.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/benchmark/ocr/compute/run-merge-audio.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/benchmark/ocr/compute/run-merge-audio.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/benchmark/ocr/compute/run-split-audio.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/benchmark/ocr/compute/run-split-audio.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/cli/architecture.md" beforeDir="false" afterPath="$PROJECT_DIR$/packages/cli/architecture.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core-rs/src/context/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core-rs/src/context/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/cmd/tasks/input.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/cmd/tasks/input.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/context/context.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/context/context.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/ml/demucs/cli/ggml_cli.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/ml/demucs/cli/ggml_cli.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/ml/demucs/separate-build.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/ml/demucs/separate-build.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/ml/llm/openai.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/ml/llm/openai.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/ml/subtitle_ocr/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/ml/subtitle_ocr/types.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/ml/whisper/runtime/ggml.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/ml/whisper/runtime/ggml.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/asr/asr.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/asr/asr.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/asr/asr_fix.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/asr/asr_fix.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/asr_ocr/asr_ocr.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/04_asr_ocr/asr_ocr.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/asr_ocr/asr_ocr_fix.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/04_asr_ocr/asr_ocr_fix.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/asr_ocr/asr_ocr_pre.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/04_asr_ocr/asr_ocr_pre.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/merge_audio.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/merge_audio/merge_audio.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/merge_video.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/merge_video.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/ocr/ocr.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/ocr/ocr.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/ocr/ocr_fix.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/ocr/ocr_fix.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/separate.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/separate.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/separate_after.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/separate_after.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/split_audio.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/06_split_audio/split_audio.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/translate.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/05_translate/translate.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/tts.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/tts.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/stages/utils/utils.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/utils/utils.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/tasks/pipeline-runner.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/tasks/pipeline-runner.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/core/utils/srt.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/utils/srt.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/shared/i18n/messages/en.json" beforeDir="false" afterPath="$PROJECT_DIR$/packages/shared/i18n/messages/en.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/packages/shared/i18n/messages/zh-cn.json" beforeDir="false" afterPath="$PROJECT_DIR$/packages/shared/i18n/messages/zh-cn.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/packages/core/stages/utils/filtering.ts" beforeDir="false" afterPath="$PROJECT_DIR$/packages/core/stages/utils/filtering.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -127,23 +54,23 @@
   <component name="ProjectViewState">
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;正在合并 main&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;G:/LocalDub/packages/cli&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
-    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;D:\\Intelji IDEA\\IntelliJ IDEA 2024.2.5\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "正在合并 main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "G:/LocalDub/packages/cli",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "ts.external.directory.path": "D:\\Intelji IDEA\\IntelliJ IDEA 2024.2.5\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="G:\LocalDub\packages\cli" />
@@ -178,7 +105,7 @@
       <workItem from="1784909163006" duration="20970000" />
       <workItem from="1784986720965" duration="11968000" />
       <workItem from="1785030948216" duration="1572000" />
-      <workItem from="1785032596369" duration="8526000" />
+      <workItem from="1785032596369" duration="9774000" />
     </task>
     <servers />
   </component>
