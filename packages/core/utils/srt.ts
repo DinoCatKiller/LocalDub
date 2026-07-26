@@ -1,6 +1,7 @@
 import { TaskCtx } from "../context/context";
 import { srtTime } from "./utils";
 import { writeFile } from "./fileOps";
+import { Timing } from "../stages/merge_audio/types";
 
 /**
  *  按标点切分长句（,, ,, 。, ? 等），但保护配对符号（《》、「」 里的内容不被切开）
@@ -141,17 +142,17 @@ function writeSrtFragments(
   }
 }
 
-export function writeSrt(translation: any[], ctx: TaskCtx, outputPath: string, useSource?: boolean) {
+export function writeSrt(translation: Timing[], ctx: TaskCtx, outputPath: string, useSource?: boolean) {
 	console.log(`Writing SRT length: ${translation.length}...`);
 	const lines: string[] = [];
 	let idx = 1;
 	for (const item of translation) {
-		const start = Math.floor(item.actual_start_time ?? item.start_time);
-		const end = Math.floor(item.actual_end_time ?? item.end_time);
+		const start = Math.floor(item.actual_start ?? item.start);
+		const end = Math.floor(item.actual_end ?? item.end);
 		// if (end <= start) continue;
 
 		const text = (
-			useSource ? (item.src || '').trim() : (item.dst || item.zh || '').trim()
+			useSource ? (item.src || '').trim() : (item.dst || item.src || '').trim()
 		);
 		if (!text) continue;
 		 // 默认一条 SRT（之前由 splitSubtitle 切分的逻辑已抽成 writeSrtFragments）
@@ -159,5 +160,65 @@ export function writeSrt(translation: any[], ctx: TaskCtx, outputPath: string, u
     idx++;
 	}
 
-	writeFile(outputPath, lines.join('\n'), ctx);
+	const content = lines.join('\n');
+	// 预检：在交给 ffmpeg 前拦截内容问题，避免其报出含糊的 "Unable to open"
+	validateSrtContent(content, outputPath);
+
+	writeFile(outputPath, content, ctx);
+}
+
+const SRT_TIME_RE = /^\d{2}:\d{2}:\d{2},\d{3} --> \d{2}:\d{2}:\d{2},\d{3}$/;
+
+/**
+ * 校验 SRT 文本内容是否可被 ffmpeg/libass 的 subtitles 滤镜正常读取。
+ * ffmpeg 在字幕文件内容有问题时往往只报模糊的 "Unable to open"，
+ * 这里在写盘前给出明确的错误信息（文件名 + 块号 + 原因）。
+ */
+export function validateSrtContent(content: string, filePath: string): void {
+	const rawLines = content.split('\n');
+	const blocks: string[][] = [];
+	let current: string[] = [];
+	for (const line of rawLines) {
+		if (line.trim() === '') {
+			if (current.length) blocks.push(current);
+			current = [];
+		} else {
+			current.push(line);
+		}
+	}
+	if (current.length) blocks.push(current);
+
+	if (blocks.length === 0) {
+		throw new Error(`SRT 预检失败 (${filePath}): 文件为空，没有任何字幕块`);
+	}
+
+	blocks.forEach((block, i) => {
+		const blockNo = i + 1;
+		if (block.length < 2) {
+			throw new Error(
+				`SRT 预检失败 (${filePath}): 第 ${blockNo} 块结构非法，期望 "序号 / 时间轴 / 文本"，实际 ${block.length} 行`,
+			);
+		}
+		if (!SRT_TIME_RE.test(block[1])) {
+			throw new Error(
+				`SRT 预检失败 (${filePath}): 第 ${blockNo} 块时间轴格式非法: "${block[1]}" (应为 HH:MM:SS,mmm --> HH:MM:SS,mmm)`,
+			);
+		}
+		const [s, e] = block[1].split(' --> ').map((t) => {
+			const [h, m, rest] = t.split(':');
+			const [s2, ms] = rest.split(',');
+			return (+h * 3600 + +m * 60 + +s2) * 1000 + +ms;
+		});
+		if (!(e > s)) {
+			throw new Error(
+				`SRT 预检失败 (${filePath}): 第 ${blockNo} 块时间轴非法，结束时间必须晚于开始时间 (${block[1]})`,
+			);
+		}
+		// 文本行不得包含 ffmpeg subtitles 滤镜无法处理的 NUL 字符
+		for (let li = 2; li < block.length; li++) {
+			if (block[li].includes('\u0000')) {
+				throw new Error(`SRT 预检失败 (${filePath}): 第 ${blockNo} 块文本含非法 NUL 字符`);
+			}
+		}
+	});
 }

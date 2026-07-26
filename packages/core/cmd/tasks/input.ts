@@ -42,6 +42,7 @@ const stagesList = [
 	'merge_audio',
 	'merge_video',
 ] as const;
+export type StageName = (typeof stagesList)[number];
 export enum StageNameEnum {
 	separate='separate',
 	separate_after='separate_after',
@@ -58,7 +59,6 @@ export enum StageNameEnum {
 	merge_audio='merge_audio',
 	merge_video='merge_video',
 }
-export type StageName = (typeof stagesList)[number];
 
 export const subtitleSourceList = ['asr', 'ocr', 'asr_ocr'] as const;
 export type SubtitleSource = (typeof subtitleSourceList)[number];

@@ -23,6 +23,14 @@ pub async fn read_app_file_text(relative_path: String) -> Result<String, String>
 }
 
 #[fnrpc::rpc_query]
+pub async fn read_app_file_json(relative_path: String) -> Result<serde_json::Value, String> {
+    let path = base_dir().join(&relative_path);
+    let text = fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+    serde_json::from_str(&text).map_err(|e| format!("Failed to parse {}: {}", path.display(), e))
+}
+
+#[fnrpc::rpc_query]
 pub async fn read_app_file_bin(relative_path: String) -> Result<Vec<u8>, String> {
     let path = base_dir().join(&relative_path);
     fs::read(&path).map_err(|e| format!("Failed to read {}: {}", path.display(), e))
@@ -34,7 +42,17 @@ pub async fn write_app_file_text(relative_path: String, content: String) -> Resu
     ensure_parent_dir(&path)?;
     fs::write(&path, &content).map_err(|e| format!("Failed to write {}: {}", path.display(), e))
 }
-
+#[fnrpc::rpc_mutate]
+pub async fn write_app_file_json(
+    relative_path: String,
+    content: serde_json::Value,
+) -> Result<(), String> {
+    let path = sanitize_relative_path(&relative_path)?;
+    ensure_parent_dir(&path)?;
+    let text = serde_json::to_string_pretty(&content)
+        .map_err(|e| format!("Failed to serialize: {}", e))?;
+    fs::write(&path, &text).map_err(|e| format!("Failed to write {}: {}", path.display(), e))
+}
 #[fnrpc::rpc_mutate]
 pub async fn write_app_file_binary(relative_path: String, content: Vec<u8>) -> Result<(), String> {
     let path = sanitize_relative_path(&relative_path)?;

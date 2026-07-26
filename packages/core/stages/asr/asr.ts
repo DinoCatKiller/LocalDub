@@ -6,7 +6,7 @@ import { homedir } from 'node:os';
 import { runStage, getTorchServerUrl } from '../../servers/client.ts';
 
 import {  emitLog, ffmpeg, nowISO, readTaskLanguages,video_source_path, vocalsPath, mixedVocalsPath, gatedVocalsPath } from '@repo/core/stages/utils/utils';
-import { AsrOptions } from './types.ts';
+import { AsrOptions, AsrResult } from './types.ts';
 import { parseAsrOutput } from './utils.ts';
 import { TaskCtx, setCtx, setStage } from '@repo/core/context/context.ts';
 import { pythonBin } from '@repo/config/path/bin';
@@ -56,17 +56,17 @@ export async function stageAsr(
 	const device = asrCfg?.device ?? 'cuda';
 	emitLog(taskDir, `[ASR] runtime=${runtime} device=${device}`);
 
-	const pyBin = pythonBin();
-	const { asrLanguage } = readTaskLanguages(ctx);
+  const pyBin = pythonBin();
+	 ctx.input.task.sourceLang
 
 	if (runtime === 'pytorch') {
-		emitLog(taskDir, `[ASR] Using Torch server (device=${device})`);
-		const {port} = await findServer('demucs_torch_server')
+		emitLog(taskDir, `[ASR] Using demucs_torch_server (device=${device})`);
+		const { port } = await findServer('demucs_torch_server')
 		const asrUrl = getTorchServerUrl(port);
 		const result = await runStage(asrUrl, 'asr', taskId, {
 			vocals_path: audioPath,
 			task_dir: taskDir,
-			language: asrLanguage || 'auto',
+			language: ctx.input.task.sourceLang || 'auto',
 			device,
 			word_timestamps: asrCfg?.wordsOutput ?? false,
 		});
@@ -80,7 +80,6 @@ export async function stageAsr(
 		}
 		if (r.detected_language) {
 			setCtx(taskDir, {
-				asr_language: r.detected_language,
 				runInfo: {
 					asr: {
 						engine: 'whisper-pytorch',
@@ -101,48 +100,53 @@ export async function stageAsr(
 				`[ASR] Audio duration ${Number(r.audio_duration_s).toFixed(1)}s`,
 			);
 		if (r.rtf) emitLog(taskDir, `[ASR] RTF ${r.rtf}`);
-	} else if (runtime === 'ggml') {
-		await asrWhisperCpp(ctx, audioPath, taskDir, asrLanguage || 'auto');
+	} else if (runtime === 'faster-whisper') {
+		await asrFasterWhisper({ ctx, taskId, audioPath, taskDir: taskDir, language: ctx.input.task.sourceLang, device, pythonBin: pyBin });
 	} else {
-		await asrFasterWhisper({ ctx, taskId, audioPath, taskDir: taskDir, language: asrLanguage, device, pythonBin: pyBin });
+		await asrWhisperCpp(ctx, audioPath, taskDir, ctx.input.task.sourceLang);
 	}
 
 	/**
 	 * asr 后处理, 避免 asr_fix 拿到多余数据
 	 */
+  const asrFile = join(taskDir, 'asr', 'asr.json');
+  if (!existsSync(asrFile)) {
+    throw new Error(`ASR file not found: ${asrFile}`);
+  }
+  const data = await readJson<AsrResult>(asrFile, ctx);
+  setCtx(taskDir, {
+		asr_language: data.detected_language,
+	});
 	// 统一过滤超出音频时长的幻觉段（所有路径 shared）
-	const asrDir = join(taskDir, 'asr');
-	const asrFile = join(asrDir, 'asr.json');
-	if (existsSync(asrFile)) {
-		const data = await readJson(asrFile, ctx);
-		const durationMs = data.audio_info?.duration ?? 0;
-		if (durationMs > 0 && data.result?.segments?.length) {
-			const before = data.result.segments.length;
-			data.result.segments = data.result.segments.filter(
-				(u: Record<string, any>) => u.start < durationMs && u.end > 0,
-			);
-			if (data.result.segments.length < before) {
-				const removed = before - data.result.segments.length;
-				emitLog(taskDir, `[ASR] Removed ${removed} hallucinated segment(s) (start >= ${durationMs}ms or end <= 0ms)`);
-				writeJson(asrFile, data, ctx);
-			}
+	const durationMs = data.audio_info?.duration ?? 0;
+	if (durationMs > 0 && data.result?.segments?.length) {
+		const before = data.result.segments.length;
+		data.result.segments = data.result.segments.filter(
+			(u: Record<string, any>) => u.start < durationMs && u.end > 0,
+		);
+		if (data.result.segments.length < before) {
+			const removed = before - data.result.segments.length;
+			emitLog(taskDir, `[ASR] Removed ${removed} hallucinated segment(s) (start >= ${durationMs}ms or end <= 0ms)`);
+			writeJson(asrFile, data, ctx);
 		}
+	}
 
-		// 能量检测：最后一个 segment 如果 RMS 过低则判为幻觉
-		const last = data.result?.segments?.[data.result.segments.length - 1];
-		if (last && existsSync(audioPath)) {
-			const rms = await segmentRms(audioPath, last.start, last.end);
-			console.log(`[ASR] Last segment RMS: ${rms}`);
-			if (rms > 0 && rms < 0.005) {
-				const removed = data.result.segments.pop();
-				emitLog(taskDir, `[ASR] Removed low-energy hallucinated segment "${removed.text.slice(0, 30)}" (RMS=${rms.toFixed(5)})`);
-				writeJson(asrFile, data, ctx);
+	// 能量检测：最后一个 segment 如果 RMS 过低则判为幻觉
+	const last = data.result?.segments?.[data.result.segments.length - 1];
+	if (last && existsSync(audioPath)) {
+		const rms = await segmentRms(audioPath, last.start, last.end);
+		console.log(`[ASR] Last segment RMS: ${rms}`);
+		if (rms > 0 && rms < 0.005) {
+      const removed = data.result.segments.pop();
+      if (removed) {
+  			emitLog(taskDir, `[ASR] Removed low-energy hallucinated segment "${removed.text.slice(0, 30)}" (RMS=${rms.toFixed(5)})`);
+  			writeJson(asrFile, data, ctx);
 			}
 		}
 	}
 
 	await setStage(taskDir, 'asr', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: 'Transcribed',

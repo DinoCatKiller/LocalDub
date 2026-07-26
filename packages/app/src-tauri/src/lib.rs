@@ -1,7 +1,6 @@
 pub mod commands;
 mod ctx;
 pub mod feat;
-pub mod func;
 pub mod integrations;
 // pub mod router;
 mod server;

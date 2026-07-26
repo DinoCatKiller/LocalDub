@@ -4,22 +4,31 @@ import { TimelineToolbar } from "./TimelineToolbar";
 import { TimelineRuler } from "./TimelineRuler";
 import { TimelineTrackSide } from "./TimelineTrackSide";
 import { TimelineTracks } from "./TimelineTracks";
-import { BASE_PX_PER_MS, rulerInterval, trackColor } from "./consts";
+import { BASE_PX_PER_MS, rulerConfig, trackColor } from "./consts";
 export type { Track, TrackSegment } from "./consts";
 import type { Track } from "./consts";
+import type { FrameRate } from "@repo/core/utils/timecode";
 
 interface Props {
   tracks: Track[];
   duration: number;
   currentTime: number;
+  fps: FrameRate;
   onSeek: (ms: number) => void;
+  taskDir?: string;
 }
 
 export function Timeline(props: Props) {
-  const [zoom, setZoom] = createSignal(1);
+  const fpsFloat = () => props.fps.numerator / props.fps.denominator;
+
+  const ZOOM_MIN = 0.1;
+  const ZOOM_MAX = 100;
+  const [sliderPos, setSliderPos] = createSignal(0.38);
+  const zoom = () => ZOOM_MIN * Math.pow(ZOOM_MAX / ZOOM_MIN, sliderPos());
+
   const pxPerMs = () => BASE_PX_PER_MS * zoom();
   const totalPx = () => props.duration * pxPerMs();
-  const ri = () => rulerInterval(pxPerMs());
+  const rc = () => rulerConfig(pxPerMs(), props.fps);
 
   let tracksRef!: HTMLDivElement;
   let rulerRef!: HTMLDivElement;
@@ -38,6 +47,18 @@ export function Timeline(props: Props) {
   );
 
   const playheadLeft = () => props.currentTime * pxPerMs() - scrollLeft();
+
+  const onSliderChange = (v: number) => {
+    const oldZoom = zoom();
+    setSliderPos(v);
+    const newZoom = zoom();
+    // anchor playhead position in viewport
+    const playheadPx = props.currentTime * BASE_PX_PER_MS * oldZoom - scrollLeft();
+    const newScrollLeft = Math.max(0, props.currentTime * BASE_PX_PER_MS * newZoom - playheadPx);
+    requestAnimationFrame(() => {
+      if (tracksRef) tracksRef.scrollLeft = newScrollLeft;
+    });
+  };
 
   let rightRef!: HTMLDivElement;
   let playheadDragging = false;
@@ -60,16 +81,9 @@ export function Timeline(props: Props) {
     playheadDragging = false;
   };
 
-  const onRulerClick = (e: MouseEvent) => {
-    const rect = rulerRef.getBoundingClientRect();
-    const x = e.clientX - rect.left + rulerRef.scrollLeft;
-    const ms = x / pxPerMs();
-    props.onSeek(Math.max(0, Math.min(ms, props.duration)));
-  };
-
   return (
     <div class="flex flex-col h-full  border-t select-none">
-      <TimelineToolbar zoom={zoom()} onZoomChange={setZoom} />
+      <TimelineToolbar zoom={zoom()} sliderValue={sliderPos()} onSliderChange={onSliderChange} />
 
       <div class="flex flex-1 overflow-hidden">
         <TimelineTrackSide
@@ -83,9 +97,10 @@ export function Timeline(props: Props) {
             ref={(el) => rulerRef = el}
             totalPx={totalPx()}
             duration={props.duration}
-            interval={ri()}
+            rulerCfg={rc()}
             pxPerMs={pxPerMs()}
-            onRulerClick={onRulerClick}
+            fps={fpsFloat()}
+            onSeek={props.onSeek}
           />
 
           <TimelineTracks
@@ -96,6 +111,7 @@ export function Timeline(props: Props) {
             onSeek={props.onSeek}
             trackColor={trackColor}
             onScroll={handleTrackScroll}
+            taskDir={props.taskDir}
           />
 
           {/* Playhead */}

@@ -5,11 +5,11 @@ export interface FrameResult {
 	timestamp: number;
 	confidence: number;
 	bbox?: { left: number; top: number; right: number; bottom: number };
-	lines?: { 
-		text: string; 
-		confidence: number; 
-		box: number[][]; 
-		bbox: { left: number; top: number; right: number; bottom: number } 
+	lines?: {
+		text: string;
+		confidence: number;
+		box: number[][];
+		bbox: { left: number; top: number; right: number; bottom: number }
 	}[];
 }
 
@@ -34,4 +34,18 @@ export interface SegmentWithAdjusted extends Segment {
 	adjustedConfidence?: number;
 	yPenalty?: number;
 	isoPenalty?: number;
+}
+
+export interface AsrOcrBaseSegment {
+ 	text: string;
+	start: number;
+	end: number;
+	box_y: [number, number];
+	confidence: number;
+}
+
+export interface AsrOcrFile {
+  result: {
+    segments: AsrOcrBaseSegment[];
+  };
 }

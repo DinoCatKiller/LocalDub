@@ -2,9 +2,10 @@ import { readJson, writeJson, ensureDir, removeFile } from '@repo/core/utils/fil
 import { existsSync, readdirSync, statSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { translationFilePath, ffmpeg, nowISO, emitLog, readTaskLanguages, subtitleFilePath, split_audio_timings_filepath, video_source_path, vocalsPath } from '@repo/core/stages/utils/utils.ts';
+import { translationFilePath, ffmpeg, nowISO, emitLog, readTaskLanguages, subtitleFilePath, split_audio_path, video_source_path, vocalsPath, readTranslationResult, split_audio_timings_path } from '@repo/core/stages/utils/utils.ts';
 import { env } from '@repo/config/env';
 import { TaskCtx, setStage } from '@repo/core/context/context.ts';
+import { SplitAudioItem, SplitAudioTiming } from './types';
 
 function probeDuration(file: string): number {
   const r = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file], { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -98,18 +99,7 @@ function padSegments(segments: any[], startPad = 100, endPad = 300): any[] {
   });
 }
 
-type SplitAudioTiming = {
-  		seg_idx: number;
-		src: string;
-		dst: string;
-		src_lang: string;
-		dst_lang: string;
-		start_time: number;
-		end_time: number;
-    start: number;
-    end: number;
-		speaker: string;
-}
+
 export async function stageSplitAudio(ctx: TaskCtx) {
   const taskId = ctx.task.id;
   const taskDir = ctx.task.task_dir
@@ -118,11 +108,13 @@ export async function stageSplitAudio(ctx: TaskCtx) {
 	const { asrLanguage: srcLangCode, targetLanguage: dstLangCode } = readTaskLanguages(ctx);
 	const splitAudioDir = join(taskDir, 'split_audio');
 	const translationFile = translationFilePath(taskDir, dstLangCode);
-	const timingsFile = split_audio_timings_filepath(taskDir);
+  const splitAudioTimingsFile = split_audio_path(taskDir);
+	const timingsFile = split_audio_timings_path(taskDir);
 	const vocalsSegmentDir = join(splitAudioDir, 'vocals');
 
 	if (!existsSync(srtFilePath)) throw new Error(`subtitle file not found: ${srtFilePath}`);
   const vocalsFilePath = ctx.input?.stages?.split_audio?.vocalsFilePath ?? vocalsPath(taskDir)
+  // 有分离的干净人声
 	const hasVocals = vocalsFilePath ? existsSync(vocalsFilePath) : false
 	const sourceAudio = hasVocals ? vocalsFilePath! : sourceFilePath;
 
@@ -133,11 +125,9 @@ export async function stageSplitAudio(ctx: TaskCtx) {
 
 	// Read translated text from translation.json, or original from srt.json
 	const translateEnabled = ctx.input?.stages?.translate?.enabled ?? true;
-	let timings: SplitAudioTiming[];
+	let timings: SplitAudioItem[];
 	if (translateEnabled) {
-		if (!existsSync(translationFile))
-			throw new Error(`translation file not found: ${translationFile}`);
-		const transData = await readJson(translationFile, ctx);
+		const transData = await readTranslationResult(ctx);
 		const translation = transData.translation;
 		if (!translation?.length) throw new Error('translation.json has no segments');
 		if (segmentsSrc.length !== translation.length) {
@@ -151,8 +141,8 @@ export async function stageSplitAudio(ctx: TaskCtx) {
 			dst_lang: translation[i].dst_lang,
       start: seg.start,
       end: seg.end,
-			start_time: Math.floor(seg.start),
-			end_time: Math.ceil(seg.end),
+			// start_time: Math.floor(seg.start),
+			// end_time: Math.ceil(seg.end),
 			speaker: translation[i].speaker ?? '1',
 		}));
 	} else {
@@ -164,11 +154,13 @@ export async function stageSplitAudio(ctx: TaskCtx) {
 			dst_lang: srcLangCode,
       start: seg.start,
       end: seg.end,
-			start_time: Math.floor(seg.start),
-			end_time: Math.ceil(seg.end),
+			// start_time: Math.floor(seg.start),
+			// end_time: Math.ceil(seg.end),
 			speaker: '1',
 		}));
 	}
+
+  const intentTimings = timings.map(t => ({ ...t }));
 
 	timings = padSegments(timings);
 
@@ -177,7 +169,8 @@ export async function stageSplitAudio(ctx: TaskCtx) {
   if (!totalMs) totalMs = probeDuration(sourceAudio);
 
   ensureDir(vocalsSegmentDir, ctx);
-
+ 	// Write timings.json (always refresh to pick up updated OCR/OCR-fix timestamps)
+ 	ensureDir(splitAudioDir, ctx);
   // ---- Segment cutting (dub only) ----
   if (hasVocals) {
     const anySeg = readdirSync(vocalsSegmentDir).find(f => f.endsWith('.wav'));
@@ -190,8 +183,8 @@ export async function stageSplitAudio(ctx: TaskCtx) {
       const outPath = join(vocalsSegmentDir, `${idx}.wav`);
       if (existsSync(outPath)) continue;
 
-      const startMs = timings[i].start_time;
-      const endMs = timings[i].end_time;
+      const startMs = timings[i].start;
+      const endMs = timings[i].end;
       if (startMs >= endMs) {
         writeFileSync(outPath, Buffer.alloc(44));
         emitLog(taskDir, `[split_audio] #${i + 1} invalid (${startMs} >= ${endMs}), empty wav`);
@@ -208,52 +201,51 @@ export async function stageSplitAudio(ctx: TaskCtx) {
       ffmpeg(['-i', sourceAudio, '-ss', String(start / 1000), '-to', String(end / 1000), '-c', 'copy', outPath]);
     }
   }
+  writeJson(splitAudioTimingsFile, { translation: timings }, ctx);
 
   // ---- VAD alignment ----
   const splitCfg = ctx.input?.stages?.split_audio;
   if (splitCfg?.vadAlign) {
     let corrected = false;
     for (let i = 0; i < timings.length; i++) {
-      const startMs = timings[i].start_time;
-      const endMs = timings[i].end_time;
+      const startMs = timings[i].start;
+      const endMs = timings[i].end;
       if (startMs >= endMs) continue;
 
-      // Detect leading non-speech content (breath/silence) in ms
       const wavPath = join(vocalsSegmentDir, `${String(i + 1).padStart(4, '0')}.wav`);
       const removedMs = existsSync(wavPath)
         ? detectSpeechStartMs(wavPath)
         : detectSpeechStartMsSeek(sourceAudio, Math.max(0, startMs - 80), Math.min(totalMs, endMs + 160), vocalsSegmentDir);
       if (removedMs <= 500) continue;
 
-      const newStartMs = startMs + removedMs - 80;
-      if (newStartMs >= endMs) {
-        emitLog(taskDir, `vadAlign #${i + 1}: would exceed end (${newStartMs} >= ${endMs}), truncating`);
+      const cutStartMs = timings[i].start;
+      const newCutStartMs = cutStartMs + removedMs - 80;
+      if (newCutStartMs >= endMs) {
+        emitLog(taskDir, `vadAlign #${i + 1}: would exceed end (${newCutStartMs} >= ${endMs}), truncating`);
         continue;
       }
 
-      emitLog(taskDir, `vadAlign #${i + 1}: start ${startMs} → ${newStartMs} (removed ${removedMs}ms)`);
+      emitLog(taskDir, `vadAlign #${i + 1}: start ${cutStartMs} → ${newCutStartMs} (removed ${removedMs}ms)`);
 
-      // Re-cut WAV with corrected timing (dub only)
       if (hasVocals) {
         const newEnd = Math.min(totalMs, endMs + 160);
-        if (newEnd > newStartMs) {
-          ffmpeg(['-i', sourceAudio, '-ss', String(newStartMs / 1000), '-to', String(newEnd / 1000), '-c', 'copy', wavPath]);
+        if (newEnd > newCutStartMs) {
+          ffmpeg(['-i', sourceAudio, '-ss', String(newCutStartMs / 1000), '-to', String(newEnd / 1000), '-c', 'copy', wavPath]);
         }
       }
 
-      // Update timings in memory (will be written to timings.json below)
-      timings[i].start_time = newStartMs;
+      timings[i].start = newCutStartMs;
+      intentTimings[i].start = Math.max(0, intentTimings[i].start + removedMs - 80);
       corrected = true;
     }
 
     if (corrected) {
-      writeJson(timingsFile, { translation: timings }, ctx);
+      writeJson(splitAudioTimingsFile, { translation: timings }, ctx);
+      writeJson(timingsFile, { translation: intentTimings }, ctx);
     }
   }
 
-	// Write timings.json (always refresh to pick up updated OCR/OCR-fix timestamps)
-	ensureDir(splitAudioDir, ctx);
-	writeJson(timingsFile, { translation: timings }, ctx);
+	writeJson(timingsFile, { translation: intentTimings }, ctx);
 
-  setStage(taskDir, 'split_audio', { status: 'succeeded', completed_at: nowISO(), progress: 100, last_message: 'Split' });
+  setStage(taskDir, 'split_audio', { status: 'success', completed_at: nowISO(), progress: 100, last_message: 'Split' });
 }

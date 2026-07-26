@@ -5,6 +5,13 @@ import { env,} from '@repo/config/env';
 import { getStages } from './stages';
 import { WHISPER_MODEL_DIR } from '@repo/config/path/models';
 
+import { _readCtx, TaskCtx,  getTaskId,  listStage,  readCtx, Task,  } from '@repo/core/context/context.ts';
+import { SubtitleSource, TargetLang } from '@repo/core/cmd/tasks/input';
+import { readJson } from '../../utils/fileOps';
+import { TranslateFile } from '../05_translate/type';
+import { SplitAudioFile, SplitAudioTimingFile } from '../06_split_audio/types';
+import { TaskStage } from '../../context/types';
+import { TimingsFile } from '../merge_audio/types';
 
 /** Get the downloaded video source path for a session. */
 export function video_source_path(ctx: TaskCtx): string {
@@ -48,8 +55,6 @@ export function defaultFont(dstLang: string): string {
 	}
 }
 
-import { _readCtx, TaskCtx,  getTaskId,  listStage,  readCtx, Task, TaskStage } from '@repo/core/context/context.ts';
-import { SubtitleSource, TargetLang } from '@repo/core/cmd/tasks/input';
 
 export function nowISO(): string {
 	return new Date().toISOString().replace(/\.\d{3}Z$/, '');
@@ -177,13 +182,37 @@ export function readTaskLanguages(ctx: TaskCtx): {
 	return { asrLanguage: 'en', targetLanguage: 'zh' };
 }
 
+
+
 export function translationFilePath(taskDir: string, lang: string): string {
 	return join(taskDir, 'translate', `translation.${lang}.json`);
 }
+export function readTranslationResult(ctx: TaskCtx) {
+  if (!ctx.target_language)  {
+    throw new Error('ctx.target_language is required');
+  }
+  const filePath = translationFilePath(ctx.task.task_dir, ctx.target_language);
+  if (!existsSync(filePath)) throw new Error(`translation file not found: ${filePath}`);
+	return readJson<TranslateFile>(filePath, ctx);
+}
 
+export interface SrtJson {
+  result: {
+    text: string;
+    segments: {
+      text: string;
+      start: number;
+      end: number;
+      confidence: number;
+    }[];
+  }
+}
+/**
+ * - asr_ocr -> asr_ocr_fused.json
+ * - asr_ocr + asr_ocr_fix?.llmFix -> asr_ocr_fused_llm_fix.json
+ */
 export function subtitleFilePath(ctx: TaskCtx,): string {
   const src = ctx.input?.task?.subtitleSource ?? 'asr'
-
 	if (src === 'ocr') {
 		const fixFile = join(ctx.task.task_dir, 'ocr_fix', 'ocr_fix.json');
 		return fixFile;
@@ -196,11 +225,35 @@ export function subtitleFilePath(ctx: TaskCtx,): string {
 	return join(ctx.task.task_dir, 'asr_fix', 'asr_fix.json');
 }
 
-export function split_audio_timings_filepath(taskDir: string): string {
+export function split_audio_path(taskDir: string): string {
 	return join(taskDir, 'split_audio', 'split_audio.json');
 }
+export function split_audio_timings_path(taskDir: string): string {
+	return join(taskDir, 'split_audio', 'timings.json');
+}
+export function read_split_audio(ctx: TaskCtx) {
+  const filepath = split_audio_path(ctx.task.task_dir);
+  return readJson<SplitAudioFile>(filepath, ctx);
+}
+export function read_split_audio_timings(ctx: TaskCtx) {
+  const filepath = split_audio_timings_path(ctx.task.task_dir);
+  return readJson<SplitAudioTimingFile>(filepath, ctx);
+}
+
+/**
+ * 目前修改此文件不会影响配音结果, 但重新运行 merge_video 时会改变生成的字幕时间位置
+ */
 export function timings_filepath(taskDir: string): string {
 	return join(taskDir, 'merge_audio', 'timings.json');
+}
+export function read_timings(ctx: TaskCtx) {
+  const filepath = timings_filepath(ctx.task.task_dir);
+  if (!existsSync(filepath)) throw new Error(`timings file not found: ${filepath}`);
+  return readJson<TimingsFile>(filepath, ctx);
+}
+
+export function tts_filepath(taskDir: string): string {
+	return join(taskDir, 'tts', 'tts.json');
 }
 
 export function mixedVocalsPath(taskDir: string): string {
@@ -210,8 +263,6 @@ export function mixedVocalsPath(taskDir: string): string {
 export function gatedVocalsPath(taskDir: string): string {
 	return join(taskDir, 'separate_after', 'target_3_vocals_gated.wav');
 }
-
-
 
 export function dubbingPath(taskDir: string): string {
 	return join(taskDir, 'merge_audio', 'audio_dubbing.wav');
@@ -281,7 +332,7 @@ function buildSummary(
 	stages: ReturnType<typeof enrichStage>[],
 	task: Task
 ): string {
-	const done = stages.filter((s) => s.status === 'completed').length;
+	const done = stages.filter((s) => s.status === 'success').length;
 	const total = stages.length;
 	const elapsedMs = msDiff(new Date().toISOString(), task.created_at) ?? 0;
 	const elapsed = fmtDuration(elapsedMs);

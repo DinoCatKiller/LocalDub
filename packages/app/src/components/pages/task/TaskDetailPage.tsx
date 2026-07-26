@@ -1,4 +1,4 @@
-import { createSignal, Match, Show, Switch } from "solid-js";
+import { createSignal, Match, Show, Switch,createEffect } from "solid-js";
 import { client, fnrpc } from "#/integrations/fnrpc/client.ts";
 import { Timeline } from "./Timeline/Timeline";
 import type { Track } from "./Timeline/consts";
@@ -7,166 +7,174 @@ import { AiReviewPanel } from "#/components/pages/task/AiReviewPanel.tsx";
 import { ContentPanel } from "#/components/app/FileContent/ContentPanel";
 import { createQuery, useQuery } from "@tanstack/solid-query";
 import {
-  setCurrentTime,
-  setDuration,
-  setFps,
-  setPlaying,
-  setPlaybackRate,
-  useCurrentTime,
-  useDuration,
+    setCurrentTime, setDuration, setFps, setPlaying, setPlaybackRate,
+    useCurrentTime, useDuration, useFps,
 } from "#/components/app/FileContent/store/videoViewer";
+import { TranslateFile } from "@repo/core/stages/05_translate/type";
+import { AsrResult } from "@repo/core/stages/asr/types";
+import { stages_to_map } from "@repo/core/stages/utils/filtering";
+import { to } from "@repo/shared/lib/utils/try";
+import { SplitAudioFile, SplitAudioTiming, SplitAudioTimingFile } from "@repo/core/stages/06_split_audio/types";
+import { AsrOcrFile } from "@repo/core/ml/subtitle_ocr/types";
+import type { TtsFile } from "@repo/core/stages/07_tts/types";
+import { TimingsFile } from "@repo/core/stages/merge_audio/types";
 
-interface Props {
-  groupId: string;
-  taskId: string;
-}
+interface Props { groupId: string; taskId: string; }
 
 export function TaskDetailPage(props: Props) {
-  const taskDir = `workfolder/${props.groupId}/${props.taskId}`;
-  const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(taskDir));
+    // console.log('[TaskDetailPage] props:', props);
+    const taskDir = `workfolder/${props.groupId}/${props.taskId}`;
+    const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(taskDir));
+    // console.log('[TaskDetailPage] taskCtxQ:', taskCtxQ);
+    const stage_map = () => stages_to_map(taskCtxQ.data?.stages ?? []);
+    // console.log('[TaskDetailPage] stages:', taskCtxQ.data?.stages?.map(s => s.name));
+
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
-  const [resumeFromStage, setResumeFromStage] = createSignal<string | null>(null);
+    const [resumeFromStage, setResumeFromStage] = createSignal<string | null>(null);
+    const watch_task_tree_q = useQuery(() => client.watch_task_tree.streamedOptions(`${props.groupId}/${props.taskId}`))
 
-  // 视频源地址（默认取 video_source.mp4）
-  // const videoUrl = () => taskCtxQ.data?.video_source_path
-  //   ? `http://localhost:19110/media/${taskDir}/video_source.mp4`
-  //   : "";
+    const onVideoReady = (ref: HTMLVideoElement) => {
+        setVideoRef(ref);
+        setDuration(ref.duration * 1000);
+        if (taskCtxQ.data) setFps(taskCtxQ.data.frame_rate);
+        ref.addEventListener("timeupdate", () => setCurrentTime(ref.currentTime * 1000));
+        ref.addEventListener("play", () => setPlaying(true));
+        ref.addEventListener("pause", () => setPlaying(false));
+    };
 
-  const onVideoReady = (ref: HTMLVideoElement) => {
-    setVideoRef(ref);
-    setDuration(ref.duration * 1000);
-    if (taskCtxQ.data) setFps(taskCtxQ.data.frame_rate);
-    ref.addEventListener("timeupdate", () => setCurrentTime(ref.currentTime * 1000));
-    ref.addEventListener("play", () => setPlaying(true));
-    ref.addEventListener("pause", () => setPlaying(false));
-  };
+    const togglePlay = () => { const v = videoRef(); if (!v) return; v.paused ? v.play() : v.pause(); };
+    const onRateChange = (rate: number) => { const v = videoRef(); if (v) v.playbackRate = rate; setPlaybackRate(rate); };
+    const onSeek = (ms: number) => { const v = videoRef(); if (v) v.currentTime = ms / 1000; };
 
-  const togglePlay = () => {
-    const v = videoRef();
-    if (!v) return;
-    v.paused ? v.play() : v.pause();
-  };
+    const asrQuery = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`, {
+      enabled: stage_map().asr?.status === 'success'
 
-  const onRateChange = (rate: number) => {
-    const v = videoRef();
-    if (v) v.playbackRate = rate;
-    setPlaybackRate(rate);
-  };
+    }));
+    const asrSegments = () => {
+        if (!asrQuery.data) return [];
+        try {
+            const data: AsrResult = JSON.parse(asrQuery.data);
+            return (data.result?.segments || []).map((s: any, i: number) => ({
+                index: i, text: (s.text || '').trim(), startMs: s.start, endMs: s.end,
+            })).filter((s: { text: string }) => s.text);
+        } catch { return []; }
+    };
 
-  const onSeek = (ms: number) => {
-    const v = videoRef();
-    if (v) v.currentTime = ms / 1000;
-  };
+    const transLang = () => taskCtxQ.data?.target_language;
+    const transQuery = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/translate/translation.${transLang()}.json`, {
+        enabled: stage_map().translate?.status === 'success',
+    }));
+    const transSegments = () => {
+        if (!transQuery.data) return [];
+        try {
+            const data: TranslateFile = JSON.parse(transQuery.data);
+            return (data.translation || []).map((item, i: number) => ({ index: i, text: item.dst || '', startMs: item.start, endMs: item.end }));
+        } catch { return []; }
+    };
 
-  // ASR 字幕段
-  const asrQuery = useQuery(
-    () => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`),
-  );
+    const merge_audio_q = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/merge_audio/timings.json`, {
+        enabled: stage_map().merge_audio?.status === 'success',
+    }));
+    const merge_audio_segments = () => {
+        if (!merge_audio_q.data) return [];
+        const [data, err] = to<TimingsFile>(() => JSON.parse(merge_audio_q.data))
+        if (err) return []
+        return (data.translation || []).map((item, i: number) => ({ index: i, text: item.dst, startMs: item.actual_start, endMs: item.actual_end }));
+    };
 
-  const asrSegments = () => {
-    if (!asrQuery.data) return [];
-    try {
-      const data = JSON.parse(asrQuery.data);
-      return (data.result?.segments || []).map((s: any, i: number) => ({
-        index: i,
-        text: (s.text || '').trim(),
-        startMs: s.start,
-        endMs: s.end,
-      })).filter((s: { text: string }) => s.text);
-    } catch { return []; }
-  };
+    const split_audio_timings_q = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/split_audio/timings.json`, {
+        enabled: stage_map().split_audio?.status === 'success',
+    }));
+    const split_audio_timings = () => {
+        if (!split_audio_timings_q.data) return [];
+        const [data, err] = to<SplitAudioTimingFile>(() => JSON.parse(split_audio_timings_q.data))
+        if (err) return []
+        return (data.translation || []).map((item, i: number) => ({ index: i, text: item.dst || '', startMs: item.start, endMs: item.end, raw: item }));
+    };
 
-  const transLang = () => taskCtxQ.data?.target_language;
+    const split_audio_q = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/split_audio/split_audio.json`, {
+        enabled: stage_map().split_audio?.status === 'success',
+    }));
+    const split_audio = () => {
+        if (!split_audio_q.data) return [];
+        const [data, err] = to<SplitAudioFile>(() => JSON.parse(split_audio_q.data))
+        if (err) return []
+        return (data.translation || []).map((item, i: number) => ({ index: i, text: item.dst || '', startMs: item.start, endMs: item.end, raw: item }));
+    };
 
-  const transQuery = useQuery(
-    () => client.read_app_file_text.queryOptions(`${taskDir}/translate/translation.${transLang()}.json`, {
-      enabled: !!transLang(),
-    }),
-  );
+    const ttsQ = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/tts/tts.json`, {
+        enabled: stage_map().tts?.status === 'success',
+    }));
+    const ttsSegments = () => {
+        if (!ttsQ.data) return [];
+        const [data, err] = to<TtsFile>(() => JSON.parse(ttsQ.data))
+        if (err) return []
+        return (data.segments || []).map((item, i: number) => ({ index: i, text: item.text, startMs: item.start, endMs: item.end, raw: item }));
+    };
 
-  const transSegments = () => {
-    if (!transQuery.data) return [];
-    try {
-      const data = JSON.parse(transQuery.data);
-      return (data.translation || []).map((item: any, i: number) => ({
-        index: i,
-        text: item.dst || '',
-        startMs: item.start_time * 1000,
-        endMs: item.end_time * 1000,
-      }));
-    } catch { return []; }
-  };
+    const asr_ocr_fix_llm_q = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json`, {
+        enabled: stage_map().asr_ocr_fix?.status === 'success',
+    }));
+    const asr_ocr_fix_llm = () => {
+        if (!asr_ocr_fix_llm_q.data) return [];
+        const [data, err] = to<AsrOcrFile>(() => JSON.parse(asr_ocr_fix_llm_q.data))
+        if (err) return []
+        return data.result.segments.map((item, i: number) => ({ index: i, text: item.text, startMs: item.start, endMs: item.end, raw: item }));
+    };
 
-  const tracks = (): Track[] => {
-    if (!resumeFromStage()) return [];
+    const tracks = (): Track[] => {
+        if (resumeFromStage() === 'asr_ocr_pre') {
+            const asr = asrSegments();
+            return asr.length ? [{ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6', filePath: `${taskDir}/asr/asr.json` }] : [];
 
-    // asr_ocr_pre 的重跑依赖上一阶段 asr 的输出
-    if (resumeFromStage() === 'asr_ocr_pre') {
-      const asr = asrSegments();
-      return asr.length
-          ? [{ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6' }]
-          : [];
-    }
+        }
+        const result: Track[] = [];
+        const merge_audio = merge_audio_segments();
+        if (merge_audio.length) result.push({ id: 'merge_audio', label: 'merge_audio/timings.json', segments: merge_audio, color: '#3b82f6' });
+        const tts = ttsSegments();
+        if (tts.length) result.push({ id: 'tts', label: 'tts/tts.json', segments: tts, color: '#f43f5e', filePath: `${taskDir}/tts/tts.json` });
+        const split_audio_timings_data = split_audio_timings();
+        if (split_audio_timings_data.length) result.push({ id: 'split_audio_timings_data', label: 'split_audio/timings.json', segments: split_audio_timings_data, color: '#3b82f6' });
+        const split_audio_data = split_audio();
+        if (split_audio_data.length) result.push({ id: 'split_audio', label: 'split_audio/split_audio.json', segments: split_audio_data, color: '#f59e0b', filePath: `${taskDir}/split_audio/split_audio.json` });
+        const trans = transSegments();
+        if (trans.length) result.push({ id: 'translation', label: `translation.${transLang()}.json`, segments: trans, color: '#22c55e' });
+        const asr_ocr_fix_llm_ = asr_ocr_fix_llm();
+        if (asr_ocr_fix_llm_.length) result.push({ id: 'asr_ocr_fix', label: 'asr_ocr_fix/asr_ocr_fused_llm_fix.json', segments: asr_ocr_fix_llm_, color: '#a855f7', filePath: `${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json` });
+        const asr = asrSegments();
+        if (asr.length) result.push({ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6' });
+        return result;
+    };
 
-    // 后续其他阶段在此扩展，例如：
-    // if (resumeFromStage() === 'translate') { ... }
-    return [];
-  };
+    const duration = useDuration();
+    const currentTime = useCurrentTime();
+    const fps = useFps();
 
 
-  // ContentPanel 暴露给 FileTree 的 openFile 回调
-  // const handleFileOpen = (_name: string, path: string) => {
-  //   // 如果点击的是当前项目的默认视频，自动用 VideoViewer 打开
-  //   if (path.includes('video_source.mp4') && videoUrl()) {
-  //     // 暂不处理：可以在后续通过 VideoViewer 路径直接渲染
-  //   }
-  // };
-
-  const duration = useDuration();
-  const currentTime = useCurrentTime();
 
   return (
-    <div class="flex flex-col h-full w-full min-w-0 max-w-full">
-      {/* 上层：左侧面板 + 中间内容区 + 右侧 AI Review */}
-      <div class="flex h-120">
-        <Show when={taskCtxQ.isPending}>
-          <p>Loading...</p>
-        </Show>
-        <Show when={taskCtxQ.isSuccess} >
-          <TaskControlPanel
-              ctx={taskCtxQ.data!}
-              resumeFromStage={resumeFromStage()}
-              onResumeFrom={setResumeFromStage}
-          />
+        <div class="flex flex-col h-full w-full min-w-0 max-w-full">
+            <div class="flex h-120">
+                <Show when={taskCtxQ.isPending}><p>Loading...</p></Show>
+                <Show when={taskCtxQ.isSuccess}>
+                    <TaskControlPanel
+                        ctx={taskCtxQ.data!}
+                        resumeFromStage={resumeFromStage()}
+                        onResumeFrom={setResumeFromStage}
+                    />
+                </Show>
+                <div class="flex-1 min-w-0 flex flex-col">
+                    <ContentPanel onReady={onVideoReady} onTogglePlay={togglePlay} onRateChange={onRateChange} onTimeChange={onSeek} />
+                </div>
+                <AiReviewPanel />
+            </div>
+
+                <div class="flex-1">
+
+                    <Timeline tracks={tracks()} duration={duration()} currentTime={currentTime()} fps={fps()} onSeek={onSeek} taskDir={taskDir} />
+                </div>
 
 
-        </Show>
-        <div class="flex-1 min-w-0 flex flex-col">
-          <ContentPanel
-            // onFileOpen={(name, path) => handleFileOpen(name, path)}
-            onReady={onVideoReady}
-            onTogglePlay={togglePlay}
-            onRateChange={onRateChange}
-            onTimeChange={onSeek}
-          />
         </div>
-        <AiReviewPanel />
-      </div>
-
-      {/* 下层：时间线轨道 */}
-
-      <Show when={resumeFromStage() === 'asr_ocr_pre'}>
-      <div class="flex-1">
-          <Timeline
-              tracks={tracks()}
-              duration={duration()}
-              currentTime={currentTime()}
-              onSeek={onSeek}
-          />
-        </div>
-      </Show>
-
-
-    </div>
-  );
+    );
 }

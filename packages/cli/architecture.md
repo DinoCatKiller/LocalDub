@@ -330,7 +330,7 @@ Both modes produce an SRT subtitle file at `metadata/subtitles.<lang>.srt`.
 | `id` | text PK | Task identifier | creation |
 | `url` | text NOT NULL | Source URL | creation |
 | `title` | text? | Video title | download |
-| `status` | text NOT NULL | pending/running/succeeded/failed | pipeline |
+| `status` | text NOT NULL | pending/running/success/failed | pipeline |
 | `current_stage` | text? | Currently executing stage | pipeline |
 | `task_dir` | text? | Relative path to session dir | download |
 | `final_video_path` | text? | API path to output video | merge_video |
@@ -348,7 +348,7 @@ Composite PK: `(task_id, name)`, FK → `tasks.id ON DELETE CASCADE`.
 | `task_id` | text NOT NULL | FK → tasks |
 | `name` | text NOT NULL | Stage name |
 | `label` | text NOT NULL | Display label |
-| `status` | text NOT NULL | pending/running/succeeded/failed |
+| `status` | text NOT NULL | pending/running/success/failed |
 | `started_at` | text? | ISO timestamp |
 | `completed_at` | text? | ISO timestamp |
 | `last_message` | text? | Human-readable status |

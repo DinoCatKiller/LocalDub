@@ -51,8 +51,8 @@ function RootComponent() {
   )
 }
  function RootDocument({ children }: { children: JSX.Element }) {
-  // const queryClient = getQueryClient();
-  return <>
+  const queryClient = getQueryClient();
+  return <QueryClientProvider client={queryClient}>
   <HeadContent />
   {/*<rspc.Provider client={rspcClient} queryClient={queryClient}>*/}
   {/*<fnrpc.Provider client={client} queryClient={queryClient}>*/}
@@ -95,5 +95,5 @@ function RootComponent() {
   {/* </rspc.Provider>*/}
   <Devtools />
   <Scripts />
-  </>
+  </QueryClientProvider>
 }

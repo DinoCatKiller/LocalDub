@@ -206,7 +206,7 @@ export async function stageAsrOcrPre(ctx: TaskCtx) {
 	emitLog(taskDir, `[asr_ocr_pre] ${extractCount} frames extracted to ${frameDir}`);
 
 	await setStage(taskDir, 'asr_ocr_pre', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 	});

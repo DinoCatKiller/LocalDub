@@ -81,7 +81,7 @@ export async function stageOcrFix(ctx: TaskCtx) {
   emitLog(taskDir, `[ocr_fix] Written ${segments.length} segs to ocr_fix.json`);
 
   await setStage(taskDir, 'ocr_fix', {
-    status: 'succeeded', completed_at: nowISO(), progress: 100,
+    status: 'success', completed_at: nowISO(), progress: 100,
     last_message: llmFix ? `LLM fixed ${segments.length} segs` : 'Fixed',
   });
 }

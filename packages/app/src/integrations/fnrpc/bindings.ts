@@ -21,14 +21,24 @@ export type Capabilities = {
 export type CpuInfo = {
 	model: string,
 	cores: number,
-	speed_mhz: number | null,
+	speedMHz: number | null,
 };
 
-export type DeviceInfo = {
-	platform: PlatformInfo,
+export type DeviceInfo = DeviceInfo_Serialize | DeviceInfo_Deserialize;
+
+export type DeviceInfo_Deserialize = {
+	platform: PlatformInfo_Deserialize,
 	cpu: CpuInfo,
 	memory: MemoryInfo,
-	gpu: GpuInfo[],
+	gpu: GpuInfo_Deserialize[],
+	ort: OrtInfo,
+};
+
+export type DeviceInfo_Serialize = {
+	platform: PlatformInfo_Serialize,
+	cpu: CpuInfo,
+	memory: MemoryInfo,
+	gpu: GpuInfo_Serialize[],
 	ort: OrtInfo,
 };
 
@@ -45,19 +55,36 @@ export type FrameRate = {
 	denominator: number,
 };
 
-export type GpuInfo = {
+export type GpuInfo = GpuInfo_Serialize | GpuInfo_Deserialize;
+
+export type GpuInfo_Deserialize = {
 	name: string,
 	vendor: Vendor,
 	architecture: string | null,
-	driver_version: string,
+	driverVersion: string,
 	temperature: number | null,
-	gpu_percent: number | null,
-	gfx_version: string | null,
-	vram: VramInfo,
+	gpuPercent: number | null,
+	gfxVersion: string | null,
+	vram: VramInfo_Deserialize,
 	capabilities: Capabilities,
-	hsa_override_gfx: string | null,
-	vulkan_heaps: VulkanHeaps | null,
-	op_probes: OpProbes | null,
+	hsaOverrideGfx: string | null,
+	vulkanHeaps: VulkanHeaps | null,
+	opProbes: OpProbes_Deserialize | null,
+};
+
+export type GpuInfo_Serialize = {
+	name: string,
+	vendor: Vendor,
+	architecture?: string,
+	driverVersion: string,
+	temperature: number | null,
+	gpuPercent: number | null,
+	gfxVersion?: string,
+	vram: VramInfo_Serialize,
+	capabilities: Capabilities,
+	hsaOverrideGfx?: string,
+	vulkanHeaps?: VulkanHeaps,
+	opProbes?: OpProbes_Serialize,
 };
 
 export type GroupInfo = {
@@ -70,11 +97,17 @@ export type GroupInfo = {
 export type MemoryInfo = {
 	total: string,
 	free: string,
-	process_heap_used: string,
+	processHeapUsed: string,
 };
 
-export type OpProbes = {
+export type OpProbes = OpProbes_Serialize | OpProbes_Deserialize;
+
+export type OpProbes_Deserialize = {
 	torch_conv1d: ProbeResult | null,
+};
+
+export type OpProbes_Serialize = {
+	torch_conv1d?: ProbeResult,
 };
 
 export type OrtBackend = {
@@ -87,17 +120,42 @@ export type OrtInfo = {
 	backends: OrtBackend[],
 };
 
-export type PlatformInfo = {
+/**  A single filesystem change delivered to a watcher. */
+export type PathEvent = {
+	path: string,
+	kind: PathEventKind | null,
+};
+
+/**
+ *  What happened to a watched path. Mirrors the subset of `notify::EventKind`
+ *  we care about; `Rescan` is emitted when the OS watcher loses sync and the
+ *  consumer should re-read state from disk rather than trust incremental events.
+ */
+export type PathEventKind = "Removed" | "Created" | "Changed" | "Rescan";
+
+export type PlatformInfo = PlatformInfo_Serialize | PlatformInfo_Deserialize;
+
+export type PlatformInfo_Deserialize = {
 	os: string,
 	arch: string,
 	release: string,
 	hostname: string,
 	runtime: string,
-	runtime_version: string,
-	node_version: string | null,
+	runtimeVersion: string,
+	nodeVersion: string | null,
 };
 
-export type ProbeResult = "Ok" | "Fail";
+export type PlatformInfo_Serialize = {
+	os: string,
+	arch: string,
+	release: string,
+	hostname: string,
+	runtime: string,
+	runtimeVersion: string,
+	nodeVersion?: string,
+};
+
+export type ProbeResult = "ok" | "fail";
 
 /**
  *  An RPC error returned by any handler (query, mutate, subscribe).
@@ -135,6 +193,8 @@ export type ServerInfo = {
 
 /**  Server type identifiers for mDNS discovery. */
 export type ServerType = "VoxcpmTorchGradio" | "DemucsTorchServer";
+
+export type StageStatus = "pending" | "running" | "success" | "failed";
 
 export type Task = {
 	id: string,
@@ -179,7 +239,7 @@ export type TaskCtx = {
 export type TaskStage = {
 	name: string,
 	label: string,
-	status: string,
+	status: StageStatus,
 	progress: number | null,
 	started_at: string | null,
 	completed_at: string | null,
@@ -187,11 +247,15 @@ export type TaskStage = {
 	error_message: string | null,
 };
 
-export type Vendor = "Amd" | "Nvidia" | "Intel" | "Unknown";
+export type Value = "Null" | ({ Bool: boolean }) & { Array?: never; Number?: never; Object?: never; String?: never } | ({ Number: ({ f64: number | null }) & { i64?: never; u64?: never } | ({ i64: bigint }) & { f64?: never; u64?: never } | ({ u64: bigint }) & { f64?: never; i64?: never } }) & { Array?: never; Bool?: never; Object?: never; String?: never } | ({ String: string }) & { Array?: never; Bool?: never; Number?: never; Object?: never } | ({ Array: Value[] }) & { Bool?: never; Number?: never; Object?: never; String?: never } | ({ Object: { [key in string]: Value } }) & { Array?: never; Bool?: never; Number?: never; String?: never };
 
-export type VideoSource = "Youtube" | "Bilibili" | "Local" | "Remote" | "Unknown";
+export type Vendor = "amd" | "nvidia" | "intel" | "unknown";
 
-export type VramInfo = {
+export type VideoSource = "youtube" | "bilibili" | "local" | "remote" | "unknown";
+
+export type VramInfo = VramInfo_Serialize | VramInfo_Deserialize;
+
+export type VramInfo_Deserialize = {
 	percent: number | null,
 	total: number | null,
 	used: number | null,
@@ -200,19 +264,31 @@ export type VramInfo = {
 	gtt: number | null,
 };
 
-export type VramType = "Dedicated" | "Shared" | "Unknown";
+export type VramInfo_Serialize = {
+	percent: number | null,
+	total?: number | null,
+	used?: number | null,
+	type?: VramType,
+	reserved?: number | null,
+	gtt?: number | null,
+};
+
+export type VramType = "dedicated" | "shared" | "unknown";
 
 export type VulkanHeaps = {
-	device_local: number | null,
-	host_visible: number | null,
+	deviceLocal: number | null,
+	hostVisible: number | null,
 };
 
 export type Procedures = {
   read_app_file_text: { kind: "query"; method: "GET"; input: string; output: string; error: RpcErr };
   write_app_file_text: { kind: "mutate"; method: "POST"; input: [string, string]; output: null; error: RpcErr };
+  read_app_file_json: { kind: "query"; method: "GET"; input: string; output: Value; error: RpcErr };
+  write_app_file_json: { kind: "mutate"; method: "POST"; input: [string, Value]; output: null; error: RpcErr };
   read_app_file_bin: { kind: "query"; method: "GET"; input: string; output: number[]; error: RpcErr };
   list_app_directory: { kind: "query"; method: "GET"; input: string; output: DirEntry[]; error: RpcErr };
   watch_task_log: { kind: "subscribe"; method: "GET"; input: string; output: string; error: RpcErr };
+  watch_task_tree: { kind: "subscribe"; method: "GET"; input: string; output: PathEvent; error: RpcErr };
   tick: { kind: "subscribe"; method: "GET"; input: bigint; output: bigint; error: RpcErr };
   get_group_list: { kind: "query"; method: "GET"; input: null; output: GroupInfo[]; error: RpcErr };
   get_task_ctx: { kind: "query"; method: "GET"; input: string; output: TaskCtx; error: RpcErr };
@@ -233,9 +309,12 @@ export type Procedures = {
 export const __procedureMeta = {
   read_app_file_text: { kind: "query", method: "GET" },
   write_app_file_text: { kind: "mutate", method: "POST" },
+  read_app_file_json: { kind: "query", method: "GET" },
+  write_app_file_json: { kind: "mutate", method: "POST" },
   read_app_file_bin: { kind: "query", method: "GET" },
   list_app_directory: { kind: "query", method: "GET" },
   watch_task_log: { kind: "subscribe", method: "GET" },
+  watch_task_tree: { kind: "subscribe", method: "GET" },
   tick: { kind: "subscribe", method: "GET" },
   get_group_list: { kind: "query", method: "GET" },
   get_task_ctx: { kind: "query", method: "GET" },

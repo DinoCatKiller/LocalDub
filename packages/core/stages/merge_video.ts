@@ -15,7 +15,8 @@ import {
 	defaultFont,
 	video_source_path,
     timings_filepath,
-    split_audio_timings_filepath,
+    split_audio_path,
+    read_timings,
 } from '@repo/core/stages/utils/utils';
 import { startLog } from './utils/log.ts';
 import { writeSrt } from '@repo/core/utils/srt';
@@ -23,6 +24,13 @@ import { writeSrt } from '@repo/core/utils/srt';
 function filterSubPath(subPath: string): string {
 	if (process.platform !== 'win32') return subPath;
 	return subPath.replace(/\\/g, '/').replace(/:/g, '\\:');
+}
+
+// 构造 subtitles 滤镜参数。用 filename= 显式包裹路径，
+// 让 libass 明确整段是文件路径；并对路径内单引号转义。
+function subFilterArg(subPath: string, style: string): string {
+	const escaped = filterSubPath(subPath).replace(/'/g, "\\'");
+	return `subtitles=filename='${escaped}':force_style='${style}'`;
 }
 
 function dstLangFromTranslation(translation: any[]): string {
@@ -61,9 +69,7 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 	const video_file_path = video_source_path(ctx)
 	const mergeVideoDir = join(taskDir, 'merge_video');
 	ensureDir(mergeVideoDir, ctx);
-	const tmpDir = join(taskDir, 'tmp');
 	const srtPath = ctx.input?.stages?.merge_video?.srtPath
-	const subtitleSource = ctx.input?.task?.subtitleSource;
 	if (!existsSync(video_file_path)) throw new Error('video_source.mp4 not found');
 
 	const pipeline = readCtx(taskDir)?.pipeline || 'dub';
@@ -87,13 +93,12 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 		`${taskId}.mp4`
 	);
 
-
 	if (pipeline === 'subtitle') {
 		const vadAlign = ctx.input?.stages?.split_audio?.vadAlign;
 		const translateEnabled = ctx.input?.stages?.translate?.enabled ?? true;
 		let data: { translation: any[] };
 		if (vadAlign) {
-			data = await readJson(split_audio_timings_filepath(taskDir), ctx);
+			data = await readJson(split_audio_path(taskDir), ctx);
 		} else if (translateEnabled) {
 			const { targetLanguage: dstLangCode } = readTaskLanguages(ctx);
 			const trFile = translationFilePath(taskDir, dstLangCode);
@@ -121,7 +126,7 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 				'-i',
 				video_file_path,
 				'-vf',
-				`subtitles='${filterSubPath(subPath)}':force_style='${style}'`,
+				subFilterArg(subPath, style),
 				'-map',
 				'0:v:0',
 				'-map',
@@ -144,15 +149,13 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 		const dubbingFile = join(taskDir, 'merge_audio', 'audio_dubbing.wav');
 		const ctxBgmPath = ctx.input?.stages?.merge_video?.bgmPath;
 		const bgmFile = ctxBgmPath ? ctxBgmPath : bgmPath(taskDir);
-		const timingsFile = timings_filepath(taskDir);
 
 		if (!existsSync(dubbingFile))
 			throw new Error('audio_dubbing.wav not found');
-		if (!existsSync(timingsFile)) throw new Error('timings.json not found');
 
-		const data = await readJson(timingsFile, ctx);
+		const data = await read_timings(ctx)
 		const dstLang = dstLangFromTranslation(data.translation);
-		const subPath = join(mergeVideoDir, `subtitles.${dstLang}.srt`);
+		const subPath = join(mergeVideoDir, `${dstLang}.srt`);
 		writeSrt(data.translation, ctx, subPath);
 		const style = probeStyle(video_file_path, dstLang, probeOverrides);
 
@@ -180,7 +183,7 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 				'-i',
 				mixedAudio,
 				'-vf',
-				`subtitles='${filterSubPath(subPath)}':force_style='${style}'`,
+				subFilterArg(subPath, style),
 				'-map',
 				'0:v:0',
 				'-map',
@@ -205,12 +208,12 @@ export async function stageMergeVideo(ctx: TaskCtx) {
 	fileLog(ctx, 'write', finalVideo);
 
 	await setStage(taskDir, 'merge_video', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: 'Merged',
 	});
 
-	const finalPath = `/api/video/${taskId}`;
-	await setTask(taskDir, { final_video_path: finalPath });
+	// const finalPath = `/api/video/${taskId}`;
+	// await setTask(taskDir, { final_video_path: finalPath });
 }

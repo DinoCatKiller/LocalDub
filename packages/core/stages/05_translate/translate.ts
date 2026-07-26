@@ -8,50 +8,29 @@ import {
 	LANG_NAMES,
 	nowISO,
 	readTaskLanguages,
+	SrtJson,
 	subtitleFilePath,
 	translationFilePath,
 } from '@repo/core/stages/utils/utils.ts';
 import { TaskCtx, setCtx, setStage } from '@repo/core/context/context.ts';
+import { buildPreprocessPrompt, buildTranslateSystem, resolveTargetLanguage } from './utils';
+import { chat_completions } from '../../ml/llm/openai';
+import { to } from '@repo/shared/lib/utils/try';
+import { TranslateFile } from './type';
 
-/**
- * translate.[dstLang].json 结构
- *
- * 由 translate 阶段写入，split_audio/tts/merge_audio/merge_video 读取。
- * 时间戳源自 srt.json（秒→毫秒），文本是 LLM 翻译结果。
- * 此文件在此阶段后冻结，split_audio 不修改它，而是创建 timings.json。
- */
-export interface TranslateFile {
-	translation: {
-		src: string;
-		dst: string;
-		src_lang: string;
-		dst_lang: string;
-		start_time: number;
-		end_time: number;
-		speaker: string;
-	}[];
-}
+
 export async function stageTranslate(ctx: TaskCtx) {
 	const taskId = ctx.task.id;
 	const taskDir = ctx.task.task_dir
-	// 解析目标语言: config > auto 推断
-	const configTargetLang = readInputArgs().stages?.translate?.targetLang;
-	const { asrLanguage: srcLangCode, targetLanguage: existingDstLang } =
-		readTaskLanguages(ctx);
-	const resolvedDstLang =
-		configTargetLang ?? (srcLangCode === 'zh' ? 'en' : 'zh');
+	const { asrLanguage: srcLangCode, } = readTaskLanguages(ctx);
 
-	if (resolvedDstLang !== existingDstLang) {
-		setCtx(taskDir, { target_language: resolvedDstLang });
-	}
-
-	const dstLangCode = resolvedDstLang;
+	const dstLangCode = resolveTargetLanguage(ctx);
 	const translationFile = translationFilePath(taskDir, dstLangCode);
 	const srcLangName = LANG_NAMES[srcLangCode] || srcLangCode;
 	const dstLangName = LANG_NAMES[dstLangCode] || dstLangCode;
 
 	const srtFile = subtitleFilePath(ctx);
-	const data = await readJson(srtFile, ctx);
+	const data = await readJson<SrtJson>(srtFile, ctx);
 	const segments = data.result.segments;
 	const texts = segments.map((u: any) => (u.text || '').trim());
 	const fullText = (data.result.text || '').trim() || texts.join(' ');
@@ -63,15 +42,9 @@ export async function stageTranslate(ctx: TaskCtx) {
 		meta = readJson(ytdlpPath, ctx);
 	}
 
-	const transCfg = readInputArgs().stages?.translate;
+	const transArgs = readInputArgs().stages?.translate;
 	const apiKey = env.OPENAI_API_KEY;
 	if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
-	const api = {
-		baseUrl:
-			transCfg?.apiBase ?? env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1',
-		apiKey,
-		model: transCfg?.model ?? env.OPENAI_MODEL ?? 'gpt-4o-mini',
-	};
 
 	const metaView = {
 		title: (meta.title || '').trim().slice(0, 500) || '(unknown)',
@@ -81,28 +54,12 @@ export async function stageTranslate(ctx: TaskCtx) {
 
 	let preprocessPrompt = '';
 	if (hasMeta) {
-		preprocessPrompt = `你为视频字幕翻译做预处理。请阅读视频元信息和完整转录文本，输出 JSON。
-转录原始语言：${srcLangName}
-目标译文语言：${dstLangName}
-
-# 输出 JSON 格式（严格遵守）
-{
-  "summary": "<中文写的视频摘要，3-5 句>",
-  "hotwords": [
-    {"src": "<原文术语>", "dst": "<目标语言推荐译法>"}
-  ],
-  "corrections": [
-    {"wrong": "<转录中明显错认的写法>", "correct": "<正确写法>"}
-  ]
-}
-
-# 视频元信息
-标题：${metaView.title}
-作者：${metaView.uploader}
-描述：${metaView.description}
-
-# 转录文本
-${fullText.slice(0, 10000)}`;
+    preprocessPrompt = buildPreprocessPrompt({
+      dstLangName,
+      srcLangName,
+      metaView,
+      fullText,
+		})
 	}
 
 	async function callJson(
@@ -110,35 +67,21 @@ ${fullText.slice(0, 10000)}`;
 		user: string,
 		maxTokens = 1024,
 	): Promise<any> {
-		const resp = await fetch(api.baseUrl + '/chat/completions', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${api.apiKey}`,
-			},
-			body: JSON.stringify({
-				model: api.model,
-				max_tokens: maxTokens,
-				messages: [
-					{ role: 'system', content: system },
-					{ role: 'user', content: user },
-				],
-				temperature: 0.2,
-			}),
-		});
-		if (!resp.ok)
-			throw new Error(`OpenAI API ${resp.status}: ${await resp.text()}`);
-		const json = await resp.json();
-		const raw = json.choices?.[0]?.message?.content || '{}';
-		try {
-			return JSON.parse(raw);
-		} catch {
-			const m = raw.match(/\{.*\}/s);
-			if (m) return JSON.parse(m[0]);
-			throw new Error(
-				`Failed to parse JSON from LLM response: ${raw.slice(0, 300)}`,
-			);
-		}
+		const raw = await chat_completions(user, {
+      systemPrompt: system,
+      max_tokens: maxTokens,
+      api_key: apiKey,
+      apiBase: transArgs.apiBase,
+      model: transArgs.model,
+			temperature: 0.2,
+    });
+    const [ret, err] = to(() => JSON.parse(raw))
+    if (ret) return ret
+    const m = raw.match(/\{.*\}/s);
+    if (m) return JSON.parse(m[0]);
+    throw new Error(
+			`Failed to parse JSON from LLM response: ${raw.slice(0, 300)}`,
+		);
 	}
 
 	let summary = '',
@@ -164,28 +107,14 @@ ${fullText.slice(0, 10000)}`;
 	const hotwordsStr = hotwords.length ? hotwords.join('\n') : '(none)';
 	const correctionsStr = corrections.length ? corrections.join('\n') : '(none)';
 
-	const translateSystem = `你是一个专业的${dstLangName}翻译助手。请将${srcLangName}逐句翻译成${dstLangName}。
-
-# 元信息
-视频标题：${metaView.title}
-作者：${metaView.uploader}
-描述：${metaView.description}
-摘要：${summary || '(none)'}
-
-# 翻译热词
-${hotwordsStr}
-
-# ASR 纠错
-${correctionsStr}
-
-# 规则
-1) 准确自然。忠实传达原意，口语保持口语感，书面保持克制；避免直译腔与过度文学化；不擅自增删信息。
-2) 逐句对齐。一句对一句。
-3) 人名、地名、品牌、型号、缩写默认保留；文件名、路径、URL 一律保留原样。
-4) 使用${dstLangName}标点；破折号禁用，改用逗号或括号。
-5) 输出格式：{"dst": ["<对应${dstLangName}译文>", "<对应${dstLangName}译文>", ...]}
-
-用户消息会发送一个编号列表，请严格按顺序逐句翻译，每句一条。`;
+	const translateSystem = buildTranslateSystem({
+		dstLangName,
+		srcLangName,
+		metaView,
+		summary,
+		hotwordsStr,
+		correctionsStr,
+	});
 
 	const BATCH_SIZE = 50;
 	const dsts: string[] = [];
@@ -246,13 +175,13 @@ ${correctionsStr}
 		});
 	}
 
-	const translation = segments.map((u: any, idx: number) => ({
+	const translation: TranslateFile['translation'] = segments.map((u: any, idx: number) => ({
 		src: texts[idx],
 		dst: dsts[idx]?.replace(/——/g, '，') || '',
 		src_lang: srcLangCode,
 		dst_lang: dstLangCode,
-		start_time: u.start,
-		end_time: u.end,
+		start: u.start,
+		end: u.end,
 		speaker: '1',
 	}));
 
@@ -261,7 +190,7 @@ ${correctionsStr}
 	writeJson(translationFile, { translation }, ctx);
 
 	await setStage(taskDir, 'translate', {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: 'Translated',

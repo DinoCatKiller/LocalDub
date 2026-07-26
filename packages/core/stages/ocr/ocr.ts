@@ -139,7 +139,7 @@ export async function stageOcr(ctx: TaskCtx) {
 	}
 
 	await setStage(taskDir, "ocr", {
-		status: "succeeded",
+		status: "success",
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: `OCR'd ${frameFiles.length} frames → ${segments.length} segments`,

@@ -94,7 +94,7 @@ export async function runPipeline(ctx: TaskCtx) {
 	}
 
 	setTask(taskDir, {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		current_stage: null,
 	});
@@ -175,7 +175,7 @@ export async function resumePipeline(
 		const stageStatus = new Map(rows.map((r) => [r.name, r.status]));
 
 		for (let i = 0; i < stages.length; i++) {
-			if (stageStatus.get(stages[i]) !== 'succeeded') {
+			if (stageStatus.get(stages[i]) !== 'success') {
 				startIdx = i;
 				break;
 			}
@@ -243,7 +243,7 @@ export async function resumePipeline(
 	}
 
 	setTask(taskDir, {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		current_stage: null,
 	});
@@ -292,7 +292,7 @@ export async function rerunSingleStage(
 	}
 
 	await setStage(taskDir, stage, {
-		status: 'succeeded',
+		status: 'success',
 		completed_at: nowISO(),
 		progress: 100,
 		last_message: `${stage} completed`,

@@ -1,4 +1,5 @@
 pub mod log;
+pub mod tree;
 
 use config_rs::{
     root::base_dir,

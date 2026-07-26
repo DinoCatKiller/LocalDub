@@ -15,7 +15,7 @@
   "zh-cn": "简体中文",
   "fr": "Français",
   "es": "Español",
-  
+
   "pt": "Português",
   "it": "Italiano",
   "de": "Deutsch",
@@ -118,7 +118,7 @@
   "task_finalVideo": "Final video",
   "task_download": "Download",
   "task_stages": "Stages",
-  "task_resumeHelp": "Resume from the failed stage. Already-succeeded stages will be reused from cache.",
+  "task_resumeHelp": "Resume from the failed stage. Already-success stages will be reused from cache.",
   "task_resuming": "Resuming",
   "task_resumeTask": "Resume task",
   "task_runLog": "Run log",
@@ -168,7 +168,7 @@
   "settings_loadModelsError": "Failed to load models",
   "status_queued": "queued",
   "status_running": "running",
-  "status_succeeded": "succeeded",
+  "status_success": "success",
   "status_failed": "failed",
   "status_pending": "pending",
   "stages_download": "Download",

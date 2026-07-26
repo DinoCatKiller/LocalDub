@@ -22,7 +22,7 @@ export function DeviceInfo() {
             <dl class="space-y-1 text-sm">
               <div class="flex gap-3"><dt class="w-24 text-gray-500">OS</dt><dd>{d().platform.os} {d().platform.arch}</dd></div>
               <div class="flex gap-3"><dt class="w-24 text-gray-500">Host</dt><dd>{d().platform.hostname}</dd></div>
-              <div class="flex gap-3"><dt class="w-24 text-gray-500">Runtime</dt><dd>{d().platform.runtime} {d().platform.runtime_version}{d().platform.node_version ? ` (node ${d().platform.node_version})` : ''}</dd></div>
+              <div class="flex gap-3"><dt class="w-24 text-gray-500">Runtime</dt><dd>{d().platform.runtime} {d().platform.runtimeVersion}{d().platform.nodeVersion ? ` (node ${d().platform.nodeVersion})` : ''}</dd></div>
             </dl>
           </section>
 
@@ -39,7 +39,7 @@ export function DeviceInfo() {
             <dl class="space-y-1 text-sm">
               <div class="flex gap-3"><dt class="w-24 text-gray-500">Total</dt><dd>{d().memory.total}</dd></div>
               <div class="flex gap-3"><dt class="w-24 text-gray-500">Free</dt><dd>{d().memory.free}</dd></div>
-              <div class="flex gap-3"><dt class="w-24 text-gray-500">Heap</dt><dd>{d().memory.process_heap_used}</dd></div>
+              <div class="flex gap-3"><dt class="w-24 text-gray-500">Heap</dt><dd>{d().memory.processHeapUsed}</dd></div>
             </dl>
           </section>
 
@@ -52,7 +52,7 @@ export function DeviceInfo() {
                     <div class="font-medium">{gpu.name}</div>
                     <div class="flex gap-4 mt-1 text-gray-400">
                       {gpu.vram.total && <span>VRAM: {gpu.vram.total} GB</span>}
-                      <span>Driver: {gpu.driver_version}</span>
+                      <span>Driver: {gpu.driverVersion}</span>
                     </div>
                   </div>
                 ))}
