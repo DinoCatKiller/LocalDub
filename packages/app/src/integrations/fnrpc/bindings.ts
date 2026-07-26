@@ -302,6 +302,8 @@ export type Procedures = {
   start_voxcpm: { kind: "mutate"; method: "POST"; input: null; output: number; error: RpcErr };
   stop_voxcpm: { kind: "mutate"; method: "POST"; input: null; output: null; error: RpcErr };
   device_info: { kind: "query"; method: "GET"; input: null; output: DeviceInfo; error: RpcErr };
+  resume_task: { kind: "mutate"; method: "POST"; input: [string, string]; output: null; error: RpcErr };
+
 }
 
 export const __procedureMeta = {
@@ -326,4 +328,5 @@ export const __procedureMeta = {
   start_voxcpm: { kind: "mutate", method: "POST" },
   stop_voxcpm: { kind: "mutate", method: "POST" },
   device_info: { kind: "query", method: "GET" },
+	resume_task: { kind: "mutate", method: "POST" },
 } as const;

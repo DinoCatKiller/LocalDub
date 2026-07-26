@@ -1,6 +1,7 @@
 import { For, type Component } from "solid-js";
 import type { Track } from "./consts";
 import { AsrOcrFixTrack } from "./tracks/AsrOcrFixTrack";
+import { AsrTrack } from "./tracks/AsrTrack";
 import { SplitAudioTrack } from "./tracks/SplitAudioTrack";
 import { TtsTrack } from "./tracks/TtsTrack";
 
@@ -26,6 +27,7 @@ interface TrackComponentProps {
 }
 
 const trackComponents: Record<string, Component<TrackComponentProps>> = {
+  asr: AsrTrack,
   asr_ocr_fix: AsrOcrFixTrack,
   split_audio: SplitAudioTrack,
   tts: TtsTrack,

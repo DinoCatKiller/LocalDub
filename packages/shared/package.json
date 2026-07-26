@@ -2,8 +2,9 @@
   "name": "@repo/shared",
   "type": "module",
   "exports": {
-    "./*": "./*.ts",
-    "./*.ts": "./*.ts"
+    "./*.js": "./*.js",
+    "./*.ts": "./*.ts",
+    "./*": "./*.ts"
   },
   "devDependencies": {
     "@types/node": "^26.1.0",
