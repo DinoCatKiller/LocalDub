@@ -65,7 +65,7 @@ export function TaskDetailPage(props: Props) {
   // ASR 字幕段
   const asrQuery = useQuery(
     () => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`, {
-      enabled: stage_map().asr.status === 'success'
+      enabled: stage_map().asr?.status === 'success'
     }),
   );
 
@@ -85,7 +85,7 @@ export function TaskDetailPage(props: Props) {
   const transLang = () => taskCtxQ.data?.target_language;
   const transQuery = useQuery(
     () => client.read_app_file_text.queryOptions(`${taskDir}/translate/translation.${transLang()}.json`, {
-      enabled: stage_map().translate.status === 'success',
+      enabled: stage_map().translate?.status === 'success',
     }),
   );
 
@@ -104,7 +104,7 @@ export function TaskDetailPage(props: Props) {
 
   const merge_audio_q = useQuery(
     () => client.read_app_file_text.queryOptions(`${taskDir}/merge_audio/timings.json`, {
-      enabled: stage_map().merge_audio.status === 'success',
+      enabled: stage_map().merge_audio?.status === 'success',
     }),
   );
   const merge_audio_segments = () => {
@@ -120,7 +120,7 @@ export function TaskDetailPage(props: Props) {
   };
   const split_audio_timings_q = useQuery(
     () => client.read_app_file_text.queryOptions(`${taskDir}/split_audio/timings.json`, {
-      enabled: stage_map().split_audio.status === 'success',
+      enabled: stage_map().split_audio?.status === 'success',
     }),
   );
   const split_audio_timings = () => {
@@ -137,7 +137,7 @@ export function TaskDetailPage(props: Props) {
   };
   const split_audio_q = useQuery(
     () => client.read_app_file_text.queryOptions(`${taskDir}/split_audio/split_audio.json`, {
-      enabled: stage_map().split_audio.status === 'success',
+      enabled: stage_map().split_audio?.status === 'success',
     }),
   );
   const split_audio = () => {
@@ -154,7 +154,7 @@ export function TaskDetailPage(props: Props) {
   };
   const ttsQ = useQuery(
     () => client.read_app_file_text.queryOptions(`${taskDir}/tts/tts.json`, {
-      enabled: stage_map().tts.status === 'success',
+      enabled: stage_map().tts?.status === 'success',
     }),
   );
   const ttsSegments = () => {
@@ -172,7 +172,7 @@ export function TaskDetailPage(props: Props) {
 
   const asr_ocr_fix_llm_q = useQuery(
     () => client.read_app_file_text.queryOptions(`${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json`, {
-      enabled: stage_map().asr_ocr_fix.status === 'success',
+      enabled: stage_map().asr_ocr_fix?.status === 'success',
     }),
   );
   const asr_ocr_fix_llm = () => {
