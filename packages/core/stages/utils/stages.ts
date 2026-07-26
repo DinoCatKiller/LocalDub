@@ -1,58 +1,55 @@
-import { StageName } from '@repo/core/cmd/tasks/input';
-import { readInputArgs } from '../../input/input.ts';
+import { StageName } from "@repo/core/cmd/tasks/input";
+import { readInputArgs } from "../../input/input.ts";
 
 export const DUB_STAGES: StageName[] = [
-	'separate',
-	'separate_after',
-	'asr',
-	'asr_fix',
-	'translate',
-	'split_audio',
-	'tts',
-	'merge_audio',
-	'merge_video',
+  "separate",
+  "separate_after",
+  "asr",
+  "asr_fix",
+  "translate",
+  "split_audio",
+  "tts",
+  "merge_audio",
+  "merge_video",
 ];
 
 export const DUB_ASR_OCR_STAGES: StageName[] = [
-	'separate',
-	'separate_after',
-	'asr',
-	'asr_ocr_pre',
-	'asr_ocr',
-	'asr_ocr_fix',
-	'translate',
-	'split_audio',
-	'tts',
-	'merge_audio',
-	'merge_video',
-]
+  "separate",
+  "separate_after",
+  "asr",
+  "asr_ocr_pre",
+  "asr_ocr",
+  "asr_ocr_fix",
+  "translate",
+  "split_audio",
+  "tts",
+  "merge_audio",
+  "merge_video",
+];
 
 export const SUBTITLE_STAGES: StageName[] = [
-	'separate',
-	'separate_after',
-	'asr',
-	'asr_fix',
-	'translate',
-	'split_audio',
-	'merge_video',
+  "separate",
+  "separate_after",
+  "asr",
+  "asr_fix",
+  "translate",
+  "split_audio",
+  "merge_video",
 ];
 
 function withOcrStages(stages: StageName[], pipeline?: string): StageName[] {
-	const drop = new Set(['asr', 'asr_fix', 'separate', 'separate_after']);
-	if (pipeline === 'subtitle') drop.add('separate');
-	const filtered = stages.filter(s => !drop.has(s));
-	const idx = filtered.findIndex(s => s === 'translate');
-	const out = [...filtered];
-	const ocrStages: StageName[] = [
-		'ocr', 
-		'ocr_fix', 
-	];
-	if (idx === -1) {
-		out.push(...ocrStages);
-	} else {
-		out.splice(idx, 0, ...ocrStages);
-	}
-	return out;
+  const drop = new Set(["asr", "asr_fix", "separate", "separate_after"]);
+  if (pipeline === "subtitle") drop.add("separate");
+  const filtered = stages.filter((s) => !drop.has(s));
+  const idx = filtered.findIndex((s) => s === "translate");
+  const out = [...filtered];
+  const ocrStages: StageName[] = ["ocr", "ocr_fix"];
+  if (idx === -1) {
+    out.push(...ocrStages);
+  } else {
+    out.splice(idx, 0, ...ocrStages);
+  }
+  return out;
 }
 
 // function withAsrOcrStages(stages: StageName[], _pipeline?: string): StageName[] {
@@ -71,21 +68,20 @@ function withOcrStages(stages: StageName[], pipeline?: string): StageName[] {
 
 /** Build stage list based on pipeline mode and subtitleSource config */
 export function getStages(pipeline?: string): StageName[] {
-	let stages = pipeline === 'subtitle' ? SUBTITLE_STAGES : DUB_STAGES;
-	try {
-		const args = readInputArgs();
-		const src = args.task.subtitleSource ?? 'asr';
-		if (src === 'ocr') stages = withOcrStages(stages, pipeline);
-		else if (src === 'asr_ocr') stages = DUB_ASR_OCR_STAGES
-		if (args.stages?.translate?.enabled === false) {
-			stages = stages.filter(s => s !== 'translate');
-		}
-		if (pipeline === 'subtitle' && args.stages?.split_audio?.vadAlign !== true) {
-			stages = stages.filter(s => s !== 'split_audio');
-		}
-	} catch {
-		// config may not be available (e.g. import time); use default
-	}
-	return stages;
+  let stages = pipeline === "subtitle" ? SUBTITLE_STAGES : DUB_STAGES;
+  try {
+    const args = readInputArgs();
+    const src = args.task.subtitleSource ?? "asr";
+    if (src === "ocr") stages = withOcrStages(stages, pipeline);
+    else if (src === "asr_ocr") stages = DUB_ASR_OCR_STAGES;
+    if (args.stages?.translate?.enabled === false) {
+      stages = stages.filter((s) => s !== "translate");
+    }
+    if (pipeline === "subtitle" && args.stages?.split_audio?.vadAlign !== true) {
+      stages = stages.filter((s) => s !== "split_audio");
+    }
+  } catch {
+    // config may not be available (e.g. import time); use default
+  }
+  return stages;
 }
-
