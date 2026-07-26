@@ -18,7 +18,8 @@ import { SplitAudioFile, SplitAudioTiming, SplitAudioTimingFile } from "@repo/co
 import { AsrOcrFile } from "@repo/core/ml/subtitle_ocr/types";
 import type { TtsFile } from "@repo/core/stages/07_tts/types";
 import { TimingsFile } from "@repo/core/stages/merge_audio/types";
-import { use_resumeFrom } from "./TaskControlPanel/taskControlPanelStore";
+import { use_resumeFrom, useViewingTab, type StageTab } from "./TaskControlPanel/taskControlPanelStore";
+import { STAGE_TRACKS } from "./const";
 
 interface Props { groupId: string; taskId: string; }
 
@@ -123,19 +124,17 @@ export function TaskDetailPage(props: Props) {
         return data.result.segments.map((item, i: number) => ({ index: i, text: item.text, startMs: item.start, endMs: item.end, raw: item }));
     };
 
-    const tracks = (): Track[] => {
-        if (resumeFrom() === 'asr_ocr_pre') {
-            const asr = asrSegments();
-            return asr.length ? [{ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6', filePath: `${taskDir}/asr/asr.json` }] : [];
 
-        }
+    const viewingTab = useViewingTab();
+
+    const tracks = (): Track[] => {
         const result: Track[] = [];
         const merge_audio = merge_audio_segments();
         if (merge_audio.length) result.push({ id: 'merge_audio', label: 'merge_audio/timings.json', segments: merge_audio, color: '#3b82f6' });
         const tts = ttsSegments();
         if (tts.length) result.push({ id: 'tts', label: 'tts/tts.json', segments: tts, color: '#f43f5e', filePath: `${taskDir}/tts/tts.json` });
         const split_audio_timings_data = split_audio_timings();
-        if (split_audio_timings_data.length) result.push({ id: 'split_audio_timings_data', label: 'split_audio/timings.json', segments: split_audio_timings_data, color: '#3b82f6' });
+        if (split_audio_timings_data.length) result.push({ id: 'split_audio_timings', label: 'split_audio/timings.json', segments: split_audio_timings_data, color: '#3b82f6' });
         const split_audio_data = split_audio();
         if (split_audio_data.length) result.push({ id: 'split_audio', label: 'split_audio/split_audio.json', segments: split_audio_data, color: '#f59e0b', filePath: `${taskDir}/split_audio/split_audio.json` });
         const trans = transSegments();
@@ -144,7 +143,12 @@ export function TaskDetailPage(props: Props) {
         if (asr_ocr_fix_llm_.length) result.push({ id: 'asr_ocr_fix', label: 'asr_ocr_fix/asr_ocr_fused_llm_fix.json', segments: asr_ocr_fix_llm_, color: '#a855f7', filePath: `${taskDir}/asr_ocr_fix/asr_ocr_fused_llm_fix.json` });
         const asr = asrSegments();
         if (asr.length) result.push({ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6' });
-        return result;
+
+        // root 显示全部轨道；其他 tab 仅显示该阶段对应的轨道
+        const v = viewingTab();
+        if (v === 'root') return result;
+        const ids = STAGE_TRACKS[v] ?? [];
+        return ids.length ? result.filter((t) => ids.includes(t.id)) : [];
     };
 
     const duration = useDuration();
