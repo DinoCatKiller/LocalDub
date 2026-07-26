@@ -24,6 +24,8 @@
     "typescript": "^7"
   },
   "dependencies": {
+    "@tanstack/query-core": "5.100.0",
+    "@tanstack/solid-query": "5.100.0",
     "agnostic-query": "^1.10.7"
   }
 }

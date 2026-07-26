@@ -5,10 +5,9 @@ use specta::Type;
 #[serde(rename_all = "lowercase")]
 pub enum StageStatus {
     #[default]
-    // #[serde(rename = "pending")]
     Pending,
     Running,
-    // #[serde(rename = "success")]
+    #[serde(alias = "succeeded")]
     Success,
     Failed,
 }
