@@ -18,6 +18,7 @@ import { SplitAudioFile, SplitAudioTiming, SplitAudioTimingFile } from "@repo/co
 import { AsrOcrFile } from "@repo/core/ml/subtitle_ocr/types";
 import type { TtsFile } from "@repo/core/stages/07_tts/types";
 import { TimingsFile } from "@repo/core/stages/merge_audio/types";
+import { use_resumeFrom } from "./TaskControlPanel/taskControlPanelStore";
 
 interface Props { groupId: string; taskId: string; }
 
@@ -30,8 +31,8 @@ export function TaskDetailPage(props: Props) {
     // console.log('[TaskDetailPage] stages:', taskCtxQ.data?.stages?.map(s => s.name));
 
   const [videoRef, setVideoRef] = createSignal<HTMLVideoElement | null>(null);
-    const [resumeFromStage, setResumeFromStage] = createSignal<string | null>(null);
-    const watch_task_tree_q = useQuery(() => client.watch_task_tree.streamedOptions(`${props.groupId}/${props.taskId}`))
+  const resumeFrom = use_resumeFrom()
+    const watch_task_tree_q = useQuery(() => client.watch_task_tree.streamedOptions(`workfolder/${props.groupId}/${props.taskId}`))
 
     const onVideoReady = (ref: HTMLVideoElement) => {
         setVideoRef(ref);
@@ -46,7 +47,9 @@ export function TaskDetailPage(props: Props) {
     const onRateChange = (rate: number) => { const v = videoRef(); if (v) v.playbackRate = rate; setPlaybackRate(rate); };
     const onSeek = (ms: number) => { const v = videoRef(); if (v) v.currentTime = ms / 1000; };
 
-    const asrQuery = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`));
+  const asrQuery = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/asr/asr.json`, {
+      enabled: stage_map().asr?.status === 'success',
+    }));
 
     const asrSegments = () => {
         if (!asrQuery.data) return [];
@@ -121,7 +124,7 @@ export function TaskDetailPage(props: Props) {
     };
 
     const tracks = (): Track[] => {
-        if (resumeFromStage() === 'asr_ocr_pre') {
+        if (resumeFrom() === 'asr_ocr_pre') {
             const asr = asrSegments();
             return asr.length ? [{ id: 'asr', label: 'asr.json', segments: asr, color: '#3b82f6', filePath: `${taskDir}/asr/asr.json` }] : [];
 
@@ -148,8 +151,6 @@ export function TaskDetailPage(props: Props) {
     const currentTime = useCurrentTime();
     const fps = useFps();
 
-
-
   return (
         <div class="flex flex-col h-full w-full min-w-0 max-w-full">
             <div class="flex h-120">
@@ -157,8 +158,8 @@ export function TaskDetailPage(props: Props) {
                 <Show when={taskCtxQ.isSuccess}>
                     <TaskControlPanel
                         ctx={taskCtxQ.data!}
-                        resumeFromStage={resumeFromStage()}
-                        onResumeFrom={setResumeFromStage}
+                        // resumeFromStage={resumeFromStage()}
+                        // onResumeFrom={setResumeFromStage}
                     />
                 </Show>
                 <div class="flex-1 min-w-0 flex flex-col">
@@ -166,13 +167,11 @@ export function TaskDetailPage(props: Props) {
                 </div>
                 <AiReviewPanel />
             </div>
-            <Show when={resumeFromStage() === 'asr_ocr_pre'}>
-                <div class="flex-1">
-                    <Timeline tracks={tracks()} duration={duration()} currentTime={currentTime()} fps={fps()} onSeek={onSeek} taskDir={taskDir} />
-                </div>
-            </Show>
-
-
+            {/*<Show when={resumeFrom() === 'asr_ocr_pre'}>*/}
+              <div class="flex-1">
+                <Timeline tracks={tracks()} duration={duration()} currentTime={currentTime()} fps={fps()} onSeek={onSeek} taskDir={taskDir} />
+              </div>
+            {/*</Show>*/}
         </div>
     );
 }
