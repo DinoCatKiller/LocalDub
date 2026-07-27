@@ -30,7 +30,7 @@ pre-commit:
       glob: "**/*.{ts,tsx,js,jsx,json,jsonc}"
       exclude:
         - "submodule/**"
-      run: oxfmt --write {staged_files}
+      run: bunx oxfmt --write {staged_files}
 #     - run: yarn eslint {staged_files}
 #       glob: "*.{js,ts,jsx,tsx}"
 #
