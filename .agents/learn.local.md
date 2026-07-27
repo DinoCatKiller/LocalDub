@@ -1,3 +1,9 @@
 ## OpenCut
+
 - /home/aa/repos/learn_ls/OpenCutClassic
 - /home/aa/repos/learn_ls/OpenCut/
+
+## ide
+
+- /home/aa/repos/learn_ls/opencode
+- /home/aa/repos/learn_ls/zed

@@ -161,7 +161,6 @@ cython_debug/
 #.idea/
 
 playground/
-models/
 flagged/
 videos/
 voice_type/

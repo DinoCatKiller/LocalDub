@@ -1,16 +1,20 @@
 <!-- intent-skills:start -->
+
 ## Skill Loading
 
 Before editing files for a substantial task:
+
 - Run `bunx @tanstack/intent@latest list` from the workspace root to see available local skills.
 - If a listed skill matches the task, run `bunx @tanstack/intent@latest load <package>#<skill>` before changing files.
 - Use the loaded `SKILL.md` guidance while making the change.
 - Monorepos: when working across packages, run the skill check from the workspace root and prefer the local skill for the package being changed.
 - Multiple matches: prefer the most specific local skill for the package or concern you are changing; load additional skills only when the task spans multiple packages or concerns.
+
 <!-- intent-skills:end -->
 
 # LocalDub
 
+- 需要有批判性思维(可以质疑)
 - 测试/实验/探索一律不用 `/tmp`，写到 `packages/tmp/`。
 - 类型检查: `bun typecheck`, `cargo check`
 - 可以使用 `gh` 来操作 github
@@ -39,7 +43,7 @@ Before editing files for a substantial task:
 ### Macros
 
 - `#[fnrpc::rpc_query]` — query endpoint. Ctx 从 `&T` 参数类型推断，无 `&T` 则 `Ctx = ()`
-- `#[fnrpc::rpc_mutation]` — mutation endpoint  
+- `#[fnrpc::rpc_mutation]` — mutation endpoint
 - `#[fnrpc::rpc_subscription]` — subscription endpoint
 - `fnrpc::fnrpc_registry![fn1, fn2]` — 生成 `build_fn_rpc() -> RpcRouter<Ctx>`（Ctx 从 handler 自动推断）
 
@@ -60,10 +64,10 @@ async fn greet(ctx: &Ctx, input: GreetInput) -> GreetOutput {
 }
 ```
 
-| transport | Ctx 构造 |
-|-----------|---------|
+| transport | Ctx 构造                                   |
+| --------- | ------------------------------------------ |
 | Tauri IPC | `Ctx { state, headers: HeaderMap::new() }` |
-| Axum HTTP | 从提取器获取 headers/query 填入 Ctx |
+| Axum HTTP | 从提取器获取 headers/query 填入 Ctx        |
 
 ### Router
 
