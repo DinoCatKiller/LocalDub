@@ -4,7 +4,7 @@ import { FrameResult, Segment, SegmentWithAdjusted } from "@repo/core/ml/subtitl
 import { LineAdjustedArgs } from "@repo/core/ml/subtitle_ocr/input";
 
 function polygonToBbox(box: number[][]): {
-    left: number;
+  left: number;
   top: number;
   right: number;
   bottom: number;
