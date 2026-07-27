@@ -3389,8 +3389,8 @@ dependencies = [
 
 [[package]]
 name = "fnrpc"
-version = "0.4.0"
-source = "git+https://github.com/Nahida-aa/fnrpc.git#51863caf2769ecbc836b902728ea9793d8ca925b"
+version = "0.4.2"
+source = "git+https://github.com/Nahida-aa/fnrpc.git?rev=b77f290320ec88fc382c6a5130de1cf2f18af2f9#b77f290320ec88fc382c6a5130de1cf2f18af2f9"
 dependencies = [
  "fnrpc-macros",
  "futures",
@@ -3407,8 +3407,8 @@ dependencies = [
 
 [[package]]
 name = "fnrpc-axum"
-version = "0.4.0"
-source = "git+https://github.com/Nahida-aa/fnrpc.git#51863caf2769ecbc836b902728ea9793d8ca925b"
+version = "0.4.2"
+source = "git+https://github.com/Nahida-aa/fnrpc.git?rev=b77f290320ec88fc382c6a5130de1cf2f18af2f9#b77f290320ec88fc382c6a5130de1cf2f18af2f9"
 dependencies = [
  "async-trait",
  "axum",
@@ -3422,8 +3422,8 @@ dependencies = [
 
 [[package]]
 name = "fnrpc-macros"
-version = "0.4.0"
-source = "git+https://github.com/Nahida-aa/fnrpc.git#51863caf2769ecbc836b902728ea9793d8ca925b"
+version = "0.4.2"
+source = "git+https://github.com/Nahida-aa/fnrpc.git?rev=b77f290320ec88fc382c6a5130de1cf2f18af2f9#b77f290320ec88fc382c6a5130de1cf2f18af2f9"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3432,8 +3432,8 @@ dependencies = [
 
 [[package]]
 name = "fnrpc-tauri"
-version = "0.4.0"
-source = "git+https://github.com/Nahida-aa/fnrpc.git#51863caf2769ecbc836b902728ea9793d8ca925b"
+version = "0.4.2"
+source = "git+https://github.com/Nahida-aa/fnrpc.git?rev=b77f290320ec88fc382c6a5130de1cf2f18af2f9#b77f290320ec88fc382c6a5130de1cf2f18af2f9"
 dependencies = [
  "fnrpc",
  "futures",

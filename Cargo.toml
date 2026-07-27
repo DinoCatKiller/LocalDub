@@ -13,9 +13,9 @@ specta = { version = "=2.0.0-rc.26", features = ["derive", "serde_json"] }
 specta-typescript = { version = "0.0.13", features = ["serde"] }
 specta-serde = { version = "0.0.13" }
 specta-util = { version = "0.0.13" }
-fnrpc = { version = "0.4.0", features = ["ts-bindings", "tracing"] }
-fnrpc-axum = { version = "0.4.0" }
-fnrpc-tauri = { version = "0.4.0" }
+fnrpc = { version = "0.4.2", features = ["ts-bindings", "tracing"] }
+fnrpc-axum = { version = "0.4.2" }
+fnrpc-tauri = { version = "0.4.2" }
 notify = { version = "6", features = ["macos_fsevent"] }
 async-channel = "2"
 tracing = "0.1"
@@ -36,6 +36,6 @@ specta-macros = { git = "https://github.com/specta-rs/specta.git", rev = "3c5357
 specta-serde = { git = "https://github.com/specta-rs/specta.git", rev = "3c535739ea7bd8737ecdbff6c3aef9b7330da706" }
 specta-typescript = { git = "https://github.com/specta-rs/specta.git", rev = "3c535739ea7bd8737ecdbff6c3aef9b7330da706" }
 specta-util = { git = "https://github.com/specta-rs/specta.git", rev = "3c535739ea7bd8737ecdbff6c3aef9b7330da706" }
-fnrpc = { git = "https://github.com/Nahida-aa/fnrpc.git",  }
-fnrpc-axum = { git = "https://github.com/Nahida-aa/fnrpc.git" }
-fnrpc-tauri = { git = "https://github.com/Nahida-aa/fnrpc.git" }
+fnrpc = { git = "https://github.com/Nahida-aa/fnrpc.git", rev = "b77f290320ec88fc382c6a5130de1cf2f18af2f9" }
+fnrpc-axum = { git = "https://github.com/Nahida-aa/fnrpc.git", rev = "b77f290320ec88fc382c6a5130de1cf2f18af2f9" }
+fnrpc-tauri = { git = "https://github.com/Nahida-aa/fnrpc.git", rev = "b77f290320ec88fc382c6a5130de1cf2f18af2f9" }
