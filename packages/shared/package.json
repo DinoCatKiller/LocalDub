@@ -6,9 +6,8 @@
     "./*.ts": "./*.ts",
     "./*": "./*.ts"
   },
-  "devDependencies": {
-    "@types/node": "^26.1.0",
-    "vite": "^8.0.13"
+  "scripts": {
+    "i18n:compile": "paraglide-js compile --project ./i18n/project.inlang --outdir ./i18n/paraglide"
   },
   "dependencies": {
     "@tanstack/query-core": "^5.100.11",
@@ -17,5 +16,10 @@
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.0",
     "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@inlang/paraglide-js": "^2.20.2",
+    "@types/node": "^26.1.0",
+    "vite": "^8.0.13"
   }
 }
