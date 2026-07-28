@@ -2,9 +2,9 @@
   "name": "@repo/shared",
   "type": "module",
   "exports": {
-    "./*.js": "./*.js",
+    "./*": "./*.ts",
     "./*.ts": "./*.ts",
-    "./*": "./*.ts"
+    "./*.js": "./*.js"
   },
   "scripts": {
     "i18n:compile": "paraglide-js compile --project ./i18n/project.inlang --outdir ./i18n/paraglide"
