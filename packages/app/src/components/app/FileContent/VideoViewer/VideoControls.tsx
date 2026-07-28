@@ -1,8 +1,20 @@
 import { Play, Pause } from "lucide-solid";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@repo/ui-solid/base/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@repo/ui-solid/base/select";
 import { msToTimecodeFull } from "@repo/core/utils/timecode";
 import { EditableTimecode } from "#/components/ui/editable-timecode";
-import { useCurrentTime, useDuration, useFps, usePlaying, usePlaybackRate } from "../store/videoViewer";
+import {
+  useCurrentTime,
+  useDuration,
+  useFps,
+  usePlaying,
+  usePlaybackRate,
+} from "../store/videoViewer";
 
 export interface VideoControlsProps {
   onTogglePlay: () => void;
@@ -20,18 +32,62 @@ export function VideoControls(props: VideoControlsProps) {
   const playing = usePlaying();
   const playbackRate = usePlaybackRate();
 
+  const fastForward = () => {
+    const newTime = Math.min(currentTime() + 15000, duration());
+    props.onTimeChange(newTime);
+  };
+
+  const fastRewind = () => {
+    const newTime = Math.max(currentTime() - 15000, 0);
+    props.onTimeChange(newTime);
+  };
+
   return (
-    <div class="flex items-center h-8 px-3 gap-3  border-t text-sm select-none">
+    <div class="flex items-center h-8 px-3 gap-3 border-t text-sm select-none">
       <span class="text-xs text-muted-foreground tabular-nums flex items-center gap-0.5">
-        <EditableTimecode format="timecode" time={currentTime()} duration={duration()} fps={fps()} onTimeChange={props.onTimeChange} />
+        <EditableTimecode
+          format="timecode"
+          time={currentTime()}
+          duration={duration()}
+          fps={fps()}
+          onTimeChange={props.onTimeChange}
+        />
         <span class="text-muted-foreground">(</span>
-        <EditableTimecode format="ms" time={currentTime()} duration={duration()} fps={fps()} onTimeChange={props.onTimeChange} />
+        <EditableTimecode
+          format="ms"
+          time={currentTime()}
+          duration={duration()}
+          fps={fps()}
+          onTimeChange={props.onTimeChange}
+        />
         <span class="text-muted-foreground">,</span>
-        <EditableTimecode format="full" time={currentTime()} duration={duration()} fps={fps()} onTimeChange={props.onTimeChange} />
+        <EditableTimecode
+          format="full"
+          time={currentTime()}
+          duration={duration()}
+          fps={fps()}
+          onTimeChange={props.onTimeChange}
+        />
         <span class="text-muted-foreground">)</span>
         <span class="text-muted-foreground">/</span>
         {msToTimecodeFull(duration(), fps())}
       </span>
+
+      {/* 快退/快进按钮 */}
+      <button
+        onClick={fastRewind}
+        class="flex items-center justify-center w-8 h-8 rounded hover:bg-accent/50 text-xs"
+        title="快退15秒"
+      >
+        ⏪ 15s
+      </button>
+      <button
+        onClick={fastForward}
+        class="flex items-center justify-center w-8 h-8 rounded hover:bg-accent/50 text-xs"
+        title="快进15秒"
+      >
+        15s ⏩
+      </button>
 
       <div class="flex-1 flex justify-center">
         <button
@@ -47,9 +103,7 @@ export function VideoControls(props: VideoControlsProps) {
         value={String(playbackRate())}
         onChange={(v) => props.onRateChange(Number(v))}
         placeholder="1"
-        itemComponent={(p) => (
-          <SelectItem item={p.item}>{rateLabel(p.item.rawValue)}</SelectItem>
-        )}
+        itemComponent={(p) => <SelectItem item={p.item}>{rateLabel(p.item.rawValue)}</SelectItem>}
       >
         <SelectTrigger class="w-14 h-7 text-xs">
           <SelectValue<string>>{(state) => rateLabel(state.selectedOption())}</SelectValue>
