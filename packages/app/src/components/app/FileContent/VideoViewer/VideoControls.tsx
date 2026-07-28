@@ -1,4 +1,4 @@
-import { Play, Pause } from "lucide-solid";
+import { FastForward, Rewind, Play, Pause } from "lucide-solid";
 import {
   Select,
   SelectContent,
@@ -73,28 +73,30 @@ export function VideoControls(props: VideoControlsProps) {
         {msToTimecodeFull(duration(), fps())}
       </span>
 
-      {/* 快退/快进按钮 */}
-      <button
-        onClick={fastRewind}
-        class="flex items-center justify-center w-8 h-8 rounded hover:bg-accent/50 text-xs"
-        title="快退15秒"
-      >
-        ⏪ 15s
-      </button>
-      <button
-        onClick={fastForward}
-        class="flex items-center justify-center w-8 h-8 rounded hover:bg-accent/50 text-xs"
-        title="快进15秒"
-      >
-        15s ⏩
-      </button>
-
       <div class="flex-1 flex justify-center">
         <button
           onClick={props.onTogglePlay}
           class="flex items-center justify-center w-8 h-8 rounded hover:bg-accent/50"
         >
           {playing() ? <Pause size={16} /> : <Play size={16} />}
+        </button>
+      </div>
+
+      {/* 快进/快退按钮 - 放在倍速选择器旁边 */}
+      <div class="flex items-center gap-1">
+        <button
+          onClick={fastRewind}
+          class="flex items-center justify-center w-8 h-8 rounded hover:bg-accent/50"
+          title="快退15秒"
+        >
+          <Rewind size={16} />
+        </button>
+        <button
+          onClick={fastForward}
+          class="flex items-center justify-center w-8 h-8 rounded hover:bg-accent/50"
+          title="快进15秒"
+        >
+          <FastForward size={16} />
         </button>
       </div>
 
