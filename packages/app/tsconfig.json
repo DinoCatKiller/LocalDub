@@ -14,8 +14,8 @@
     "noEmit": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-     "resolveJsonModule": true,
-    "esModuleInterop": true,  // 通常一起开启
+    "resolveJsonModule": true,
+    "esModuleInterop": true, // 通常一起开启
     /* Linting */
     "strict": true,
     "allowJs": true,
