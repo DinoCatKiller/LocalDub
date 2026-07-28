@@ -1,5 +1,11 @@
 import { createSignal } from "solid-js";
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@repo/ui-solid/base/context-menu";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@repo/ui-solid/base/context-menu";
 import { openModal, closeModal } from "@repo/ui-solid/custom/modal/renderer";
 import type { Track, TrackSegment } from "../consts";
 import { client } from "#/integrations/fnrpc/client.ts";
@@ -73,24 +79,26 @@ function deleteAt(segments: TrackSegment[], index: number): TrackSegment[] {
 
 export function AsrOcrFixTrack(props: Props) {
   const { track, pxPerMs, onSeek, color } = props;
-  const mutation = useMutation(() => client.write_app_file_text.mutationOptions({
-    onMutate: (variables, context) => {
-      context.client.setQueryData(client.read_app_file_text.queryKey(variables[0]), variables[1])
-    },
-    onSuccess: (data, variables, onMutateResult, context) => {
-      context.client.invalidateQueries({
-        queryKey: client.read_app_file_text.queryKey(variables[0])
-      })
-    },
-  }));
-  const handleInsertBefore =  (segIndex: number) => {
+  const mutation = useMutation(() =>
+    client.write_app_file_text.mutationOptions({
+      onMutate: (variables, context) => {
+        context.client.setQueryData(client.read_app_file_text.queryKey(variables[0]), variables[1]);
+      },
+      onSuccess: (data, variables, onMutateResult, context) => {
+        context.client.invalidateQueries({
+          queryKey: client.read_app_file_text.queryKey(variables[0]),
+        });
+      },
+    }),
+  );
+  const handleInsertBefore = (segIndex: number) => {
     const newSegments = insertAt(track.segments, segIndex, false);
-     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
+    mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
 
-  const handleInsertAfter =  (segIndex: number) => {
+  const handleInsertAfter = (segIndex: number) => {
     const newSegments = insertAt(track.segments, segIndex, true);
-     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
+    mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
 
   const handleEdit = (segIndex: number) => {
@@ -98,65 +106,80 @@ export function AsrOcrFixTrack(props: Props) {
     if (!seg) return;
     const raw = seg.raw as AsrOcrBaseSegment | undefined;
 
-    openModal(() => {
-      const [text, setText] = createSignal(seg.text);
-      const [startMs, setStartMs] = createSignal(seg.startMs);
-      const [endMs, setEndMs] = createSignal(seg.endMs);
+    openModal(
+      () => {
+        const [text, setText] = createSignal(seg.text);
+        const [startMs, setStartMs] = createSignal(seg.startMs);
+        const [endMs, setEndMs] = createSignal(seg.endMs);
 
-      const onSave = () => {
-        const newSegments = track.segments.map((s, i) =>
-          i === segIndex ? { ...s, text: text(), startMs: startMs(), endMs: endMs() } : s,
-        );
-         mutation.mutate([props.filePath, serializeSegments(newSegments)]);
-        closeModal();
-      };
+        const onSave = () => {
+          const newSegments = track.segments.map((s, i) =>
+            i === segIndex ? { ...s, text: text(), startMs: startMs(), endMs: endMs() } : s,
+          );
+          mutation.mutate([props.filePath, serializeSegments(newSegments)]);
+          closeModal();
+        };
 
-      return (
-        <div class="flex flex-col gap-3 p-2 text-sm">
-          <label class="flex flex-col gap-1">
-            <span class="font-medium">文本</span>
-            <textarea
-              class="w-full min-h-20 rounded border p-2 text-sm"
-              value={text()}
-              onInput={(e) => setText(e.currentTarget.value)}
-            />
-          </label>
-          <div class="flex gap-4">
-            <label class="flex flex-col gap-1 flex-1">
-              <span class="font-medium">开始 (ms)</span>
-              <input
-                class="rounded border px-2 py-1 text-sm"
-                type="number"
-                value={startMs()}
-                onInput={(e) => setStartMs(Number(e.currentTarget.value))}
+        return (
+          <div class="flex flex-col gap-3 p-2 text-sm">
+            <label class="flex flex-col gap-1">
+              <span class="font-medium">文本</span>
+              <textarea
+                class="w-full min-h-20 rounded border p-2 text-sm"
+                value={text()}
+                onInput={(e) => setText(e.currentTarget.value)}
               />
             </label>
-            <label class="flex flex-col gap-1 flex-1">
-              <span class="font-medium">结束 (ms)</span>
-              <input
-                class="rounded border px-2 py-1 text-sm"
-                type="number"
-                value={endMs()}
-                onInput={(e) => setEndMs(Number(e.currentTarget.value))}
-              />
-            </label>
-          </div>
-          {raw && (
-            <div class="flex gap-4 text-xs text-muted-foreground">
-              <span>置信度: {raw.confidence?.toFixed(3)}</span>
-              <span>box_y: [{raw.box_y?.[0]}, {raw.box_y?.[1]}]</span>
+            <div class="flex gap-4">
+              <label class="flex flex-col gap-1 flex-1">
+                <span class="font-medium">开始 (ms)</span>
+                <input
+                  class="rounded border px-2 py-1 text-sm"
+                  type="number"
+                  value={startMs()}
+                  onInput={(e) => setStartMs(Number(e.currentTarget.value))}
+                />
+              </label>
+              <label class="flex flex-col gap-1 flex-1">
+                <span class="font-medium">结束 (ms)</span>
+                <input
+                  class="rounded border px-2 py-1 text-sm"
+                  type="number"
+                  value={endMs()}
+                  onInput={(e) => setEndMs(Number(e.currentTarget.value))}
+                />
+              </label>
             </div>
-          )}
-          <div class="flex justify-end gap-2 mt-1">
-            <button class="px-3 py-1.5 rounded border text-sm cursor-pointer" onClick={closeModal}>取消</button>
-            <button class="px-3 py-1.5 rounded bg-primary text-primary-foreground text-sm cursor-pointer" onClick={onSave}>保存</button>
+            {raw && (
+              <div class="flex gap-4 text-xs text-muted-foreground">
+                <span>置信度: {raw.confidence?.toFixed(3)}</span>
+                <span>
+                  box_y: [{raw.box_y?.[0]}, {raw.box_y?.[1]}]
+                </span>
+              </div>
+            )}
+            <div class="flex justify-end gap-2 mt-1">
+              <button
+                class="px-3 py-1.5 rounded border text-sm cursor-pointer"
+                onClick={closeModal}
+              >
+                取消
+              </button>
+              <button
+                class="px-3 py-1.5 rounded bg-primary text-primary-foreground text-sm cursor-pointer"
+                onClick={onSave}
+              >
+                保存
+              </button>
+            </div>
           </div>
-        </div>
-      );
-    }, { title: "编辑片段" });
+        );
+      },
+      { title: "编辑片段" },
+    );
   };
 
-  const handleDelete =  (segIndex: number) => {
+  const handleDelete = (segIndex: number) => {
     const newSegments = deleteAt(track.segments, segIndex);
     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
@@ -187,10 +210,10 @@ export function AsrOcrFixTrack(props: Props) {
             <ContextMenuItem onSelect={() => handleInsertAfter(seg.index)}>
               向后插入
             </ContextMenuItem>
-            <ContextMenuItem onSelect={() => handleEdit(seg.index)}>
-              编辑
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={() => handleDelete(seg.index)}>
+            <ContextMenuItem onSelect={() => handleEdit(seg.index)}>编辑</ContextMenuItem>
+            <ContextMenuItem onSelect={() => onSeek(seg.endMs)}>跳转到结尾</ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onSelect={() => handleDelete(seg.index)} class="text-destructive">
               删除
             </ContextMenuItem>
           </ContextMenuContent>
