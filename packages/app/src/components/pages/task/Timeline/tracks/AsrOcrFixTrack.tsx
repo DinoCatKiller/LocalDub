@@ -10,7 +10,12 @@ import { openModal, closeModal } from "@repo/ui-solid/custom/modal/renderer";
 import type { Track, TrackSegment } from "../consts";
 import { client } from "#/integrations/fnrpc/client.ts";
 import type { AsrOcrBaseSegment, AsrOcrFile } from "@repo/core/ml/subtitle_ocr/types";
-import { useMutation } from "@tanstack/solid-query";
+import type { TranslateFile } from "@repo/core/stages/05_translate/type";
+import { useMutation, useQueryClient } from "@tanstack/solid-query";
+import { useViewingTab } from "../../TaskControlPanel/taskControlPanelStore";
+import { use_task_ctx, use_translate_data } from "../../query";
+import { STAGE_TRACKS } from "./const";
+import { linkedDelete, type LinkedWriteTarget } from "./shared";
 
 interface Props {
   track: Track;
@@ -184,6 +189,62 @@ export function AsrOcrFixTrack(props: Props) {
     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
 
+  // ---- 联动删除（校对 + 译文同步删同索引）----
+  const viewingTab = useViewingTab();
+  const taskCtxQ = use_task_ctx();
+  // 当前 tab 映射到的轨道 id 列表（root tab 无映射）
+  const tabTracks = () => {
+    const v = viewingTab();
+    return v === "root" ? [] : (STAGE_TRACKS[v] ?? []);
+  };
+  const transSegments = use_translate_data({
+    enabled: () => tabTracks().includes("translation"),
+  });
+  const transLang = () => taskCtxQ.data?.target_language;
+  const queryClient = useQueryClient();
+
+  // 仅当当前 tab 同时映射了校对与翻译轨道（translate tab）时显示联动删除
+  const showLinkedDelete = () =>
+    tabTracks().includes("asr_ocr_fix") && tabTracks().includes("translation");
+
+  const serializeTranslation = (segments: TrackSegment[]): string => {
+    const segs: TranslateFile["translation"] = segments.map((s) => {
+      const raw = s.raw as TranslateFile["translation"][number] | undefined;
+      return {
+        src: raw?.src ?? "",
+        dst: s.text,
+        src_lang: raw?.src_lang ?? "auto",
+        dst_lang: raw?.dst_lang ?? "auto",
+        start: s.startMs,
+        end: s.endMs,
+        speaker: raw?.speaker ?? "1",
+      };
+    });
+    return JSON.stringify({ translation: segs }, null, 2);
+  };
+
+  const handleLinkedDelete = async (segIndex: number) => {
+    const trans = transSegments();
+    const lang = transLang();
+    if (!lang || trans.length !== track.segments.length) return;
+    const targets: LinkedWriteTarget[] = [
+      { filePath: props.filePath, segments: track.segments, serialize: serializeSegments },
+      {
+        filePath: `${props.taskDir}/translate/translation.${lang}.json`,
+        segments: trans,
+        serialize: serializeTranslation,
+      },
+    ];
+    await linkedDelete(targets, segIndex);
+    await Promise.all(
+      targets.map((t) =>
+        queryClient.invalidateQueries({
+          queryKey: client.read_app_file_text.queryKey(t.filePath),
+        }),
+      ),
+    );
+  };
+
   return (
     <div class="h-16 border-b relative">
       {track.segments.map((seg) => (
@@ -213,6 +274,14 @@ export function AsrOcrFixTrack(props: Props) {
             <ContextMenuItem onSelect={() => handleEdit(seg.index)}>编辑</ContextMenuItem>
             <ContextMenuItem onSelect={() => onSeek(seg.endMs)}>跳转到结尾</ContextMenuItem>
             <ContextMenuSeparator />
+            {showLinkedDelete() && (
+              <ContextMenuItem
+                onSelect={() => handleLinkedDelete(seg.index)}
+                class="text-destructive"
+              >
+                联动删除(校对+译文)
+              </ContextMenuItem>
+            )}
             <ContextMenuItem onSelect={() => handleDelete(seg.index)} class="text-destructive">
               删除
             </ContextMenuItem>
