@@ -11,6 +11,7 @@
     "start": "vite",
     "dev": "vite",
     "dev:desktop": "bun run tauri dev",
+    "android:init": "tauri android init",
     "dev:android": "bun run tauri android dev",
     "typecheck": "tsc --noEmit",
     "rustcheck": "cargo check",

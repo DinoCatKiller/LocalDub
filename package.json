@@ -13,7 +13,7 @@
     "typecheck": "bun scripts/typecheck.ts",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "prepare": "lefthook install"
+    "prepare": "bunx lefthook install"
   },
   "dependencies": {
     "agnostic-query": "^1.10.7"
