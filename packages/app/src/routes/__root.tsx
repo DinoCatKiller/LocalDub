@@ -10,7 +10,6 @@ import {
   useRouter,
   useRouterState,
 } from "@tanstack/solid-router";
-import { AppSidebar, ClientApiProvider } from "@repo/ui";
 import { ModalRenderer } from "@repo/ui-solid/custom/modal/renderer";
 import { Toaster } from "@repo/ui-solid/base/sonner";
 import type { JSX } from "solid-js";
@@ -26,6 +25,7 @@ import { Header } from "#/components/app/header/Header.tsx";
 // import { Procedures, ProceduresLegacy } from '#/integrations/rspc/bindings.ts';
 // import { createSolidQueryHooks } from '#/integrations/rspc/query.tsx';
 import { isTauri } from "@tauri-apps/api/core";
+import { AppSidebar } from "#/components/app/AppSidebar.tsx";
 
 interface MyRouterContext {
   queryClient: QueryClient;
