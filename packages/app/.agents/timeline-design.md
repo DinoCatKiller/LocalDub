@@ -34,7 +34,7 @@
 - 组装：`../query_track.ts` 的 `use_track`（返回 `() => Track[]`，按 `viewingTab` + `STAGE_TRACKS` 过滤）
 - 联动删除：AsrOcrFixTrack 右键"联动删除(校对+译文)"经 `linkedDelete` 同时删 `asr_ocr_fused_llm_fix.json` + `translation.{lang}.json`（`STAGE_TRACKS.translate` 含两条轨道）
 
-## 废弃文件（PR #52 遗留，无引用，勿用勿改）
+## 废弃文件（PR #52 遗留，已删除）
 
-- `CommonTimeline.tsx` / `CommonTimelineTracks.tsx` / `tracks/CommonTrack.tsx`（仍 untracked）
-- `query_track.ts` 里的 `use_track_groups`（Common 体系，保留未动）
+- `CommonTimeline.tsx` / `CommonTimelineTracks.tsx` / `tracks/CommonTrack.tsx` 已删除
+- `query_track.ts` 里的 `use_track_groups` 已删除（仅剩 `use_track`）
