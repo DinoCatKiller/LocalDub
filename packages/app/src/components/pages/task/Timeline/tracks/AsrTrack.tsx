@@ -9,7 +9,7 @@ import type { Track, TrackSegment } from "../consts";
 import { client } from "#/integrations/fnrpc/client.ts";
 import { useMutation } from "@tanstack/solid-query";
 import { deleteAt, insertAt } from "./shared";
-import { TrackEditModal } from "./TrackEditModal";
+import { TrackEditModal } from "./comp/TrackEditModal";
 
 interface Props {
   track: Track;

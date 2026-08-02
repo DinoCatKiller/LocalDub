@@ -11,7 +11,7 @@ import { mediaUrl } from "#/lib/utils/path.ts";
 import type { Track, TrackSegment } from "../consts";
 import { client } from "#/integrations/fnrpc/client.ts";
 import type { SplitAudioTiming } from "@repo/core/stages/06_split_audio/types";
-import { TrackEditModal } from "./TrackEditModal";
+import { TrackEditModal } from "./comp/TrackEditModal";
 import { deleteAt, insertAt } from "./shared";
 
 interface Props {

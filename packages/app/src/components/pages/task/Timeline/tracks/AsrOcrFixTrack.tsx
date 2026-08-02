@@ -15,7 +15,7 @@ import { useViewingTab } from "../../TaskControlPanel/taskControlPanelStore";
 import { use_task_ctx, use_translate_data } from "../../query";
 import { STAGE_TRACKS } from "./const";
 import { deleteAt, insertAt, linkedDelete, type LinkedWriteTarget } from "./shared";
-import { TrackEditModal } from "./TrackEditModal";
+import { TrackEditModal } from "./comp/TrackEditModal";
 
 interface Props {
   track: Track;
