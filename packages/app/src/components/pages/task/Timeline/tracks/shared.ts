@@ -1,5 +1,16 @@
 import { client } from "#/integrations/fnrpc/client.ts";
-import type { TrackSegment } from "../consts";
+import type { Track, TrackSegment } from "../consts";
+
+/** 轨道组件公共 props */
+export interface BaseTrackProps {
+  track: Track;
+  totalPx: number;
+  pxPerMs: number;
+  onSeek: (ms: number) => void;
+  color: string;
+  taskDir: string;
+  filePath: string;
+}
 
 /** 一个可联动写入的目标轨道（文件路径 + 数据 + 序列化格式） */
 export interface LinkedWriteTarget {

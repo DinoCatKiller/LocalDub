@@ -12,17 +12,9 @@ import type { Track, TrackSegment } from "../consts";
 import { client } from "#/integrations/fnrpc/client.ts";
 import type { SplitAudioTiming } from "@repo/core/stages/06_split_audio/types";
 import { TrackEditModal } from "./comp/TrackEditModal";
-import { deleteAt, insertAt } from "./shared";
+import { deleteAt, insertAt, type BaseTrackProps } from "./shared";
 
-interface Props {
-  track: Track;
-  totalPx: number;
-  pxPerMs: number;
-  onSeek: (ms: number) => void;
-  color: string;
-  taskDir: string;
-  filePath: string;
-}
+type Props = BaseTrackProps;
 
 function serializeSegments(segments: TrackSegment[]): string {
   const segs: SplitAudioTiming[] = segments.map((s) => {

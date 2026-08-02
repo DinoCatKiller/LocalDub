@@ -69,11 +69,7 @@ export function TaskDetailPage(props: Props) {
           <p>Loading...</p>
         </Show>
         <Show when={taskCtxQ.isSuccess}>
-          <TaskControlPanel
-            ctx={taskCtxQ.data!}
-            // resumeFromStage={resumeFromStage()}
-            // onResumeFrom={setResumeFromStage}
-          />
+          <TaskControlPanel ctx={taskCtxQ.data!} />
         </Show>
         <div class="flex-1 min-w-0 flex flex-col">
           <ContentPanel
@@ -85,7 +81,6 @@ export function TaskDetailPage(props: Props) {
         </div>
         <AiReviewPanel />
       </div>
-      {/*<Show when={resumeFrom() === 'asr_ocr_pre'}>*/}
       <div class="flex-1">
         <Timeline
           tracks={tracks()}
@@ -96,7 +91,6 @@ export function TaskDetailPage(props: Props) {
           taskDir={taskDir}
         />
       </div>
-      {/*</Show>*/}
     </div>
   );
 }

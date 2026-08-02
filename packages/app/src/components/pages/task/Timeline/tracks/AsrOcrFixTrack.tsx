@@ -14,18 +14,16 @@ import { useMutation, useQueryClient } from "@tanstack/solid-query";
 import { useViewingTab } from "../../TaskControlPanel/taskControlPanelStore";
 import { use_task_ctx, use_translate_data } from "../../query";
 import { STAGE_TRACKS } from "./const";
-import { deleteAt, insertAt, linkedDelete, type LinkedWriteTarget } from "./shared";
+import {
+  deleteAt,
+  insertAt,
+  linkedDelete,
+  type BaseTrackProps,
+  type LinkedWriteTarget,
+} from "./shared";
 import { TrackEditModal } from "./comp/TrackEditModal";
 
-interface Props {
-  track: Track;
-  totalPx: number;
-  pxPerMs: number;
-  onSeek: (ms: number) => void;
-  color: string;
-  taskDir: string;
-  filePath: string;
-}
+type Props = BaseTrackProps;
 
 function serializeSegments(segments: TrackSegment[]): string {
   const segs: AsrOcrBaseSegment[] = segments.map((s) => {

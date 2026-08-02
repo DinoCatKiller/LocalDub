@@ -8,18 +8,10 @@ import { openModal } from "@repo/ui-solid/custom/modal/renderer";
 import type { Track, TrackSegment } from "../consts";
 import { client } from "#/integrations/fnrpc/client.ts";
 import { useMutation } from "@tanstack/solid-query";
-import { deleteAt, insertAt } from "./shared";
+import { deleteAt, insertAt, type BaseTrackProps } from "./shared";
 import { TrackEditModal } from "./comp/TrackEditModal";
 
-interface Props {
-  track: Track;
-  totalPx: number;
-  pxPerMs: number;
-  onSeek: (ms: number) => void;
-  color: string;
-  taskDir: string;
-  filePath: string;
-}
+type Props = BaseTrackProps;
 
 function serializeSegments(segments: TrackSegment[]): string {
   const segs = segments.map((s) => ({
