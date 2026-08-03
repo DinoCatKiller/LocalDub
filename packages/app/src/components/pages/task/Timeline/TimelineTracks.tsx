@@ -3,6 +3,7 @@ import type { Track } from "./consts";
 import { AsrOcrFixTrack } from "./tracks/AsrOcrFixTrack";
 import { AsrTrack } from "./tracks/AsrTrack";
 import { SplitAudioTrack } from "./tracks/SplitAudioTrack";
+import { TranslationTrack } from "./tracks/TranslationTrack";
 import { TtsTrack } from "./tracks/TtsTrack";
 
 interface Props {
@@ -30,6 +31,7 @@ const trackComponents: Record<string, Component<TrackComponentProps>> = {
   asr: AsrTrack,
   asr_ocr_fix: AsrOcrFixTrack,
   split_audio: SplitAudioTrack,
+  translation: TranslationTrack,
   tts: TtsTrack,
 };
 

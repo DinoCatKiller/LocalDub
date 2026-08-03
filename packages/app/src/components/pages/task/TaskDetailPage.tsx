@@ -262,6 +262,7 @@ export function TaskDetailPage(props: Props) {
         label: `translation.${transLang()}.json`,
         segments: trans,
         color: "#22c55e",
+        filePath: `${taskDir}/translate/translation.${transLang()}.json`,
       });
     const asr_ocr_fix_llm_ = asr_ocr_fix_llm();
     if (asr_ocr_fix_llm_.length)

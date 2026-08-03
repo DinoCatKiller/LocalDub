@@ -5,6 +5,7 @@
 **现象**：滑动区域在编辑/插入轨道后自动滑到开头（滚动归零）。编辑 **asr_ocr_fix** 最稳。
 
 **背景（git 排查）**：
+
 - 好版本 `3d82d87`（Timeline 编辑功能完整）；坏版本 main(`35343f1`)；回归区间 `3d82d87..35343f1` 共 22 提交。
 - 已建分支 `fix/3d82d87-正确基线`，基于好版并已提交 2 个干净功能 commit（不含联动删除）：
   - `f09321d` refactor(ui): remove @repo/ui dependency
@@ -30,12 +31,20 @@
 - 决策：**先不复用**（复用留在 bug 定位后的收尾重构）。
 
 **相关文件**：
+
 - `packages/app/src/components/pages/task/Timeline/Timeline.tsx`（scrollLeft、useScrollSync、tracksRef/ruler/labelsRef）
 - `packages/app/src/components/pages/task/Timeline/tracks/AsrOcrFixTrack.tsx`（本次改动核心=联动删除）
 - `packages/app/src/components/pages/task/Timeline/TimelineTracks.tsx:63`（外层滚动容器）
 - `packages/app/src/components/pages/task/TaskDetailPage.tsx`（track 组装 / transQuery / taskCtxQ）
 - `packages/app/src/components/pages/task/const.ts`（STAGE_TRACKS）
 - `packages/app/src/hooks/useScrollSync.ts`
+
+## debug todo f290274
+
+1. 加 TrackEditModal + shared.ts 纯函数
+2. 加 TranslationTrack 右键菜单
+3. 不动 query 层/TaskDetailPage
+4.
 
 ## tmp-todo
 
