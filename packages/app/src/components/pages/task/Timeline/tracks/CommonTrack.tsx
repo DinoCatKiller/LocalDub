@@ -316,7 +316,9 @@ export function CommonTrack(props: CommonTrackProps) {
                 background: `${color}33`,
                 "border-color": `${color}55`,
               }}
-              onClick={() => props.onSeek(seg.startMs)}
+              onClick={() =>
+                item.isAudio ? handlePlay(itemIdx, seg.index) : props.onSeek(seg.startMs)
+              }
               title={seg.text}
             >
               {seg.text}

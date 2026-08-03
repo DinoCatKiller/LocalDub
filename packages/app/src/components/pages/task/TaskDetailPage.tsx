@@ -64,7 +64,7 @@ export function TaskDetailPage(props: Props) {
     };
 
     const transLang = () => taskCtxQ.data?.target_language;
-    const transQuery = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/translate/translation.${transLang()}.json`));
+    const transQuery = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/translate/translation.${transLang()}.json`,{enabled:stage_map().translate?.status === 'success'}));
     const transSegments = () => {
         if (!transQuery.data) return [];
         try {
@@ -117,7 +117,7 @@ export function TaskDetailPage(props: Props) {
         return (data.segments || []).map((item, i: number) => ({ index: i, text: item.text, startMs: item.start, endMs: item.end, raw: item }));
     };
 
-    const asr_ocr_fix_llm_q = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/asr_ocr_fix/asr_ocr_fused.json`));
+    const asr_ocr_fix_llm_q = useQuery(() => client.read_app_file_text.queryOptions(`${taskDir}/asr_ocr_fix/asr_ocr_fused.json`,{enabled:stage_map().asr_ocr_fix?.status === 'success'}));
     const asr_ocr_fix_llm = () => {
         if (!asr_ocr_fix_llm_q.data) return [];
         const [data, err] = to<AsrOcrFile>(() => JSON.parse(asr_ocr_fix_llm_q.data))
@@ -141,6 +141,11 @@ export function TaskDetailPage(props: Props) {
             const data = asr_ocr_fix_llm();
             if (!data.length) return [];
             const trans = transSegments();
+            const sa = split_audio();
+            const vocals: TrackSegment[] = sa.map((s, i) => ({
+                index: i, text: `🔊 ${String(i + 1).padStart(4, '0')}.wav`, startMs: s.startMs, endMs: s.endMs,
+                raw: `${taskDir}/split_audio/vocals/${String(i + 1).padStart(4, '0')}.wav`,
+            }));
             return [{
                 id: 'split-audio-linked', label: '翻译校对',
                 linked: true,
@@ -182,6 +187,11 @@ export function TaskDetailPage(props: Props) {
                                 };
                             }),
                         }, null, 2),
+                    },
+                    {
+                        track: { id: 'audio', label: 'vocals', segments: vocals, color: '#ec4899' },
+                        isAudio: true,
+                        features: ['delete'],
                     },
                 ],
             }];
