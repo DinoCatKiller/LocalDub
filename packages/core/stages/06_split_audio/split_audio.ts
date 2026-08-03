@@ -130,19 +130,14 @@ export async function stageSplitAudio(ctx: TaskCtx) {
 		const transData = await readTranslationResult(ctx);
 		const translation = transData.translation;
 		if (!translation?.length) throw new Error('translation.json has no segments');
-		if (segmentsSrc.length !== translation.length) {
-			throw new Error(`Segment count mismatch: srt (${segmentsSrc.length}) !== translation (${translation.length})`);
-		}
-		timings = segmentsSrc.map((seg, i) => ({
+		timings = translation.map((seg, i) => ({
 			seg_idx: i + 1,
 			src: translation[i].src,
 			dst: translation[i].dst,
 			src_lang: translation[i].src_lang,
 			dst_lang: translation[i].dst_lang,
-      start: seg.start,
-      end: seg.end,
-			// start_time: Math.floor(seg.start),
-			// end_time: Math.ceil(seg.end),
+      start: translation[i].start,
+      end: translation[i].end,
 			speaker: translation[i].speaker ?? '1',
 		}));
 	} else {
