@@ -10,7 +10,7 @@ import {
   useRouter,
   useRouterState,
 } from "@tanstack/solid-router";
-import { AppSidebar, ClientApiProvider } from "@repo/ui";
+import { AppSidebar } from "#/components/app/AppSidebar.tsx";
 import { ModalRenderer } from "@repo/ui-solid/custom/modal/renderer";
 import { Toaster } from "@repo/ui-solid/base/sonner";
 import type { JSX } from "solid-js";
