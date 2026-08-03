@@ -12,6 +12,7 @@ import { client } from "#/integrations/fnrpc/client.ts";
 import type { AsrOcrBaseSegment, AsrOcrFile } from "@repo/core/ml/subtitle_ocr/types";
 import { useMutation, useQuery } from "@tanstack/solid-query";
 import { useViewingTab } from "../../TaskControlPanel/taskControlPanelStore";
+import { STAGE_TRACKS } from "./const";
 
 interface Props {
   track: Track;
@@ -85,7 +86,14 @@ export function AsrOcrFixTrack(props: Props) {
   const onSeek = props.onSeek;
   const viewingTab = useViewingTab();
   const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(props.taskDir));
-  const tctx = () => taskCtxQ.data?.target_language?.length ?? -1;
+
+  // ---- 联动删除（校对 + 译文同步删同索引）：占位，待服务端 RPC，见 ROADMAP.md ----
+  const tabTracks = () => {
+    const v = viewingTab();
+    return v === "root" ? [] : (STAGE_TRACKS[v] ?? []);
+  };
+  const showLinkedDelete = () =>
+    tabTracks().includes("asr_ocr_fix") && tabTracks().includes("translation");
 
   const mutation = useMutation(() =>
     client.write_app_file_text.mutationOptions({
@@ -196,7 +204,7 @@ export function AsrOcrFixTrack(props: Props) {
   });
 
   return (
-    <div class="h-16 border-b relative" data-vtab={viewingTab()} data-tctx={tctx()}>
+    <div class="h-16 border-b relative" data-vtab={viewingTab()}>
       {track().segments.map((seg) => (
         <ContextMenu>
           <ContextMenuTrigger as="div" class="contents">
@@ -224,12 +232,14 @@ export function AsrOcrFixTrack(props: Props) {
             <ContextMenuItem onSelect={() => handleEdit(seg.index)}>编辑</ContextMenuItem>
             <ContextMenuItem onSelect={() => onSeek(seg.endMs)}>跳转到结尾</ContextMenuItem>
             <ContextMenuSeparator />
-            <ContextMenuItem
-              onSelect={() => console.warn("[linked-delete] placeholder")}
-              class="text-destructive"
-            >
-              联动删除
-            </ContextMenuItem>
+            {showLinkedDelete() && (
+              <ContextMenuItem
+                onSelect={() => console.log("[LINKED-DELETE] 开发中，待服务端 RPC，见 ROADMAP.md")}
+                class="text-destructive"
+              >
+                联动删除(校对+译文) · 开发中
+              </ContextMenuItem>
+            )}
             <ContextMenuItem onSelect={() => handleDelete(seg.index)} class="text-destructive">
               删除
             </ContextMenuItem>

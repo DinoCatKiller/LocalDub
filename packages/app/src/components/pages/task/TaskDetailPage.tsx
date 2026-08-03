@@ -33,7 +33,7 @@ import {
   useViewingTab,
   type StageTab,
 } from "./TaskControlPanel/taskControlPanelStore";
-import { STAGE_TRACKS } from "./const";
+import { STAGE_TRACKS } from "./Timeline/tracks/const";
 
 interface Props {
   groupId: string;

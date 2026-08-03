@@ -1,4 +1,4 @@
-import { Index, type Component } from "solid-js";
+import { For, Index, type Component } from "solid-js";
 import type { Track } from "./consts";
 import { AsrOcrFixTrack } from "./tracks/AsrOcrFixTrack";
 import { AsrTrack } from "./tracks/AsrTrack";
@@ -59,6 +59,9 @@ function DefaultTrack(props: TrackComponentProps) {
 }
 
 export function TimelineTracks(props: Props) {
+  console.warn(
+    `[TRACKS-ARR] len=${props.tracks.length} ids=${props.tracks.map((t) => t.id).join(",")} uniq=${new Set(props.tracks.map((t) => t.id)).size}`,
+  );
   return (
     <div
       ref={(el) => {
@@ -69,23 +72,26 @@ export function TimelineTracks(props: Props) {
       onScroll={props.onScroll}
     >
       <div class="relative" style={{ width: `${props.totalPx}px`, "min-width": "100%" }}>
-        <Index each={props.tracks}>
+        <For each={props.tracks}>
           {(track, i) => {
-            const c = props.trackColor(i, track());
-            const Comp = trackComponents[track().id] || DefaultTrack;
+            const c = props.trackColor(i(), track);
+            const Comp = trackComponents[track.id] || DefaultTrack;
+            console.warn(
+              `[TRACK] i=${i()} id=${track.id} rawColor=${track.color ?? "(none)"} resolved=${c} segs=${track.segments.length}`,
+            );
             return (
               <Comp
-                track={track()}
+                track={track}
                 totalPx={props.totalPx}
                 pxPerMs={props.pxPerMs}
                 onSeek={props.onSeek}
                 color={c}
                 taskDir={props.taskDir ?? ""}
-                filePath={track().filePath ?? ""}
+                filePath={track.filePath ?? ""}
               />
             );
           }}
-        </Index>
+        </For>
       </div>
     </div>
   );
