@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { createSignal, onMount } from "solid-js";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,7 +10,8 @@ import { openModal, closeModal } from "@repo/ui-solid/custom/modal/renderer";
 import type { Track, TrackSegment } from "../consts";
 import { client } from "#/integrations/fnrpc/client.ts";
 import type { AsrOcrBaseSegment, AsrOcrFile } from "@repo/core/ml/subtitle_ocr/types";
-import { useMutation } from "@tanstack/solid-query";
+import { useMutation, useQuery } from "@tanstack/solid-query";
+import { useViewingTab } from "../../TaskControlPanel/taskControlPanelStore";
 
 interface Props {
   track: Track;
@@ -79,6 +80,9 @@ function deleteAt(segments: TrackSegment[], index: number): TrackSegment[] {
 
 export function AsrOcrFixTrack(props: Props) {
   const { track, pxPerMs, onSeek, color } = props;
+  const viewingTab = useViewingTab();
+  const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(props.taskDir));
+
   const mutation = useMutation(() =>
     client.write_app_file_text.mutationOptions({
       onMutate: (variables, context) => {
@@ -183,9 +187,12 @@ export function AsrOcrFixTrack(props: Props) {
     const newSegments = deleteAt(track.segments, segIndex);
     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
+  onMount(() => {
+    console.log("AsrOcrFixTrack.onMount");
+  });
 
   return (
-    <div class="h-16 border-b relative">
+    <div class="h-16 border-b relative" data-vtab={viewingTab()}>
       {track.segments.map((seg) => (
         <ContextMenu>
           <ContextMenuTrigger as="div" class="contents">
@@ -213,6 +220,12 @@ export function AsrOcrFixTrack(props: Props) {
             <ContextMenuItem onSelect={() => handleEdit(seg.index)}>编辑</ContextMenuItem>
             <ContextMenuItem onSelect={() => onSeek(seg.endMs)}>跳转到结尾</ContextMenuItem>
             <ContextMenuSeparator />
+            <ContextMenuItem
+              onSelect={() => console.warn("[linked-delete] placeholder")}
+              class="text-destructive"
+            >
+              联动删除
+            </ContextMenuItem>
             <ContextMenuItem onSelect={() => handleDelete(seg.index)} class="text-destructive">
               删除
             </ContextMenuItem>

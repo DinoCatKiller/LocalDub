@@ -60,7 +60,14 @@ function DefaultTrack(props: TrackComponentProps) {
 
 export function TimelineTracks(props: Props) {
   return (
-    <div ref={props.ref} class="flex-1 overflow-auto min-h-0" onScroll={props.onScroll}>
+    <div
+      ref={(el) => {
+        props.ref(el);
+        console.warn(`[REF-TRACKS] set pid=${(el as any).__pid ?? "(none)"}`);
+      }}
+      class="flex-1 overflow-auto min-h-0"
+      onScroll={props.onScroll}
+    >
       <div class="relative" style={{ width: `${props.totalPx}px`, "min-width": "100%" }}>
         <For each={props.tracks}>
           {(track, i) => {
