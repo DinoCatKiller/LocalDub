@@ -1,4 +1,0 @@
-@import 'tailwindcss';
-@source '.';
-@import '../ui-solid/styles.css';
-@plugin 'tailwindcss-animate';

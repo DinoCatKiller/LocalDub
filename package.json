@@ -11,9 +11,11 @@
     "test": "bun test",
     "stats": "scc . --exclude-dir node_modules,dist,build,target,venv,.venv,__pycache__,.git,vendor,out,cmake-build-debug,CMakeFiles --exclude-ext lock,json,md,yaml,yml,toml,ini,conf",
     "typecheck": "bun scripts/typecheck.ts",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check",
-    "prepare": "lefthook install"
+    "fmt": "git ls-files -z ':(exclude)submodule/*' | xargs -0 -n 200 oxfmt --no-error-on-unmatched-pattern",
+    "fmt:check": "git ls-files -z ':(exclude)submodule/*' | xargs -0 -n 200 oxfmt --check --no-error-on-unmatched-pattern",
+    "fmt:changed": "{ git diff --name-only -z HEAD; git ls-files -o -z --exclude-standard; } | grep -zv '^submodule/' | xargs -0 -n 200 oxfmt --no-error-on-unmatched-pattern",
+    "fmt:check:changed": "{ git diff --name-only -z HEAD; git ls-files -o -z --exclude-standard; } | grep -zv '^submodule/' | xargs -0 -n 200 oxfmt --check --no-error-on-unmatched-pattern",
+    "prepare": "bunx lefthook install"
   },
   "dependencies": {
     "agnostic-query": "^1.10.7"
