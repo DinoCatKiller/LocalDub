@@ -79,9 +79,13 @@ function deleteAt(segments: TrackSegment[], index: number): TrackSegment[] {
 }
 
 export function AsrOcrFixTrack(props: Props) {
-  const { track, pxPerMs, onSeek, color } = props;
+  const track = () => props.track;
+  const pxPerMs = () => props.pxPerMs;
+  const color = () => props.color;
+  const onSeek = props.onSeek;
   const viewingTab = useViewingTab();
   const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(props.taskDir));
+  const tctx = () => taskCtxQ.data?.target_language?.length ?? -1;
 
   const mutation = useMutation(() =>
     client.write_app_file_text.mutationOptions({
@@ -96,17 +100,17 @@ export function AsrOcrFixTrack(props: Props) {
     }),
   );
   const handleInsertBefore = (segIndex: number) => {
-    const newSegments = insertAt(track.segments, segIndex, false);
+    const newSegments = insertAt(track().segments, segIndex, false);
     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
 
   const handleInsertAfter = (segIndex: number) => {
-    const newSegments = insertAt(track.segments, segIndex, true);
+    const newSegments = insertAt(track().segments, segIndex, true);
     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
 
   const handleEdit = (segIndex: number) => {
-    const seg = track.segments[segIndex];
+    const seg = track().segments[segIndex];
     if (!seg) return;
     const raw = seg.raw as AsrOcrBaseSegment | undefined;
 
@@ -117,7 +121,7 @@ export function AsrOcrFixTrack(props: Props) {
         const [endMs, setEndMs] = createSignal(seg.endMs);
 
         const onSave = () => {
-          const newSegments = track.segments.map((s, i) =>
+          const newSegments = track().segments.map((s, i) =>
             i === segIndex ? { ...s, text: text(), startMs: startMs(), endMs: endMs() } : s,
           );
           mutation.mutate([props.filePath, serializeSegments(newSegments)]);
@@ -184,7 +188,7 @@ export function AsrOcrFixTrack(props: Props) {
   };
 
   const handleDelete = (segIndex: number) => {
-    const newSegments = deleteAt(track.segments, segIndex);
+    const newSegments = deleteAt(track().segments, segIndex);
     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
   onMount(() => {
@@ -192,17 +196,17 @@ export function AsrOcrFixTrack(props: Props) {
   });
 
   return (
-    <div class="h-16 border-b relative" data-vtab={viewingTab()}>
-      {track.segments.map((seg) => (
+    <div class="h-16 border-b relative" data-vtab={viewingTab()} data-tctx={tctx()}>
+      {track().segments.map((seg) => (
         <ContextMenu>
           <ContextMenuTrigger as="div" class="contents">
             <div
               class="absolute top-1 h-12 rounded cursor-pointer truncate text-xs px-2 border flex items-center hover:opacity-80"
               style={{
-                left: `${seg.startMs * pxPerMs}px`,
-                width: `${Math.max((seg.endMs - seg.startMs) * pxPerMs, 4)}px`,
-                background: `${color}33`,
-                "border-color": `${color}55`,
+                left: `${seg.startMs * pxPerMs()}px`,
+                width: `${Math.max((seg.endMs - seg.startMs) * pxPerMs(), 4)}px`,
+                background: `${color()}33`,
+                "border-color": `${color()}55`,
               }}
               onClick={() => onSeek(seg.startMs)}
               title={seg.text}

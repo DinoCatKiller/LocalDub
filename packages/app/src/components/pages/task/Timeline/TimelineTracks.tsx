@@ -1,4 +1,4 @@
-import { For, type Component } from "solid-js";
+import { Index, type Component } from "solid-js";
 import type { Track } from "./consts";
 import { AsrOcrFixTrack } from "./tracks/AsrOcrFixTrack";
 import { AsrTrack } from "./tracks/AsrTrack";
@@ -37,23 +37,23 @@ function DefaultTrack(props: TrackComponentProps) {
   const { track, pxPerMs, onSeek, color } = props;
   return (
     <div class="h-16 border-b relative">
-      <For each={track.segments}>
+      <Index each={track.segments}>
         {(seg) => (
           <div
             class="absolute top-1 h-12 rounded cursor-pointer truncate text-xs px-2 border flex items-center hover:opacity-80"
             style={{
-              left: `${seg.startMs * pxPerMs}px`,
-              width: `${Math.max((seg.endMs - seg.startMs) * pxPerMs, 4)}px`,
+              left: `${seg().startMs * pxPerMs}px`,
+              width: `${Math.max((seg().endMs - seg().startMs) * pxPerMs, 4)}px`,
               background: `${color}33`,
               "border-color": `${color}55`,
             }}
-            onClick={() => onSeek(seg.startMs)}
-            title={seg.text}
+            onClick={() => onSeek(seg().startMs)}
+            title={seg().text}
           >
-            {seg.text}
+            {seg().text}
           </div>
         )}
-      </For>
+      </Index>
     </div>
   );
 }
@@ -69,23 +69,23 @@ export function TimelineTracks(props: Props) {
       onScroll={props.onScroll}
     >
       <div class="relative" style={{ width: `${props.totalPx}px`, "min-width": "100%" }}>
-        <For each={props.tracks}>
+        <Index each={props.tracks}>
           {(track, i) => {
-            const c = props.trackColor(i(), track);
-            const Comp = trackComponents[track.id] || DefaultTrack;
+            const c = props.trackColor(i, track());
+            const Comp = trackComponents[track().id] || DefaultTrack;
             return (
               <Comp
-                track={track}
+                track={track()}
                 totalPx={props.totalPx}
                 pxPerMs={props.pxPerMs}
                 onSeek={props.onSeek}
                 color={c}
                 taskDir={props.taskDir ?? ""}
-                filePath={track.filePath ?? ""}
+                filePath={track().filePath ?? ""}
               />
             );
           }}
-        </For>
+        </Index>
       </div>
     </div>
   );
