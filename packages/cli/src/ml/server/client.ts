@@ -15,8 +15,17 @@ function buildTorchEnv(env: Record<string, string>) {
 	const venvScripts = join(venvBase, 'Scripts');
 	env.VIRTUAL_ENV = venvBase;
 	env.WHISPER_DOWNLOAD_ROOT = join(homedir(), '.cache', 'whisper');
+	// Filter out conda/anaconda/miniconda paths to prevent DLL version conflicts.
+	// Conda environments inject their own torch/cuda DLLs into PATH which can
+	// shadow the venv's torch installation.
+	const isCondaPath = (p: string) => /conda|miniconda|mamba/i.test(p);
 	const dllPath = [torchLib, torchAudioLib, venvScripts]
-		.concat((env.PATH || '').split(delimiter).filter(Boolean))
+		.concat(
+			(env.PATH || '')
+				.split(delimiter)
+				.filter(Boolean)
+				.filter((p) => !isCondaPath(p)),
+		)
 		.join(delimiter);
 	env.PATH = dllPath;
 	delete env.CONDA_PREFIX;
