@@ -45,3 +45,34 @@
 ## 换用修复（备选，若未来需要 main 的 query 层）
 
 若要迁 query 层而不归零，可给 tracks 稳定引用（`createMemo` + 按 id 缓存轨道对象，`For` 按 item 引用 diff 跳过未变轨道）——提交 `0073186` 曾尝试，但当时未在 a03a775 上验证即转走。此项待后续在干净基线上单独验证后再决定。
+
+---
+
+## 2026-08 追加：归零具有"非确定性 / 双稳态"特征（实验结论需修正）
+
+在 `81cbe86` 纯净基线 + `a03a775` 迁移状态的反复对照中发现：
+
+- **同一份代码，时而不归零、时而"一直归零"**；会话间切换（reload）后才改变。
+- 也就是说，问题**不是**由某个确定文件 / 某个确定改动决定，而是**会话级初始化的一个竞争条件**，产生两种稳定态。
+- 因此此前把「AsrOcrFixTrack 的 `get_task_ctx` 订阅」「TaskControlPanel main 版」「query hooks 化」分别判为归零源的实验，**均可能被双稳态随机性误导，结论不可靠**。
+- "f290274 / 81cbe86 干净"的判定同样**不确定**——可能只是当时未撞上那一种稳定态。
+
+### 最可疑的会话级开关：`duration`/`totalPx` 初始化时序
+
+- `totalPx = props.duration * pxPerMs()`，`duration` 来自 videoViewer store（初始 0），由 `onVideoReady`（video metadata 就绪）设置。
+- 若某次 reload 视频就绪晚，`duration` 长时间为 0 → 滚动容器无滚动宽度（`min-width:100%`）→ 任何重排都把 `scrollLeft` clamp 回 0；另一态视频就绪正常 → 不影响。
+- 判别方法：归零瞬间看 Console `[TRACE]` 的 `dur:` 是否为 0，以及归零是 `[SET-SL]`（显式）还是 `[RAF/SCROLL]`（scrollWidth 变化）还是 `[CONN]`（容器替换）。
+
+### 架构根治方向（待实现）：把各轨道查询下沉到轨道组件
+
+不再由 `TaskDetailPage` 集中 7 个 query + 组装 `tracks()` 数组下发给 Timeline，改为：
+
+1. 父层只下发**稳定引用**的轨道定义（`id/label/color/filePath/stageName`，不含数据），按 `viewingTab` + `STAGE_TRACKS` + stage status 决定显示哪些行，`createMemo` + 按 id 缓存引用 → Timeline `<For>` item 引用不变 → **轨道行永不 remount**。
+2. 各轨道组件（`AsrTrack` 等）内部 `useQuery(read_app_file_text, filePath)` + parse，mutation 后 invalidate 自己的 read key → 仅自身 rerender（行容器 `h-16` 固定，scrollWidth 不变）→ 无 clamp。
+3. 只读轨道（merge_audio_timings / split_audio_timings）用通用 `ReadOnlyFileTrack`。
+
+此方案从机制上消除「父层重建 → remount」，比 scrollLeft 恢复更治本；若 `duration` 双稳态另存，还需叠加初始渲染防御（duration 为 0 时不渲染可滚动内容）。
+
+### 实验状态备份
+
+`a03a775` 迁移 + `AsrOcrFix` 订阅的中间实验状态存于 `git stash@{0}`（`wip: a03a迁移+订阅 实验状态`），如需可 `git stash apply` 恢复，非最终成果。
