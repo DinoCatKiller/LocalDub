@@ -1,3 +1,4 @@
+import { createSignal, onMount } from "solid-js";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -5,25 +6,23 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@repo/ui-solid/base/context-menu";
-import { openModal } from "@repo/ui-solid/custom/modal/renderer";
+import { openModal, closeModal } from "@repo/ui-solid/custom/modal/renderer";
 import type { Track, TrackSegment } from "../consts";
 import { client } from "#/integrations/fnrpc/client.ts";
 import type { AsrOcrBaseSegment, AsrOcrFile } from "@repo/core/ml/subtitle_ocr/types";
-import type { TranslateFile } from "@repo/core/stages/05_translate/type";
-import { useMutation, useQueryClient } from "@tanstack/solid-query";
+import { useMutation, useQuery } from "@tanstack/solid-query";
 import { useViewingTab } from "../../TaskControlPanel/taskControlPanelStore";
-import { use_task_ctx, use_translate_data } from "../../query";
 import { STAGE_TRACKS } from "./const";
-import {
-  deleteAt,
-  insertAt,
-  linkedDelete,
-  type BaseTrackProps,
-  type LinkedWriteTarget,
-} from "./shared";
-import { TrackEditModal } from "./comp/TrackEditModal";
 
-type Props = BaseTrackProps;
+interface Props {
+  track: Track;
+  totalPx: number;
+  pxPerMs: number;
+  onSeek: (ms: number) => void;
+  color: string;
+  taskDir: string;
+  filePath: string;
+}
 
 function serializeSegments(segments: TrackSegment[]): string {
   const segs: AsrOcrBaseSegment[] = segments.map((s) => {
@@ -40,10 +39,62 @@ function serializeSegments(segments: TrackSegment[]): string {
   return JSON.stringify(out, null, 2);
 }
 
-const ASR_OCR_DEFAULT_RAW = { text: "", start: 0, end: 0, box_y: [0, 0], confidence: 1 };
+const DEFAULT_DURATION_MS = 500;
+
+function insertAt(segments: TrackSegment[], index: number, after: boolean): TrackSegment[] {
+  const copy = [...segments];
+  const current = copy[index];
+  if (!current) return copy;
+
+  const newSeg: TrackSegment = {
+    index: -1,
+    text: "",
+    startMs: after ? current.endMs : Math.max(0, current.startMs - DEFAULT_DURATION_MS),
+    endMs: after ? current.endMs + DEFAULT_DURATION_MS : current.startMs,
+    raw: { text: "", start: 0, end: 0, box_y: [0, 0], confidence: 1 },
+  };
+
+  if (after) {
+    // Check gap to next segment
+    const next = copy[index + 1];
+    if (next) {
+      const gap = next.startMs - current.endMs;
+      newSeg.endMs = current.endMs + Math.min(gap / 2, DEFAULT_DURATION_MS);
+    }
+    copy.splice(index + 1, 0, newSeg);
+  } else {
+    // Check gap to previous segment
+    const prev = copy[index - 1];
+    if (prev) {
+      const gap = current.startMs - prev.endMs;
+      newSeg.startMs = current.startMs - Math.min(gap / 2, DEFAULT_DURATION_MS);
+    }
+    copy.splice(index, 0, newSeg);
+  }
+
+  return copy.map((s, i) => ({ ...s, index: i }));
+}
+
+function deleteAt(segments: TrackSegment[], index: number): TrackSegment[] {
+  return segments.filter((_, i) => i !== index).map((s, i) => ({ ...s, index: i }));
+}
 
 export function AsrOcrFixTrack(props: Props) {
-  const { track, pxPerMs, onSeek, color } = props;
+  const track = () => props.track;
+  const pxPerMs = () => props.pxPerMs;
+  const color = () => props.color;
+  const onSeek = props.onSeek;
+  const viewingTab = useViewingTab();
+  const taskCtxQ = useQuery(() => client.get_task_ctx.queryOptions(props.taskDir));
+
+  // ---- 联动删除（校对 + 译文同步删同索引）：占位，待服务端 RPC，见 ROADMAP.md ----
+  const tabTracks = () => {
+    const v = viewingTab();
+    return v === "root" ? [] : (STAGE_TRACKS[v] ?? []);
+  };
+  const showLinkedDelete = () =>
+    tabTracks().includes("asr_ocr_fix") && tabTracks().includes("translation");
+
   const mutation = useMutation(() =>
     client.write_app_file_text.mutationOptions({
       onMutate: (variables, context) => {
@@ -57,125 +108,113 @@ export function AsrOcrFixTrack(props: Props) {
     }),
   );
   const handleInsertBefore = (segIndex: number) => {
-    const newSegments = insertAt(track.segments, segIndex, false, {
-      defaultRaw: ASR_OCR_DEFAULT_RAW,
-    });
+    const newSegments = insertAt(track().segments, segIndex, false);
     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
 
   const handleInsertAfter = (segIndex: number) => {
-    const newSegments = insertAt(track.segments, segIndex, true, {
-      defaultRaw: ASR_OCR_DEFAULT_RAW,
-    });
+    const newSegments = insertAt(track().segments, segIndex, true);
     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
 
   const handleEdit = (segIndex: number) => {
-    const seg = track.segments[segIndex];
+    const seg = track().segments[segIndex];
     if (!seg) return;
     const raw = seg.raw as AsrOcrBaseSegment | undefined;
 
     openModal(
-      () => (
-        <TrackEditModal
-          initialText={seg.text}
-          initialStartMs={seg.startMs}
-          initialEndMs={seg.endMs}
-          extraFields={() =>
-            raw && (
+      () => {
+        const [text, setText] = createSignal(seg.text);
+        const [startMs, setStartMs] = createSignal(seg.startMs);
+        const [endMs, setEndMs] = createSignal(seg.endMs);
+
+        const onSave = () => {
+          const newSegments = track().segments.map((s, i) =>
+            i === segIndex ? { ...s, text: text(), startMs: startMs(), endMs: endMs() } : s,
+          );
+          mutation.mutate([props.filePath, serializeSegments(newSegments)]);
+          closeModal();
+        };
+
+        return (
+          <div class="flex flex-col gap-3 p-2 text-sm">
+            <label class="flex flex-col gap-1">
+              <span class="font-medium">文本</span>
+              <textarea
+                class="w-full min-h-20 rounded border p-2 text-sm"
+                value={text()}
+                onInput={(e) => setText(e.currentTarget.value)}
+              />
+            </label>
+            <div class="flex gap-4">
+              <label class="flex flex-col gap-1 flex-1">
+                <span class="font-medium">开始 (ms)</span>
+                <input
+                  class="rounded border px-2 py-1 text-sm"
+                  type="number"
+                  value={startMs()}
+                  onInput={(e) => setStartMs(Number(e.currentTarget.value))}
+                />
+              </label>
+              <label class="flex flex-col gap-1 flex-1">
+                <span class="font-medium">结束 (ms)</span>
+                <input
+                  class="rounded border px-2 py-1 text-sm"
+                  type="number"
+                  value={endMs()}
+                  onInput={(e) => setEndMs(Number(e.currentTarget.value))}
+                />
+              </label>
+            </div>
+            {raw && (
               <div class="flex gap-4 text-xs text-muted-foreground">
                 <span>置信度: {raw.confidence?.toFixed(3)}</span>
                 <span>
                   box_y: [{raw.box_y?.[0]}, {raw.box_y?.[1]}]
                 </span>
               </div>
-            )
-          }
-          onSave={({ text, startMs, endMs }) => {
-            const newSegments = track.segments.map((s, i) =>
-              i === segIndex ? { ...s, text, startMs, endMs } : s,
-            );
-            mutation.mutate([props.filePath, serializeSegments(newSegments)]);
-          }}
-        />
-      ),
+            )}
+            <div class="flex justify-end gap-2 mt-1">
+              <button
+                class="px-3 py-1.5 rounded border text-sm cursor-pointer"
+                onClick={closeModal}
+              >
+                取消
+              </button>
+              <button
+                class="px-3 py-1.5 rounded bg-primary text-primary-foreground text-sm cursor-pointer"
+                onClick={onSave}
+              >
+                保存
+              </button>
+            </div>
+          </div>
+        );
+      },
       { title: "编辑片段" },
     );
   };
 
   const handleDelete = (segIndex: number) => {
-    const newSegments = deleteAt(track.segments, segIndex);
+    const newSegments = deleteAt(track().segments, segIndex);
     mutation.mutate([props.filePath, serializeSegments(newSegments)]);
   };
-
-  // ---- 联动删除（校对 + 译文同步删同索引）----
-  const viewingTab = useViewingTab();
-  const taskCtxQ = use_task_ctx();
-  // 当前 tab 映射到的轨道 id 列表（root tab 无映射）
-  const tabTracks = () => {
-    const v = viewingTab();
-    return v === "root" ? [] : (STAGE_TRACKS[v] ?? []);
-  };
-  const transSegments = use_translate_data({
-    enabled: () => tabTracks().includes("translation"),
+  onMount(() => {
+    console.log("AsrOcrFixTrack.onMount");
   });
-  const transLang = () => taskCtxQ.data?.target_language;
-  const queryClient = useQueryClient();
-
-  // 仅当当前 tab 同时映射了校对与翻译轨道（translate tab）时显示联动删除
-  const showLinkedDelete = () =>
-    tabTracks().includes("asr_ocr_fix") && tabTracks().includes("translation");
-
-  const serializeTranslation = (segments: TrackSegment[]): string => {
-    const segs: TranslateFile["translation"] = segments.map((s) => {
-      const raw = s.raw as TranslateFile["translation"][number] | undefined;
-      return {
-        src: raw?.src ?? "",
-        dst: s.text,
-        src_lang: raw?.src_lang ?? "auto",
-        dst_lang: raw?.dst_lang ?? "auto",
-        start: s.startMs,
-        end: s.endMs,
-        speaker: raw?.speaker ?? "1",
-      };
-    });
-    return JSON.stringify({ translation: segs }, null, 2);
-  };
-
-  const handleLinkedDelete = async (segIndex: number) => {
-    const trans = transSegments();
-    const lang = transLang();
-    if (!lang || trans.length !== track.segments.length) return;
-    const targets: LinkedWriteTarget[] = [
-      { filePath: props.filePath, segments: track.segments, serialize: serializeSegments },
-      {
-        filePath: `${props.taskDir}/translate/translation.${lang}.json`,
-        segments: trans,
-        serialize: serializeTranslation,
-      },
-    ];
-    await linkedDelete(targets, segIndex);
-    await Promise.all(
-      targets.map((t) =>
-        queryClient.invalidateQueries({
-          queryKey: client.read_app_file_text.queryKey(t.filePath),
-        }),
-      ),
-    );
-  };
 
   return (
-    <div class="h-16 border-b relative">
-      {track.segments.map((seg) => (
+    <div class="h-16 border-b relative" data-vtab={viewingTab()}>
+      {track().segments.map((seg) => (
         <ContextMenu>
           <ContextMenuTrigger as="div" class="contents">
             <div
               class="absolute top-1 h-12 rounded cursor-pointer truncate text-xs px-2 border flex items-center hover:opacity-80"
               style={{
-                left: `${seg.startMs * pxPerMs}px`,
-                width: `${Math.max((seg.endMs - seg.startMs) * pxPerMs, 4)}px`,
-                background: `${color}33`,
-                "border-color": `${color}55`,
+                left: `${seg.startMs * pxPerMs()}px`,
+                width: `${Math.max((seg.endMs - seg.startMs) * pxPerMs(), 4)}px`,
+                background: `${color()}33`,
+                "border-color": `${color()}55`,
               }}
               onClick={() => onSeek(seg.startMs)}
               title={seg.text}
@@ -195,10 +234,10 @@ export function AsrOcrFixTrack(props: Props) {
             <ContextMenuSeparator />
             {showLinkedDelete() && (
               <ContextMenuItem
-                onSelect={() => handleLinkedDelete(seg.index)}
+                onSelect={() => console.log("[LINKED-DELETE] 开发中，待服务端 RPC，见 ROADMAP.md")}
                 class="text-destructive"
               >
-                联动删除(校对+译文)
+                联动删除(校对+译文) · 开发中
               </ContextMenuItem>
             )}
             <ContextMenuItem onSelect={() => handleDelete(seg.index)} class="text-destructive">

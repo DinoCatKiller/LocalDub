@@ -1,8 +1,9 @@
-import { For, type Component } from "solid-js";
+import { For, Index, type Component } from "solid-js";
 import type { Track } from "./consts";
 import { AsrOcrFixTrack } from "./tracks/AsrOcrFixTrack";
 import { AsrTrack } from "./tracks/AsrTrack";
 import { SplitAudioTrack } from "./tracks/SplitAudioTrack";
+import { TranslationTrack } from "./tracks/TranslationTrack";
 import { TtsTrack } from "./tracks/TtsTrack";
 
 interface Props {
@@ -30,6 +31,7 @@ const trackComponents: Record<string, Component<TrackComponentProps>> = {
   asr: AsrTrack,
   asr_ocr_fix: AsrOcrFixTrack,
   split_audio: SplitAudioTrack,
+  translation: TranslationTrack,
   tts: TtsTrack,
 };
 
@@ -37,35 +39,48 @@ function DefaultTrack(props: TrackComponentProps) {
   const { track, pxPerMs, onSeek, color } = props;
   return (
     <div class="h-16 border-b relative">
-      <For each={track.segments}>
+      <Index each={track.segments}>
         {(seg) => (
           <div
             class="absolute top-1 h-12 rounded cursor-pointer truncate text-xs px-2 border flex items-center hover:opacity-80"
             style={{
-              left: `${seg.startMs * pxPerMs}px`,
-              width: `${Math.max((seg.endMs - seg.startMs) * pxPerMs, 4)}px`,
+              left: `${seg().startMs * pxPerMs}px`,
+              width: `${Math.max((seg().endMs - seg().startMs) * pxPerMs, 4)}px`,
               background: `${color}33`,
               "border-color": `${color}55`,
             }}
-            onClick={() => onSeek(seg.startMs)}
-            title={seg.text}
+            onClick={() => onSeek(seg().startMs)}
+            title={seg().text}
           >
-            {seg.text}
+            {seg().text}
           </div>
         )}
-      </For>
+      </Index>
     </div>
   );
 }
 
 export function TimelineTracks(props: Props) {
+  console.warn(
+    `[TRACKS-ARR] len=${props.tracks.length} ids=${props.tracks.map((t) => t.id).join(",")} uniq=${new Set(props.tracks.map((t) => t.id)).size}`,
+  );
   return (
-    <div ref={props.ref} class="flex-1 overflow-auto min-h-0" onScroll={props.onScroll}>
+    <div
+      ref={(el) => {
+        props.ref(el);
+        console.warn(`[REF-TRACKS] set pid=${(el as any).__pid ?? "(none)"}`);
+      }}
+      class="flex-1 overflow-auto min-h-0"
+      onScroll={props.onScroll}
+    >
       <div class="relative" style={{ width: `${props.totalPx}px`, "min-width": "100%" }}>
         <For each={props.tracks}>
           {(track, i) => {
             const c = props.trackColor(i(), track);
             const Comp = trackComponents[track.id] || DefaultTrack;
+            console.warn(
+              `[TRACK] i=${i()} id=${track.id} rawColor=${track.color ?? "(none)"} resolved=${c} segs=${track.segments.length}`,
+            );
             return (
               <Comp
                 track={track}
