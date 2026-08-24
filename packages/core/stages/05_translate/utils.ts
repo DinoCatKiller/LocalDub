@@ -45,6 +45,49 @@ ${correctionsStr}
 
 用户消息会发送一个编号列表，请严格按顺序逐句翻译，每句一条。`;
 
+export const buildCorrectSystem = ({
+  dstLangName,
+  srcLangName,
+  metaView,
+  summary,
+  hotwordsStr,
+  correctionsStr,
+}: {
+  dstLangName: string;
+  srcLangName: string;
+  metaView: MetaView;
+  summary: string | undefined;
+  hotwordsStr: string;
+  correctionsStr: string;
+}) => `你是一个专业的${srcLangName}字幕校对助手。源语言 ${srcLangName} 与目标语言 ${dstLangName} 一致——不做翻译，只做书写格式纠错。
+
+# 元信息
+视频标题：${metaView.title}
+作者：${metaView.uploader}
+描述：${metaView.description}
+摘要：${summary || "(none)"}
+
+# 热词
+${hotwordsStr}
+
+# ASR/OCR 纠错
+${correctionsStr}
+
+# 输入是 OCR/语音识别产生的字幕，常见问题：
+- 英文单词之间缺失空格（如 "Mychild." → "My child."）
+- 拼写错误、大小写错误
+- 标点缺失或使用错误
+
+# 规则
+1) 保持原文语言不变，禁止翻译。
+2) 只修正书写格式与明显错字；保持原意、语气、句子结构，不增删、不改写。
+3) 结合上下文判断英文单词边界，正确补空格。
+4) 逐句对齐，一句对一句，行数完全一致。
+5) 没有问题的行保持原样。
+6) 输出格式：{"dst": ["<修正后文本>", "<修正后文本>", ...]}
+
+用户消息会发送一个编号列表，请严格按顺序逐句校对，每句一条。`;
+
 export const buildPreprocessPrompt = ({
   dstLangName,
   srcLangName,

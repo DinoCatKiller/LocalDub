@@ -11,7 +11,12 @@ import {
   translationFilePath,
 } from "@repo/core/stages/utils/utils.ts";
 import { TaskCtx, setCtx, setStage } from "@repo/core/context/context.ts";
-import { buildPreprocessPrompt, buildTranslateSystem, resolveLanguage } from "./utils";
+import {
+  buildCorrectSystem,
+  buildPreprocessPrompt,
+  buildTranslateSystem,
+  resolveLanguage,
+} from "./utils";
 import { chat_completions } from "../../ml/llm/openai";
 import { to } from "@repo/shared/lib/utils/try";
 import { TranslateResult, TranslateSegment } from "./out";
@@ -24,6 +29,7 @@ export async function stageTranslate(ctx: TaskCtx) {
   const taskDir = ctx.task.task_dir;
 
   const { srcLang, targetLang } = resolveLanguage(ctx);
+  const isCorrectMode = srcLang === targetLang; // 语言一致 → 只纠错不翻译
   const translationFile = translationFilePath(taskDir, targetLang);
   const srcLangName = LANG_NAMES[srcLang] || srcLang;
   const dstLangName = LANG_NAMES[targetLang] || targetLang;
@@ -99,26 +105,35 @@ export async function stageTranslate(ctx: TaskCtx) {
   const hotwordsStr = hotwords.length ? hotwords.join("\n") : "(none)";
   const correctionsStr = corrections.length ? corrections.join("\n") : "(none)";
 
-  const translateSystem = buildTranslateSystem({
-    dstLangName,
-    srcLangName,
-    metaView,
-    summary,
-    hotwordsStr,
-    correctionsStr,
-  });
+  const systemPrompt = isCorrectMode
+    ? buildCorrectSystem({
+        dstLangName,
+        srcLangName,
+        metaView,
+        summary,
+        hotwordsStr,
+        correctionsStr,
+      })
+    : buildTranslateSystem({
+        dstLangName,
+        srcLangName,
+        metaView,
+        summary,
+        hotwordsStr,
+        correctionsStr,
+      });
 
   const BATCH_SIZE = 50;
   const dsts: string[] = [];
 
   async function translateBatch(batchTexts: string[], attempt = 0): Promise<string[]> {
     const numbered = batchTexts.map((t, i) => `${i + 1}. ${t}`).join("\n");
-    const userMsg =
-      attempt > 0
-        ? `${numbered}\n\n（注意：以上回复包含中文！必须全部输出${dstLangName}译文，不得包含任何中文。）`
-        : numbered;
+    const retryMsg = isCorrectMode
+      ? `\n\n（注意：以上回复不符合要求！保持${srcLangName}不变，只修正书写格式、补全缺失空格，逐句输出修正后文本，禁止翻译成其他语言。）`
+      : `\n\n（注意：以上回复包含中文！必须全部输出${dstLangName}译文，不得包含任何中文。）`;
+    const userMsg = attempt > 0 ? `${numbered}${retryMsg}` : numbered;
     try {
-      const data = await callJson(translateSystem, userMsg, 3072);
+      const data = await callJson(systemPrompt, userMsg, 3072);
       console.log(`[translate] Batch translated:`, data);
       const arr = data.dst;
       if (!Array.isArray(arr) || arr.length === 0) throw new Error("dst is not an array");
@@ -164,7 +179,7 @@ export async function stageTranslate(ctx: TaskCtx) {
     const results = await translateBatch(batch);
     dsts.push(...results);
     await setStage(taskDir, "translate", {
-      last_message: `Translating ${Math.min(i + BATCH_SIZE, texts.length)}/${texts.length}...`,
+      last_message: `${isCorrectMode ? "Correcting" : "Translating"} ${Math.min(i + BATCH_SIZE, texts.length)}/${texts.length}...`,
     });
   }
 
@@ -192,6 +207,6 @@ export async function stageTranslate(ctx: TaskCtx) {
     status: "success",
     completed_at: nowISO(),
     progress: 100,
-    last_message: "Translated",
+    last_message: isCorrectMode ? "Corrected" : "Translated",
   });
 }
