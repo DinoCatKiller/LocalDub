@@ -82,12 +82,21 @@ pub struct MixVideoArgs {
     /// 配音增益(dB), 补偿合成语音偏小的听感差; 默认 3
     #[serde(default = "default_dub_gain")]
     pub dub_gain: f64,
+    /// 是否烧录字幕到视频 (dub 流程); 默认 true
+    ///
+    /// false 则仅替换配音不添加字幕, 适用于原视频自带字幕的场景。
+    #[serde(default = "default_burn_subs")]
+    pub burn_subs: bool,
     /// 是否启用本阶段 (缺省 true; 设为 false 可跳过 mix_video)
     #[serde(default = "default_enabled")]
     pub enabled: bool,
 }
 
 fn default_enabled() -> bool {
+    true
+}
+
+fn default_burn_subs() -> bool {
     true
 }
 
@@ -104,6 +113,7 @@ impl Default for MixVideoArgs {
             bgm_path: None,
             bgm_gain: default_bgm_gain(),
             dub_gain: default_dub_gain(),
+            burn_subs: default_burn_subs(),
             enabled: default_enabled(),
         }
     }

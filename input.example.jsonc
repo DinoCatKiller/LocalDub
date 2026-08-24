@@ -77,6 +77,8 @@
       "font": "Noto Sans CJK SC Medium",
       "shadow": 1.1,
       "bgmGain": -9,
+      // 是否烧录字幕 (dub 流程)。原视频自带字幕时可设 false，仅替换配音不添加字幕
+      "burnSubs": true,
     },
   },
 }

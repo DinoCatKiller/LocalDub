@@ -39,6 +39,13 @@ export const MixVideoArgsSchema = z
     bgmPath: z.string().optional().describe("调试使用"),
     bgmGain: z.number().default(-6).optional().describe("背景音乐增益(dB), 0=不变, 负值=衰减"),
     dubGain: z.number().default(3).optional().describe("配音增益(dB), 补偿合成语音偏小的听感差"),
+    burnSubs: z
+      .boolean()
+      .default(true)
+      .optional()
+      .describe(
+        "是否烧录字幕到视频 (dub 流程); false 则仅替换配音不添加字幕, 适用于原视频自带字幕的场景",
+      ),
   })
   .default({
     alignment: "bottom-center",
@@ -46,5 +53,6 @@ export const MixVideoArgsSchema = z
     shadow: 1,
     bgmGain: -6,
     dubGain: 3,
+    burnSubs: true,
   })
   .optional();

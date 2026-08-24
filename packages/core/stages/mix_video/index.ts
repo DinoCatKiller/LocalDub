@@ -147,8 +147,9 @@ export async function stageMixVideo(ctx: TaskCtx) {
     if (!existsSync(dubbingFile)) throw new Error("audio_dubbing.wav not found");
 
     const data = await read_timings(ctx);
+    const burnSubs = mergeCfg?.burnSubs ?? true;
     const subPath = join(mergeVideoDir, `${targetLang}.srt`);
-    writeSrt(data.segments, ctx, subPath);
+    if (burnSubs) writeSrt(data.segments, ctx, subPath);
     const style = probeStyle(video_file_path, targetLang, probeOverrides);
 
     const bgmGain = ctx.input?.stages?.mix_video?.bgmGain ?? -6;
@@ -168,14 +169,15 @@ export async function stageMixVideo(ctx: TaskCtx) {
       mixedAudio,
     ]);
 
+    // burnSubs=false: 仅替换配音, 不烧录字幕 (原视频自带字幕的场景)
+    const vfArgs = burnSubs ? ["-vf", subFilterArg(subPath, style)] : [];
     ffmpeg(
       [
         "-i",
         video_file_path,
         "-i",
         mixedAudio,
-        "-vf",
-        subFilterArg(subPath, style),
+        ...vfArgs,
         "-map",
         "0:v:0",
         "-map",

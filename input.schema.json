@@ -1278,6 +1278,10 @@
           "description": " 配音增益(dB), 补偿合成语音偏小的听感差; 默认 3",
           "type": "number"
         },
+        "burnSubs": {
+          "description": " 是否烧录字幕到视频 (dub 流程); 默认 true\n\n false 则仅替换配音不添加字幕, 适用于原视频自带字幕的场景。",
+          "type": "boolean"
+        },
         "enabled": {
           "description": " 是否启用本阶段 (缺省 true; 设为 false 可跳过 mix_video)",
           "type": "boolean"
@@ -1371,6 +1375,10 @@
           "description": " 配音增益(dB), 补偿合成语音偏小的听感差; 默认 3",
           "type": "number"
         },
+        "burnSubs": {
+          "description": " 是否烧录字幕到视频 (dub 流程); 默认 true\n\n false 则仅替换配音不添加字幕, 适用于原视频自带字幕的场景。",
+          "type": "boolean"
+        },
         "enabled": {
           "description": " 是否启用本阶段 (缺省 true; 设为 false 可跳过 mix_video)",
           "type": "boolean"
@@ -1439,6 +1447,7 @@
         "bgmPath",
         "bgmGain",
         "dubGain",
+        "burnSubs",
         "enabled"
       ],
       "title": "MixVideoArgs_Serialize",
