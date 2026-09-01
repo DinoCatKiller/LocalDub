@@ -6,13 +6,18 @@ import { spawnSync } from "node:child_process";
  * 注意: ffprobe `format=duration` 单位固定为秒 (浮点, 精度到微秒),
  * 无法直接输出毫秒, 这里统一 round(秒 × 1000) 换算。
  */
-export function probeDurationMs(mediaPath: string): number {
-  const r = spawnSync(
-    "ffprobe",
-    ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", mediaPath],
-    { timeout: 15_000, encoding: "utf-8" },
-  );
-  return Math.round(parseFloat(r.stdout?.trim() || "0") * 1000);
+export function probeDurationMs(mediaPath: string, retries = 1): number {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const r = spawnSync(
+      "ffprobe",
+      ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", mediaPath],
+      { timeout: 15_000, encoding: "utf-8" },
+    );
+    const ms = Math.round(parseFloat(r.stdout?.trim() || "0") * 1000);
+    // ffprobe 偶发空输出 (大文件冷读 + 15s timeout 争用), 重试一次即可, 不必让整个阶段挂掉
+    if (Number.isFinite(ms) && ms > 0) return ms;
+  }
+  return 0;
 }
 
 export interface FrameRate {

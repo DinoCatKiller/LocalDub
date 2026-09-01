@@ -93,6 +93,22 @@ export async function continuePipeline(ctx: TaskCtx) {
     log(
       `[Pipeline] Resetting from "${continueFrom}" (${stages.length - startIdx} stage(s)), resuming...`,
     );
+
+    // continueFrom 之前的前置阶段不会被重跑。若其中有 failed/pending, 下游通常不是报
+    // "前置阶段没跑" 而是报缺文件 (例: split_audio failed → tts 读 timings.json 直接 ENOENT),
+    // 根因难找, 这里显式提醒。
+    const statuses = new Map(listStage(taskDir).map((r) => [r.name, r.status]));
+    const notDone = stages
+      .slice(0, startIdx)
+      .map((s) => [s, statuses.get(s) ?? "unknown"] as const)
+      .filter(([, st]) => st !== "success");
+    if (notDone.length) {
+      log(
+        `[WARN] [Pipeline] continueFrom="${continueFrom}" 跳过了未完成的前置阶段: ` +
+          `${notDone.map(([s, st]) => `${s}(${st})`).join(", ")}; ` +
+          `若下游报缺文件, 请把 continueFrom 改成 "${notDone[0][0]}" (或删掉 continueFrom 自动从首个未完成阶段续跑)`,
+      );
+    }
   } else {
     const rows = listStage(taskDir);
     const stageStatus = new Map(rows.map((r) => [r.name, r.status]));

@@ -1,8 +1,9 @@
 import { readJson, writeFile, fileLog } from "@repo/core/utils/fileOps";
 import { ensureDir } from "@repo/util/file_op";
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { TaskCtx, readCtx, setStage, setTask } from "@repo/core/context/context.ts";
+import { probeDurationMs } from "@repo/core/utils/ffmpeg";
 import {
   ffmpeg,
   nowISO,
@@ -69,6 +70,15 @@ export async function stageMixVideo(ctx: TaskCtx) {
   ensureDir(mergeVideoDir);
   const srtPath = ctx.input?.stages?.mix_video?.srtPath;
   if (!existsSync(video_file_path)) throw new Error("video_source.mp4 not found");
+  // 转码被中断 (Ctrl+C / 进程被杀) 会留下存在但无 moov atom 的残缺 mp4, ffprobe 读不到时长。
+  // 先 probe 一次, 否则问题会被埋进 ffmpeg exit 183 "moov atom not found" 里, 根因难找。
+  const videoSourceMs = probeDurationMs(video_file_path);
+  if (!(videoSourceMs > 0)) {
+    throw new Error(
+      `video_source.mp4 不是完整视频 (probe=${videoSourceMs}ms, size=${statSync(video_file_path).size}B): ${video_file_path}\n` +
+        `通常是 import 阶段转码被中断所致 (moov atom 未写入), 请重跑 task start (import) 重新生成`,
+    );
+  }
   const pipeline = readCtx(taskDir)?.pipeline || "dub";
   const { srcLang, targetLang } = resolveLanguage(ctx);
 
