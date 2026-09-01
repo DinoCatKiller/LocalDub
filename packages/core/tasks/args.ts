@@ -4,6 +4,7 @@ import { langList, TargetLang } from "../const/lang";
 const stagesList = [
   "separate",
   "separate_after",
+  "import_subtitle",
   "asr",
   "asr_fix",
   "sf_ocr_pre",
@@ -20,7 +21,7 @@ const stagesList = [
 ] as const;
 export type StageName = (typeof stagesList)[number];
 
-export const subtitleSourceList = ["asr", "sf_ocr", "asr_ocr"] as const;
+export const subtitleSourceList = ["asr", "sf_ocr", "asr_ocr", "file"] as const;
 export type SubtitleSource = (typeof subtitleSourceList)[number];
 
 const taskActionList = ["start", "continue", "status", "get_group_list", "get_task_ctx"] as const;
@@ -53,6 +54,10 @@ export const taskArgsSchema = z.object({
     .default("asr")
     .optional()
     .describe(
-      "字幕源: asr (whisper, 默认), sf_ocr (关键帧策略硬字幕提取), asr_ocr (ASR 时序+OCR 文本融合)",
+      "字幕源: asr (whisper, 默认), sf_ocr (关键帧策略硬字幕提取), asr_ocr (ASR 时序+OCR 文本融合), file (读入外部字幕文件)",
     ),
+  subtitleFile: z
+    .string()
+    .optional()
+    .describe("字幕文件路径 (VTT/SRT)，当 subtitleSource=file 时读取"),
 });

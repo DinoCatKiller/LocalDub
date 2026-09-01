@@ -10,6 +10,7 @@ import { langList } from "../const/lang";
 import { CookieArgsSchema } from "../cmd/cookie/args";
 
 import { AsrArgsSchema } from "@repo/subtitle-asr/args";
+import { ImportSubtitleArgsSchema } from "../stages/import_subtitle/args";
 import { SplitAudioArgsSchema } from "../stages/06_split_audio/args";
 import { TranslateArgsSchema } from "../stages/05_translate/args";
 import { AsrFixArgsSchema } from "../stages/asr/fix_args";
@@ -39,6 +40,7 @@ export type Command = (typeof commandList)[number];
 const StagesSchema = z
   .object({
     separate: SeparateArgsSchema,
+    import_subtitle: ImportSubtitleArgsSchema,
     asr: AsrArgsSchema,
     asr_fix: AsrFixArgsSchema,
     sf_ocr: SfOcrArgsSchema,

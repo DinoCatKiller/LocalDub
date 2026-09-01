@@ -3,10 +3,11 @@ import { StageName } from "@repo/core/tasks/args";
 // stage 名 → 该阶段对应的轨道 id 列表（一个 stage 可能有多条轨道，且 track.id 不一定等于 stage 名）
 export const STAGE_TRACKS: Record<StageName, string[]> = {
   // root: [],
-  asr: ["asr"],
-  asr_fix: [],
   separate: [],
   separate_after: [],
+  import_subtitle: [],
+  asr: ["asr"],
+  asr_fix: [],
   asr_ocr_pre: ["asr"],
   asr_ocr: [],
   asr_ocr_fix: ["asr_ocr_fix"],

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { writeJson, ensureDir } from "@repo/core/utils/fileOps";
+import { writeJson, ensureDir } from "@repo/util/file_op";
 import {
   emitLog,
   nowISO,
@@ -579,17 +579,13 @@ export async function stageImportSubtitle(ctx: TaskCtx): Promise<void> {
 
   const asrFixDir = join(taskDir, "asr_fix");
   const srtFile = join(asrFixDir, "asr_fix.json");
-  ensureDir(asrFixDir, ctx);
-  writeJson(
-    srtFile,
-    {
-      audio_info: { duration },
-      result: { text: resultText, segments },
-      _llm_fixed: false,
-      _source: "import_subtitle",
-    },
-    ctx,
-  );
+  ensureDir(asrFixDir);
+  writeJson(srtFile, {
+    audio_info: { duration },
+    result: { text: resultText, segments },
+    _llm_fixed: false,
+    _source: "import_subtitle",
+  });
 
   emitLog(
     taskDir,

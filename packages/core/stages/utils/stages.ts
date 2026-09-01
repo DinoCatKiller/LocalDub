@@ -13,6 +13,17 @@ export const DUB_STAGES: StageName[] = [
   "mix_video",
 ];
 
+export const DUB_FILE_STAGES: StageName[] = [
+  "separate",
+  "separate_after",
+  "import_subtitle",
+  "translate",
+  "split_audio",
+  "tts",
+  "mix_audio",
+  "mix_video",
+];
+
 export const DUB_SF_OCR_STAGES: StageName[] = [
   "separate",
   "separate_after",
@@ -56,7 +67,8 @@ export function getStages(pipeline?: string): StageName[] {
   try {
     const args = readInputArgs();
     const src = args.task.subtitleSource ?? "asr";
-    if (src === "sf_ocr") stages = DUB_SF_OCR_STAGES;
+    if (src === "file") stages = DUB_FILE_STAGES;
+    else if (src === "sf_ocr") stages = DUB_SF_OCR_STAGES;
     else if (src === "asr_ocr") stages = DUB_ASR_OCR_STAGES;
     if (args.stages?.translate?.enabled === false) {
       stages = stages.filter((s) => s !== "translate");

@@ -82,6 +82,7 @@
           "enum": [
             "separate",
             "separate_after",
+            "import_subtitle",
             "asr",
             "asr_fix",
             "sf_ocr_pre",
@@ -103,6 +104,7 @@
           "enum": [
             "separate",
             "separate_after",
+            "import_subtitle",
             "asr",
             "asr_fix",
             "sf_ocr_pre",
@@ -127,6 +129,7 @@
           "enum": [
             "separate",
             "separate_after",
+            "import_subtitle",
             "asr",
             "asr_fix",
             "sf_ocr_pre",
@@ -149,10 +152,14 @@
           "enum": ["dub", "subtitle"]
         },
         "subtitleSource": {
-          "description": "字幕源: asr (whisper, 默认), sf_ocr (关键帧策略硬字幕提取), asr_ocr (ASR 时序+OCR 文本融合)",
+          "description": "字幕源: asr (whisper, 默认), sf_ocr (关键帧策略硬字幕提取), asr_ocr (ASR 时序+OCR 文本融合), file (读入外部字幕文件)",
           "default": "asr",
           "type": "string",
-          "enum": ["asr", "sf_ocr", "asr_ocr"]
+          "enum": ["asr", "sf_ocr", "asr_ocr", "file"]
+        },
+        "subtitleFile": {
+          "description": "字幕文件路径 (VTT/SRT)，当 subtitleSource=file 时读取",
+          "type": "string"
         }
       }
     },
@@ -290,6 +297,30 @@
               }
             }
           }
+        },
+        "import_subtitle": {
+          "default": {},
+          "type": "object",
+          "properties": {
+            "file": {
+              "description": "外部字幕文件路径 (VTT/SRT)，需配合 task.subtitleSource: 'file'",
+              "type": "string"
+            },
+            "mergeOverlap": {
+              "description": "合并 YouTube 自动字幕的渐进式滑动窗口重叠段 (默认: subtitleSource===file 时开启)",
+              "type": "boolean"
+            },
+            "maxSegmentWords": {
+              "description": "TTS 配音段最大词数 (默认 10)",
+              "type": "number"
+            },
+            "segmentPad": {
+              "default": true,
+              "description": "段落前后 padding，避免字幕贴边",
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": {}
         },
         "asr": {
           "default": {
@@ -482,6 +513,18 @@
               "description": "只识别字幕区域 (Y轴裁剪); 默认 true",
               "type": "boolean"
             },
+            "yRange": {
+              "description": "Y 轴像素过滤范围 [y1, y2] (原图坐标), 仅保留该区间内的字幕框; 默认不限制。指定后替代 subtitleOnly 的 [0.85, 0.99] 比例硬编码过滤",
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
             "cleanupFrames": {
               "default": false,
               "description": "步骤完成后是否删除抽出的帧图片; 默认 false (保留)",
@@ -593,6 +636,18 @@
               "description": "只识别字幕区域 (Y轴裁剪); 默认 true",
               "type": "boolean"
             },
+            "yRange": {
+              "description": "Y 轴像素过滤范围 [y1, y2] (原图坐标), 仅保留该区间内的字幕框; 默认不限制。指定后替代 subtitleOnly 的 [0.85, 0.99] 比例硬编码过滤",
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
             "cleanupFrames": {
               "default": false,
               "description": "步骤完成后是否删除抽出的帧图片; 默认 false (保留)",
@@ -675,11 +730,11 @@
           "type": "object",
           "properties": {
             "apiBase": {
-              "default": "http://localhost:11434/v1",
+              "default": "https://ollama.com/v1",
               "type": "string"
             },
             "model": {
-              "default": "gemma4:31b:cloud",
+              "default": "gemma4:31b",
               "type": "string"
             },
             "targetLang": {
@@ -814,7 +869,8 @@
             "outline": 0,
             "shadow": 1,
             "bgmGain": -6,
-            "dubGain": 3
+            "dubGain": 3,
+            "burnSubs": true
           },
           "type": "object",
           "properties": {
@@ -889,6 +945,11 @@
               "description": "配音增益(dB), 补偿合成语音偏小的听感差",
               "default": 3,
               "type": "number"
+            },
+            "burnSubs": {
+              "description": "是否烧录字幕到视频 (dub 流程); false 则仅替换配音不添加字幕, 适用于原视频自带字幕的场景",
+              "default": true,
+              "type": "boolean"
             }
           }
         }

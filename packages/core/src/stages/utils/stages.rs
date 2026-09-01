@@ -10,6 +10,7 @@ use crate::context::TaskCtx;
 pub const STAGES_LIST: &[&str] = &[
     "separate",
     "separate_after",
+    "import_subtitle",
     "asr",
     "asr_fix",
     "sf_ocr_pre",
@@ -30,6 +31,17 @@ pub const DUB_STAGES: &[&str] = &[
     "separate_after",
     "asr",
     "asr_fix",
+    "translate",
+    "split_audio",
+    "tts",
+    "mix_audio",
+    "mix_video",
+];
+
+pub const DUB_FILE_STAGES: &[&str] = &[
+    "separate",
+    "separate_after",
+    "import_subtitle",
     "translate",
     "split_audio",
     "tts",
@@ -113,6 +125,7 @@ pub fn get_stages(ctx: &TaskCtx) -> Vec<String> {
     } else {
         // dub 模式下按 subtitleSource 选基础序列
         let base = match subtitle_source(ctx).as_str() {
+            "file" => DUB_FILE_STAGES,
             "sf_ocr" => DUB_SF_OCR_STAGES,
             "asr_ocr" => DUB_ASR_OCR_STAGES,
             _ => DUB_STAGES,

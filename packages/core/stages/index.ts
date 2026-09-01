@@ -1,5 +1,6 @@
 import { stageSeparate } from "./separate";
 import { stageSeparateAfter } from "./separate/after";
+import { stageImportSubtitle } from "./import_subtitle/import_subtitle";
 import { stageAsr } from "./asr/asr";
 import { stageAsrFix } from "./asr/asr_fix";
 import { stageSfOcrPre } from "./sf_ocr/ocr_pre";
@@ -20,6 +21,7 @@ export type StageHandler = (sp: string) => Promise<void>;
 export const STAGE_HANDLERS: Record<string, StageHandler> = {
   separate: async (sp) => await stageSeparate(readCtx(sp)),
   separate_after: async (sp) => await stageSeparateAfter(readCtx(sp)),
+  import_subtitle: async (sp) => await stageImportSubtitle(readCtx(sp)),
   asr: async (sp) => await stageAsr(readCtx(sp)),
   asr_fix: async (sp) => await stageAsrFix(readCtx(sp)),
   sf_ocr_pre: async (sp) => await stageSfOcrPre(readCtx(sp)),
