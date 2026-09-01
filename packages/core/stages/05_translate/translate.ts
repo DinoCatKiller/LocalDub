@@ -9,6 +9,7 @@ import {
   nowISO,
   subtitleFilePath,
   translationFilePath,
+  segTimesMs,
 } from "@repo/core/stages/utils/utils.ts";
 import { TaskCtx, setCtx, setStage } from "@repo/core/context/context.ts";
 import {
@@ -183,14 +184,18 @@ export async function stageTranslate(ctx: TaskCtx) {
     });
   }
 
-  const translation: TranslateSegment[] = segments.map((u, idx) => ({
-    text: texts[idx],
-    dst: dsts[idx]?.replace(/——/g, "，") ?? "",
-    src_lang: srcLang,
-    dst_lang: targetLang,
-    start_ms: u.start_ms,
-    end_ms: u.end_ms,
-  }));
+  const translation: TranslateSegment[] = segments.map((u, idx) => {
+    // 兼容历史产物写成 start/end 的情况, 时间缺失时立即失败而不是让下游算出 NaN
+    const { start_ms, end_ms } = segTimesMs(u, srtFile, idx);
+    return {
+      text: texts[idx],
+      dst: dsts[idx]?.replace(/——/g, "，") ?? "",
+      src_lang: srcLang,
+      dst_lang: targetLang,
+      start_ms,
+      end_ms,
+    };
+  });
   const translateResult: TranslateResult = {
     segments: translation,
     meta: {

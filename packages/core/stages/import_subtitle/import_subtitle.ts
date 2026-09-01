@@ -10,12 +10,18 @@ import {
 import { TaskCtx, setStage } from "@repo/core/context/context.ts";
 import { srtTime } from "@repo/core/utils/utils";
 
-/** 与 asr_fix/asr_fix.json 完全一致的单段字幕结构。 */
+/**
+ * 与 asr_fix/asr_fix.json 完全一致的单段字幕结构。
+ *
+ * 时间字段名必须是 `start_ms` / `end_ms`（同 `@repo/subtitle` 的 SubtitleSegment）:
+ * 下游 translate / split_audio / mix_audio / tts / app 全部按这两个字段读取,
+ * 写成 `start` / `end` 会让它们静默拿到 undefined 并在切音频时炸成 `ss: NaN`。
+ */
 export interface ImportedSubtitleSegment {
   id?: number;
   text: string;
-  start: number;
-  end: number;
+  start_ms: number;
+  end_ms: number;
   start_fmt?: string;
   end_fmt?: string;
   confidence?: number;
@@ -94,7 +100,7 @@ export function parseVtt(content: string): ImportedSubtitleSegment[] {
     if (!times) continue;
     const textContent = cleanCueText(lines.slice(timeIdx + 1).join(" "));
     if (!textContent) continue;
-    segments.push({ text: textContent, start: times.start, end: times.end });
+    segments.push({ text: textContent, start_ms: times.start, end_ms: times.end });
   }
   return segments;
 }
@@ -116,7 +122,7 @@ export function parseSrt(content: string): ImportedSubtitleSegment[] {
     if (!times) continue;
     const textContent = cleanCueText(lines.slice(timeIdx + 1).join(" "));
     if (!textContent) continue;
-    segments.push({ text: textContent, start: times.start, end: times.end });
+    segments.push({ text: textContent, start_ms: times.start, end_ms: times.end });
   }
   return segments;
 }
@@ -136,9 +142,9 @@ function padSegments(
   const minGap = 50;
 
   const startPadAt = (idx: number): number => {
-    const origStart = segments[idx].start;
+    const origStart = segments[idx].start_ms;
     if (idx === 0) return Math.max(0, origStart - startPad);
-    const prevEnd = segments[idx - 1].end;
+    const prevEnd = segments[idx - 1].end_ms;
     const gap = origStart - prevEnd;
     const total = startPad + endPad;
     if (gap >= total + minGap) return origStart - startPad;
@@ -150,9 +156,9 @@ function padSegments(
   };
 
   const endPadAt = (idx: number): number => {
-    const origEnd = segments[idx].end;
+    const origEnd = segments[idx].end_ms;
     if (idx === segments.length - 1) return origEnd + endPad;
-    const nextStart = segments[idx + 1].start;
+    const nextStart = segments[idx + 1].start_ms;
     const gap = nextStart - origEnd;
     const total = startPad + endPad;
     if (gap >= total + minGap) return origEnd + endPad;
@@ -166,7 +172,7 @@ function padSegments(
   return segments.map((s, idx) => {
     const newStart = startPadAt(idx);
     const newEnd = endPadAt(idx);
-    return { ...s, start: Math.max(0, newStart), end: newEnd };
+    return { ...s, start_ms: Math.max(0, newStart), end_ms: newEnd };
   });
 }
 
@@ -244,12 +250,12 @@ export function mergeOverlapSegments(
   let mergedCount = 0;
   for (let i = 1; i < segments.length; i++) {
     const seg = segments[i];
-    const isEcho = seg.end - seg.start < 150;
+    const isEcho = seg.end_ms - seg.start_ms < 150;
     const { overlapWords } = longestPrefixSuffixOverlap(cur.text, seg.text);
-    const gapMs = seg.start - cur.end; // 可为负（时间重叠）
+    const gapMs = seg.start_ms - cur.end_ms; // 可为负（时间重叠）
     const overlapOk = overlapWords >= minOverlapWords || (isEcho && overlapWords >= 1);
     if (gapMs <= maxGapMs && overlapOk) {
-      cur.end = seg.end;
+      cur.end_ms = seg.end_ms;
       cur.text = mergeTwoTexts(cur.text, seg.text);
       mergedCount++;
       continue;
@@ -274,15 +280,15 @@ export function splitBySentences(segments: ImportedSubtitleSegment[]): ImportedS
       continue;
     }
     const totalChars = seg.text.replace(/\s/g, "").length || 1;
-    const span = seg.end - seg.start;
-    let cursor = seg.start;
+    const span = seg.end_ms - seg.start_ms;
+    let cursor = seg.start_ms;
     sentences.forEach((s, i) => {
       const chars = s.replace(/\s/g, "").length;
       const isLast = i === sentences.length - 1;
-      const start = cursor;
-      const end = isLast ? seg.end : Math.round(cursor + (chars / totalChars) * span);
-      out.push({ ...seg, text: s, start, end });
-      cursor = end;
+      const startMs = cursor;
+      const endMs = isLast ? seg.end_ms : Math.round(cursor + (chars / totalChars) * span);
+      out.push({ ...seg, text: s, start_ms: startMs, end_ms: endMs });
+      cursor = endMs;
     });
   }
   return out;
@@ -313,15 +319,15 @@ export function splitForTTS(
       continue;
     }
     const totalChars = seg.text.replace(/\s/g, "").length || 1;
-    const span = seg.end - seg.start;
-    let cursor = seg.start;
+    const span = seg.end_ms - seg.start_ms;
+    let cursor = seg.start_ms;
     parts.forEach((p, i) => {
       const chars = p.replace(/\s/g, "").length;
       const isLast = i === parts.length - 1;
-      const start = cursor;
-      const end = isLast ? seg.end : Math.round(cursor + (chars / totalChars) * span);
-      atoms.push({ ...seg, text: p, start, end });
-      cursor = end;
+      const startMs = cursor;
+      const endMs = isLast ? seg.end_ms : Math.round(cursor + (chars / totalChars) * span);
+      atoms.push({ ...seg, text: p, start_ms: startMs, end_ms: endMs });
+      cursor = endMs;
     });
   }
 
@@ -341,7 +347,7 @@ export function splitForTTS(
     }
     if (countWords(cur.text) + w <= maxWords) {
       cur.text = `${cur.text} ${seg.text}`;
-      cur.end = seg.end;
+      cur.end_ms = seg.end_ms;
       continue;
     }
     out.push(cur);
@@ -532,7 +538,7 @@ export async function stageImportSubtitle(ctx: TaskCtx): Promise<void> {
   } catch (e) {
     emitLog(taskDir, `[Import Subtitle] probe duration failed, fallback to last cue end: ${e}`);
   }
-  if (!duration) duration = segments[segments.length - 1].end;
+  if (!duration) duration = segments[segments.length - 1].end_ms;
 
   // 重叠合并 + 语义重切：仅字幕来源为外部文件（subtitleSource === "file"）时默认启用。
   // YouTube 自动字幕是渐进式滑动窗口输出（每条 cue 重复上条尾部 + 新增内容，常带 10ms 回声段），
@@ -572,8 +578,8 @@ export async function stageImportSubtitle(ctx: TaskCtx): Promise<void> {
     ...s,
     id: idx + 1,
     confidence: 1,
-    start_fmt: srtTime(s.start),
-    end_fmt: srtTime(s.end),
+    start_fmt: srtTime(s.start_ms),
+    end_fmt: srtTime(s.end_ms),
   }));
   const resultText = segments.map((s) => s.text).join(" ");
 

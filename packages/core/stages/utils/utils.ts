@@ -232,6 +232,37 @@ export function split_audio_path(taskDir: string): string {
 export function split_audio_timings_path(taskDir: string): string {
   return join(taskDir, "split_audio", "timings.json");
 }
+/**
+ * 段是否带可用的毫秒时间戳。
+ *
+ * 字幕契约 (SubtitleSegment) 是 start_ms / end_ms; 历史产物里存在写成 start / end 的
+ * 情况, 下游按 start_ms 读会得到 undefined, 一路传到 ffmpeg 就变成
+ * "Invalid duration for option ss: NaN" 这种无法定位根因的报错。
+ */
+export function hasSegTimesMs(seg: any): boolean {
+  return Number.isFinite(Number(seg?.start_ms)) && Number.isFinite(Number(seg?.end_ms));
+}
+
+/** 取段的毫秒时间戳（兼容 start/end 历史写法），缺失时立即失败并指明段号与来源文件。 */
+export function segTimesMs(
+  seg: any,
+  where: string,
+  idx?: number,
+): { start_ms: number; end_ms: number } {
+  if (hasSegTimesMs(seg)) {
+    return { start_ms: Number(seg.start_ms), end_ms: Number(seg.end_ms) };
+  }
+  const legacy = { start_ms: Number(seg?.start), end_ms: Number(seg?.end) };
+  if (Number.isFinite(legacy.start_ms) && Number.isFinite(legacy.end_ms)) {
+    return legacy;
+  }
+  const at = idx == null ? "" : ` #${idx + 1}`;
+  throw new Error(
+    `[segTimesMs]${at} ${where}: 段缺少 start_ms/end_ms (start_ms=${seg?.start_ms}, end_ms=${seg?.end_ms}); ` +
+      `该产物不符合 SubtitleSegment 契约, 请重跑产出它的阶段 (import_subtitle / asr_fix / translate)`,
+  );
+}
+
 export function read_split_audio(ctx: TaskCtx) {
   const filepath = split_audio_path(ctx.task.task_dir);
   return readJson<SplitAudioResult>(filepath);

@@ -29,6 +29,8 @@ import {
   vocalsPath,
   readTranslationResult,
   split_audio_timings_path,
+  hasSegTimesMs,
+  segTimesMs,
 } from "@repo/core/stages/utils/utils.ts";
 import { env } from "@repo/config/env";
 import { probeDurationMs } from "@repo/core/utils/ffmpeg";
@@ -78,26 +80,48 @@ export async function stageSplitAudio(ctx: TaskCtx) {
       const transData = await readTranslationResult(ctx);
       const translation = transData.segments;
       if (!translation?.length) throw new Error("translation.json has no segments");
+      // 翻译文件自带时间轴; 若缺失 (历史产物曾写成 start/end) 且段数与字幕文件一致,
+      // 按序号回退到权威字幕时间轴, 省去整段重跑翻译的成本。
+      const missing = translation.filter((s: any) => !hasSegTimesMs(s));
+      const times = missing.length
+        ? (() => {
+            if (translation.length !== srtSegments.length) {
+              throw new Error(
+                `[split_audio] ${translationFile} 有 ${missing.length} 段缺 start_ms/end_ms ` +
+                  `(段数 ${translation.length} 与 ${srtFilePath} 的 ${srtSegments.length} 不一致, 无法按序号回退), ` +
+                  `请重跑 translate`,
+              );
+            }
+            log(
+              `[split_audio] WARN: ${translationFile} 有 ${missing.length} 段缺 start_ms/end_ms, ` +
+                `按序号回退到 ${srtFilePath} 的时间轴`,
+            );
+            return srtSegments.map((s, i) => segTimesMs(s, srtFilePath, i));
+          })()
+        : translation.map((s, i) => segTimesMs(s, translationFile, i));
       return translation.map((seg, i) => ({
         seg_idx: i + 1,
-        text: translation[i].text,
-        dst: translation[i].dst,
-        src_lang: translation[i].src_lang,
-        dst_lang: translation[i].dst_lang,
-        start_ms: translation[i].start_ms,
-        end_ms: translation[i].end_ms,
-        speaker: translation[i].speaker,
+        text: seg.text,
+        dst: seg.dst,
+        src_lang: seg.src_lang,
+        dst_lang: seg.dst_lang,
+        start_ms: times[i].start_ms,
+        end_ms: times[i].end_ms,
+        speaker: seg.speaker,
       }));
     } else {
-      return srtSegments.map((seg, i) => ({
-        seg_idx: i + 1,
-        text: seg.text,
-        dst: seg.text, // 未翻译时 dst 直接用原文, 保证 tts 有文本可读
-        src_lang: srcLang,
-        dst_lang: srcLang,
-        start_ms: seg.start_ms,
-        end_ms: seg.end_ms,
-      }));
+      return srtSegments.map((seg, i) => {
+        const { start_ms, end_ms } = segTimesMs(seg, srtFilePath, i);
+        return {
+          seg_idx: i + 1,
+          text: seg.text,
+          dst: seg.text, // 未翻译时 dst 直接用原文, 保证 tts 有文本可读
+          src_lang: srcLang,
+          dst_lang: srcLang,
+          start_ms,
+          end_ms,
+        };
+      });
     }
   })();
 
