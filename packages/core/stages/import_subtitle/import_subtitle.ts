@@ -48,16 +48,43 @@ export function decodeHtmlEntities(text: string): string {
 }
 
 /**
- * 清理 cue 文本：去掉 <c>/<i>/<00:00:00.200> 等所有标签、合并空白、解码 HTML 实体。
- * YouTube 自动字幕的单词级时间戳 <00:00:00.200> 也在此被移除。
+ * 圆括号内的"非语音"描述词（`[music]` 的圆括号版本，如 `(upbeat music)`）。
+ * 圆括号也可能是正文（如 "Python (1991)"），因此只在整块含这些词时才删除。
+ */
+const NON_SPEECH_WORDS =
+  "music|musical|singing|sings|song|songs|applause|laughter|laughs|laughing|cheering|cheers|audience|crowd|noise|noisy|inaudible|silence|beep|beeping|bell|buzzer|whistle|whistling|sighs?|coughs?|groans?|grunts?|murmur\\w*|breathing|engine|static|instrumental|upbeat|dramatic|theme|intro|outro|background|rain|thunder|wind|footsteps|typing|clicking|alarm";
+const NON_SPEECH_PAREN = new RegExp(
+  `\\(\\s*[^()]{0,40}?\\b(?:${NON_SPEECH_WORDS})\\b[^()]{0,40}?\\s*\\)`,
+  "gi",
+);
+
+/**
+ * 移除字幕里的非语音标记，避免它们被送进翻译/TTS（会读成 "[music]"）。
+ *
+ * - `[music]` / `[Applause]` / `[ __ ]` / `【音乐】`：VTT 的方括号基本都是非语音标记
+ * - `(upbeat music)`：圆括号版，仅整块含非语音词时删除
+ * - `♪ (upbeat music) ♪` / `♪♪♪`：音乐片段与孤立音乐符号
+ * - `>>`：YouTube 自动字幕的说话人切换前缀（可叠加，如 ">> >> A:"）
+ */
+function stripNonSpeech(text: string): string {
+  return text
+    .replace(/[♪♫][^♪♫]{0,200}?[♪♫]|[♪♫]+/g, " ")
+    .replace(/\[[^\]\n]{0,40}\]|【[^】\n]{0,40}】/g, " ")
+    .replace(NON_SPEECH_PAREN, " ")
+    .replace(/>>+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * 清理 cue 文本：去掉 <c>/<i>/<00:00:00.200> 等所有标签、非语音标记，合并空白、解码 HTML 实体。
+ *
+ * YouTube 自动字幕的单词级时间戳 <00:00:00.200> 也在此被移除；
+ * 实体在标签之后解码，这样 `&gt;&gt;` 还原成的 `>>` 也能被清掉。
+ * 清理后为空的 cue（独立一行 `[music]`）由调用方丢弃。
  */
 export function cleanCueText(raw: string): string {
-  return decodeHtmlEntities(
-    raw
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim(),
-  );
+  return stripNonSpeech(decodeHtmlEntities(raw.replace(/<[^>]+>/g, " ")));
 }
 
 /** 把 hh:mm:ss.mmm / mm:ss.mmm（或 SRT 的逗号毫秒）时间戳转为毫秒。解析失败返回 null。 */
@@ -573,6 +600,17 @@ export async function stageImportSubtitle(ctx: TaskCtx): Promise<void> {
 
   const segmentPad = importCfg?.segmentPad ?? true;
   if (segmentPad) segments = padSegments(segments);
+
+  // 清洗后文本为空的段（如独立一行 "[music]" 的非语音 cue）直接丢弃，
+  // 否则下游 translate/tts 会拿到空文本却仍占一段时间槽。
+  const beforeDrop = segments.length;
+  segments = segments.filter((s) => s.text.trim().length > 0);
+  if (segments.length !== beforeDrop) {
+    emitLog(
+      taskDir,
+      `[Import Subtitle] Dropped ${beforeDrop - segments.length} non-speech cue(s) (empty after cleanup)`,
+    );
+  }
 
   segments = segments.map((s, idx) => ({
     ...s,
