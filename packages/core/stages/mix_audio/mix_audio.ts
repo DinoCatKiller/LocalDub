@@ -71,6 +71,40 @@ export async function stageMixAudio(ctx: TaskCtx) {
     // Probe original TTS duration
     const ttsMs = probeDurationMs(ttsFile);
 
+    // 零时长/损坏的 TTS 段 (空译文或缺失参考音时, tts 阶段写入了无效/零时长占位 wav):
+    // 跳过其配音、在时间线留白, 不让整个 mix_audio 失败 (见 known-limits "零时长段跳过留白")。
+    if (ttsMs <= 0) {
+      const realStartMs = Math.max(item.start_ms, lastEndMs, 0);
+      if (realStartMs > lastEndMs) {
+        const gapSec = (realStartMs - lastEndMs) / 1000;
+        const silenceFile = join(silenceDir, `silence_${i}.wav`);
+        ffmpeg([
+          "-f",
+          "lavfi",
+          "-i",
+          `anullsrc=r=${sampleRate}:cl=mono`,
+          "-t",
+          String(gapSec),
+          silenceFile,
+        ]);
+        segmentInputs.push(silenceFile);
+      }
+      lastEndMs = realStartMs;
+      newTranslation.push({
+        ...item,
+        original_duration_ms: item.end_ms - item.start_ms,
+        drift_ms: Math.round(driftMs),
+        advance_ms: 0,
+        delay_ms: 0,
+        actual_start: Math.floor(realStartMs),
+        actual_end: Math.floor(realStartMs),
+        tts_duration_ms: 0,
+        stretched_duration_ms: 0,
+        stretch_ratio: 1.0,
+      });
+      continue;
+    }
+
     // Trim trailing silence only (areverse so internal pauses aren't mistaken for tail)
     const trimmedFile = join(stretchedDir, `${idx}_trimmed.wav`);
     ffmpeg([

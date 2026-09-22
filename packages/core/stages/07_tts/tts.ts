@@ -17,6 +17,28 @@ import { startLog } from "../utils/log.ts";
 import { newVoxCPMEngine } from "@repo/core/ml/voxcpm/voxcpm";
 import { log } from "@repo/util/log";
 
+/**
+ * 生成合法的零时长静音 WAV (PCM 16-bit mono), 作为空译文/缺参考音段的占位。
+ * 必须带合法 RIFF/WAVE 头, 否则下游 mix_audio 用 ffmpeg 打开会报 "Invalid data"。
+ */
+function silentWav(sampleRate = 48000): Buffer {
+  const buf = Buffer.alloc(44);
+  buf.write("RIFF", 0, "ascii");
+  buf.writeUInt32LE(36, 4);
+  buf.write("WAVE", 8, "ascii");
+  buf.write("fmt ", 12, "ascii");
+  buf.writeUInt32LE(16, 16);
+  buf.writeUInt16LE(1, 20); // PCM
+  buf.writeUInt16LE(1, 22); // mono
+  buf.writeUInt32LE(sampleRate, 24);
+  buf.writeUInt32LE(sampleRate * 2, 28); // byteRate = sr * channels * bytesPerSample
+  buf.writeUInt16LE(2, 32); // blockAlign
+  buf.writeUInt16LE(16, 34); // bitsPerSample
+  buf.write("data", 36, "ascii");
+  buf.writeUInt32LE(0, 40); // data size = 0
+  return buf;
+}
+
 // vocals 参考音的"非静音"判定阈值: PCM 裸数据 > 该字节数才认为有实际声音内容。
 // 1200 = 1200 个采样帧 (约 75ms @ 16kHz), 16 = 16bit 采样深度, 2 = 双声道。
 const MIN_REF_BYTES = 1200 * 16 * 2;
@@ -167,7 +189,7 @@ export async function stageTts(ctx: TaskCtx) {
 
     const text = item.dst || "";
     if (!text.trim()) {
-      writeFile(outPath, Buffer.alloc(44), ctx);
+      writeFile(outPath, silentWav(48000), ctx);
       ttsSegments.push({
         seg_idx: i + 1,
         text: "",
@@ -185,7 +207,7 @@ export async function stageTts(ctx: TaskCtx) {
 
     if (!refWav || !existsSync(refWav)) {
       log(`[WARN] No reference for segment ${idx}, skipping`);
-      writeFile(outPath, Buffer.alloc(44), ctx);
+      writeFile(outPath, silentWav(48000), ctx);
       ttsSegments.push({
         seg_idx: i + 1,
         text: item.text,
