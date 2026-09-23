@@ -361,6 +361,28 @@ export async function stageTts(ctx: TaskCtx) {
     }
   }
 
+  // 无音频处理汇总: 列出所有被 silentWav 占位 (零时长, 无配音) 的段。
+  // 这些段在生成循环里写了合法静音 wav, 下游 mix_audio 据此跳过 (留白、不烧字幕)。
+  // 用最终 ttsSegments 的 tts_duration_ms===0 作为判定, 这样无论本次新写还是
+  // skipExisting 复用的静音占位段都能被列出。
+  const noAudio = ttsSegments.filter((s) => (s.tts_duration_ms ?? 0) === 0);
+  if (noAudio.length > 0) {
+    const reasonOf = (s: TtsSegment) =>
+      s.status === "dropped" ? "编辑层删段" : s.status === "empty" ? "空译文" : "无参考音/静音占位";
+    log(
+      `[tts-noaudio] 无音频处理: 共 ${noAudio.length} 段生成静音占位 (空译文/缺参考音/编辑层删段)`,
+    );
+    const shown = noAudio.slice(0, 20);
+    for (const s of shown) {
+      log(`  #${s.seg_idx} (${reasonOf(s)})`);
+    }
+    if (noAudio.length > shown.length) {
+      log(
+        `  ... 另有 ${noAudio.length - shown.length} 条, 完整明细见 tts/tts.json (status∈{empty,dropped,skipped} 且 tts_duration_ms=0)`,
+      );
+    }
+  }
+
   await setStage(taskDir, "tts", {
     status: "success",
     completed_at: nowISO(),
