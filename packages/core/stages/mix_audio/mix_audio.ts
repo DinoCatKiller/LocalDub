@@ -70,6 +70,13 @@ export async function stageMixAudio(ctx: TaskCtx) {
   const segmentInputs: string[] = [];
   let lastEndMs = 0;
   let driftMs = 0;
+  /** 因零时长而留白跳过的段 (TTS 空音频 / 去尾静音后无内容), 结束后统一告警 */
+  const zeroDurationSkipped: {
+    segIdx: number;
+    text: string;
+    ttsMs: number;
+    trimmedMs: number;
+  }[] = [];
 
   const maxSpeed = ctx.input.stages.mix_audio.maxSpeed;
   const maxAdvanceMs = ctx.input.stages.mix_audio.maxAdvanceMs;
@@ -117,7 +124,9 @@ export async function stageMixAudio(ctx: TaskCtx) {
         advance_ms: 0,
         delay_ms: 0,
         actual_start: Math.floor(realStartMs),
-        actual_end: Math.floor(realStartMs),
+        // 没配音但**保留字幕**, 且按原始时间槽给足时长 (而不是零长度),
+        // 否则观众既听不到也看不到, 内容直接丢失
+        actual_end: Math.max(Math.floor(item.end_ms), Math.floor(realStartMs) + 1),
         tts_duration_ms: 0,
         stretched_duration_ms: 0,
         stretch_ratio: 1.0,
@@ -135,7 +144,41 @@ export async function stageMixAudio(ctx: TaskCtx) {
       trimmedFile,
     ]);
 
-    const trimmedMs = probeDurationMs(trimmedFile);
+    let trimmedMs = probeDurationMs(trimmedFile);
+    // 去尾静音会把「极短且整体很轻」的段整段删光: trimmed=0 但 tts_duration>0
+    // (例如 gl8okcRDRpI #301: tts=320ms 被 silenceremove -50dB 整段判为尾部静音)。
+    // 这种情况退化为使用**未裁剪**的原音频: 宁可多留一点呼吸声, 也不要整段丢词。
+    let srcFile = trimmedFile;
+    if (trimmedMs <= 0) {
+      if (ttsMs > 0) {
+        srcFile = ttsFile;
+        trimmedMs = ttsMs;
+      } else {
+        // 理论上不可达 (ttsMs<=0 已在上面留白跳过), 兜底: 记录后跳过, 绝不中断
+        zeroDurationSkipped.push({
+          segIdx: i + 1,
+          text: item.text?.slice(0, 30) || "?",
+          ttsMs,
+          trimmedMs: 0,
+        });
+        const skipStartMs = Math.max(item.start_ms, lastEndMs, 0);
+        lastEndMs = skipStartMs;
+        newTranslation.push({
+          ...item,
+          original_duration_ms: item.end_ms - item.start_ms,
+          drift_ms: Math.round(driftMs),
+          advance_ms: 0,
+          delay_ms: 0,
+          actual_start: Math.floor(skipStartMs),
+          // 无配音但保留字幕, 避免观众既听不到也看不到
+          actual_end: Math.max(Math.floor(item.end_ms), Math.floor(skipStartMs) + 1),
+          tts_duration_ms: Math.round(ttsMs),
+          stretched_duration_ms: 0,
+          stretch_ratio: 1.0,
+        });
+        continue;
+      }
+    }
 
     // Determine advance — conservative for segments that already fit
     const originalSlotBaseMs = item.end_ms - item.start_ms;
@@ -182,20 +225,14 @@ export async function stageMixAudio(ctx: TaskCtx) {
     let speed = 1.0;
     if (trimmedMs <= originalSlotMs) {
       stretchedMs = trimmedMs;
-      ffmpeg(["-i", trimmedFile, "-c", "copy", stretchedFile]);
+      ffmpeg(["-i", srcFile, "-c", "copy", stretchedFile]);
     } else if (trimmedMs <= slotMs) {
       stretchedMs = trimmedMs;
-      ffmpeg(["-i", trimmedFile, "-c", "copy", stretchedFile]);
+      ffmpeg(["-i", srcFile, "-c", "copy", stretchedFile]);
     } else {
       speed = Math.min(maxSpeed, trimmedMs / slotMs);
       stretchedMs = trimmedMs / speed;
-      ffmpeg([
-        "-i",
-        trimmedFile,
-        "-filter:a",
-        `rubberband=tempo=${speed.toFixed(4)}`,
-        stretchedFile,
-      ]);
+      ffmpeg(["-i", srcFile, "-filter:a", `rubberband=tempo=${speed.toFixed(4)}`, stretchedFile]);
     }
     newDriftMs = originalSlotMs - stretchedMs;
     if (newDriftMs > maxAdvanceMs) newDriftMs = maxAdvanceMs;
@@ -205,16 +242,31 @@ export async function stageMixAudio(ctx: TaskCtx) {
 
     const realEndMs = Math.floor(realStartMs + stretchedMs);
 
+    // 零时长段不再让整个阶段失败: 记录并留白跳过, 结束后统一告警。
+    // 一个坏段不该毁掉整条 24 分钟的配音 (见 known-limits "零时长段跳过留白而非失败")。
     if (realEndMs <= realStartMs) {
-      throw new Error(
-        `[mix_audio] #${i + 1} (${item.text?.slice(0, 30) || "?"}) 生成了零时长段: ` +
-          `tts_file=${ttsFile}, ` +
-          `item.start=${item.start_ms}ms, item.end=${item.end_ms}ms (slot=${(item.end_ms - item.start_ms).toFixed(0)}ms), ` +
-          `tts_duration=${ttsMs.toFixed(0)}ms, trimmed=${trimmedMs.toFixed(0)}ms, ` +
-          `advance=${advanceMs}ms, delay=${delayMs}ms, ` +
-          `stretched=${stretchedMs.toFixed(0)}ms, drift=${driftMs.toFixed(0)}ms\n` +
-          `可能原因: TTS 生成了空音频 (检查 tts/tts.json 该段 status) 或原始时间槽为 0`,
-      );
+      zeroDurationSkipped.push({
+        segIdx: i + 1,
+        text: item.text?.slice(0, 30) || "?",
+        ttsMs,
+        trimmedMs,
+      });
+      // 前面的间隙静音已经填到 realStartMs, 因此时间线推进到 realStartMs 即可
+      lastEndMs = realStartMs;
+      newTranslation.push({
+        ...item,
+        original_duration_ms: item.end_ms - item.start_ms,
+        drift_ms: Math.round(driftMs),
+        advance_ms: advanceMs,
+        delay_ms: delayMs,
+        actual_start: Math.floor(realStartMs),
+        // 无配音但保留字幕, 避免观众既听不到也看不到
+        actual_end: Math.max(Math.floor(item.end_ms), Math.floor(realStartMs) + 1),
+        tts_duration_ms: Math.round(ttsMs),
+        stretched_duration_ms: 0,
+        stretch_ratio: 1.0,
+      });
+      continue;
     }
 
     lastEndMs = realEndMs;
@@ -231,6 +283,24 @@ export async function stageMixAudio(ctx: TaskCtx) {
       stretch_ratio: parseFloat((trimmedMs <= slotMs ? 1.0 : speed).toFixed(4)),
     };
     newTranslation.push(segment);
+  }
+
+  if (zeroDurationSkipped.length > 0) {
+    // 明确告知哪些段没配上音, 便于用 edits.json 删掉或用 regenIndices 重生成,
+    // 而不是像以前那样一条异常把整条配音打断。
+    emitLog(
+      taskDir,
+      `[mix_audio] [WARN] ${zeroDurationSkipped.length} 段因零时长留白跳过 (这些段没有配音, 字幕仍在):`,
+    );
+    for (const z of zeroDurationSkipped.slice(0, 20)) {
+      emitLog(
+        taskDir,
+        `  #${z.segIdx} tts=${z.ttsMs.toFixed(0)}ms trimmed=${z.trimmedMs.toFixed(0)}ms | ${z.text}`,
+      );
+    }
+    if (zeroDurationSkipped.length > 20) {
+      emitLog(taskDir, `  ... 另有 ${zeroDurationSkipped.length - 20} 段`);
+    }
   }
 
   if (segmentInputs.length === 0) throw new Error("No audio segments to merge");
