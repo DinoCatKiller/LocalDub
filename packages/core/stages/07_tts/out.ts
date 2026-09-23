@@ -6,7 +6,8 @@ export interface TtsSegment extends SplitAudioTiming {
   text: string; // TTS 实际朗读文本（tts.ts 写入）
   slot_end_ms: number; // split_audio end_ms（原始槽位终点，参考）
   tts_duration_ms: number;
-  status: "success" | "skipped" | "error" | "empty";
+  /** success=正常合成; skipped=复用旧结果/无参考音; dropped=用户在 edits.json 中删除 */
+  status: "success" | "skipped" | "error" | "empty" | "dropped";
 }
 
 export interface TtsFile {

@@ -16,6 +16,7 @@ import { TaskCtx, setStage, setTask } from "@repo/core/context/context.ts";
 import { startLog } from "../utils/log.ts";
 import { newVoxCPMEngine } from "@repo/core/ml/voxcpm/voxcpm";
 import { log } from "@repo/util/log";
+import { readTaskEdits } from "@repo/core/edits";
 import { DEFAULT_TTS_QUALITY_CONFIG, runTtsQualityCheck, type TtsQualityConfig } from "./quality";
 
 /**
@@ -133,24 +134,61 @@ export async function stageTts(ctx: TaskCtx) {
   const isStart = ctx.input?.task.action === "start";
   const regenIndices = isStart ? undefined : ttsArgs.regenIndices;
 
-  let existingSegments: Map<number, TtsSegment> | undefined;
-  if (regenIndices?.length) {
-    const existingPath = tts_filepath(taskDir);
-    if (existsSync(existingPath)) {
-      const existing = await readJson<TtsFile>(existingPath);
-      existingSegments = new Map(existing.segments.map((s) => [s.seg_idx, s]));
-    }
+  // 上一次 tts.json 的结果: 既服务于 regenIndices 的复用判断,
+  // 也用于识别「编辑层改动」导致的强制重生成 (改文案 / 取消删除)。
+  const existingPath = tts_filepath(taskDir);
+  const existingSegments: Map<number, TtsSegment> = existsSync(existingPath)
+    ? new Map((await readJson<TtsFile>(existingPath)).segments.map((s) => [s.seg_idx, s]))
+    : new Map();
+
+  // 用户编辑层 (edits.json): 删段 / 改文案
+  const edits = readTaskEdits(taskDir);
+  if (edits.dropped.size > 0 || edits.textOverrides.size > 0) {
+    // log() 会自动加阶段前缀, 文案里不要再写一遍 "[tts] "
+    log(`应用 edits.json: 删除 ${edits.dropped.size} 段, 改文案 ${edits.textOverrides.size} 段`);
   }
 
   for (const [i, item] of segments.entries()) {
-    const idx = String(i + 1).padStart(4, "0");
+    const segIdx = i + 1;
+    const idx = String(segIdx).padStart(4, "0");
     const outPath = resolve(ttsWavDir, `${idx}.wav`);
 
-    if (regenIndices?.length && !regenIndices.includes(i + 1)) {
+    // 编辑层: 用户删掉的段 —— 写合法静音占位, 不合成。
+    // 下游 mix_audio 会据此跳过该段 (不加配音、不写入 timings 即不烧字幕),
+    // 因此「删段」是合法语义, 而不需要真的把下标抽走导致后面整体错位。
+    if (edits.dropped.has(segIdx)) {
+      writeFile(outPath, silentWav(48000), ctx);
+      ttsSegments.push({
+        seg_idx: segIdx,
+        text: item.text,
+        dst: item.dst,
+        start_ms: item.start_ms,
+        end_ms: item.start_ms,
+        slot_end_ms: item.end_ms,
+        tts_duration_ms: 0,
+        status: "dropped",
+      });
+      skipped += 1;
+      renderProgress(i + 1, segments.length, tqdmStart);
+      continue;
+    }
+
+    // 编辑层导致的强制重生成: 改了文案 (与上次记录不同), 或上一段被标记 dropped 现在又加回来。
+    const prevSeg = existingSegments.get(segIdx);
+    const wantText = edits.textOverrides.get(segIdx) ?? (item.dst || "");
+    const forceRegen =
+      (edits.textOverrides.has(segIdx) && prevSeg?.dst !== wantText) ||
+      prevSeg?.status === "dropped";
+    // 先删旧 wav, 这样下方的 regenIndices 复用判断与 skipExisting 都会自然落到「重新生成」分支
+    if (forceRegen && existsSync(outPath)) {
+      rmSync(outPath, { force: true });
+    }
+
+    if (regenIndices?.length && !regenIndices.includes(segIdx)) {
       // regenIndices 仅作用于「存在有效旧结果」的段: 列表外且旧结果有效才复用并跳过。
       // 没有有效旧结果 (无记录 / wav 缺失 / wav 零时长损坏) 的段, 无论是否在列表里
       // 都必须正常生成, 不能因为不在 regenIndices 中就被跳过复用坏结果。
-      const existing = existingSegments?.get(i + 1);
+      const existing = existingSegments.get(segIdx);
       const oldValid = !!existing && existsSync(outPath) && probeDurationMs(outPath) > 0;
       if (oldValid) {
         ttsSegments.push(existing!);
@@ -171,10 +209,15 @@ export async function stageTts(ctx: TaskCtx) {
     }
     const refMtime = refWav && existsSync(refWav) ? statSync(refWav).mtimeMs : 0;
 
-    if (ttsArgs.skipExisting && existsSync(outPath) && statSync(outPath).mtimeMs > refMtime) {
+    if (
+      !forceRegen &&
+      ttsArgs.skipExisting &&
+      existsSync(outPath) &&
+      statSync(outPath).mtimeMs > refMtime
+    ) {
       const durMs = probeDurationMs(outPath);
       ttsSegments.push({
-        seg_idx: i + 1,
+        seg_idx: segIdx,
         text: item.text,
         dst: item.dst,
         start_ms: item.start_ms,
@@ -188,7 +231,8 @@ export async function stageTts(ctx: TaskCtx) {
       continue;
     }
 
-    const text = item.dst || "";
+    // 编辑层允许覆盖朗读文案, 因此用 wantText (而非原始译文) 参与后续所有判断与合成
+    const text = wantText;
     if (!text.trim()) {
       writeFile(outPath, silentWav(48000), ctx);
       ttsSegments.push({
@@ -276,9 +320,10 @@ export async function stageTts(ctx: TaskCtx) {
     }
 
     ttsSegments.push({
-      seg_idx: i + 1,
+      seg_idx: segIdx,
       text: item.text,
-      dst: item.dst,
+      // 记录实际朗读的文本 (可能来自 edits.json 的改写), 供下次运行比对是否需要重生成
+      dst: text,
       start_ms: item.start_ms,
       end_ms: item.start_ms + ttsDurationMs,
       slot_end_ms: item.end_ms,

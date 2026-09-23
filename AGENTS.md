@@ -95,6 +95,23 @@ async fn greet(ctx: &Ctx, input: GreetInput) -> GreetOutput {
 - **TTS cloud 对超短文本返回近空音频**：单音节段（如 "嘿"→"Hê"，workfolder 大/55 #25）VoxCPM cloud 可能返回 ~1ms 近空 wav，曾致 mix_audio 零时长硬失败。现由 pacer-rs Retryer 在 tts 段内重试（<100ms 视为无效），耗尽则写静音占位标 error；mix_audio 对零时长段跳过留白而非失败。
 - **VAD 变体时间戳偏移**：所有 VAD 模式都系统性地将分段边界左移（s_off_mean -0.75~-1.85s），导致字幕 timing 不准。CER 最低的 sidechain+vad-v6-th02（8.41%）偏移 -534ms。最佳平衡参数是 sidechain+temp-02（CER 9.48%，s_off +203ms，94.7% 检测率）
 
+## 任务编辑层 edits.json
+
+想手动干预某段配音时**不要去删产物里的行**：`tts/wavs/NNNN.wav` 与段下标一一对应，
+抽走一行会让后面所有段错位，`mix_audio` 的缺文件校验也会直接报错。
+改用任务目录下的 `edits.json` —— 用户手工维护、pipeline 只读不覆盖：
+
+```json
+{ "dropSegments": [22], "textOverrides": { "23": "新的朗读文案" } }
+```
+
+- `dropSegments`：该段不合成配音、时间线留白。因 `mix_video` 的字幕源自
+  `mix_audio/timings.json`，对应字幕行也会一起消失（不会留下"有字幕没声音"）。
+- `textOverrides`：改写朗读文案，**只**强制重生成命中的那一段（无视 `skipExisting`）。
+- 序号保持不变，因此不存在错位问题；改完直接重跑即可。
+- `import` 阶段会为每个新任务自动生成空模板；JSON 写错不会让流水线崩溃，
+  只会打 `[edits] [WARN]` 并忽略全部编辑。
+
 ## Navigation
 
 - `.agents/hardware.md` — GPU 兼容性 & MES hang 根因

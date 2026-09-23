@@ -12,6 +12,7 @@ import {
   encodeToMp4,
 } from "./utils.ts";
 import { WORKFOLDER } from "@repo/config/path/paths";
+import { writeEditsTemplate } from "@repo/core/edits";
 import { log } from "@repo/util/log";
 import { startLog } from "../../stages/utils/log.ts";
 import { probeFrameRate } from "../../utils/ffmpeg.ts";
@@ -65,6 +66,11 @@ export const importVideo = async (input: InputArgs) => {
   };
 
   writeCtx(ctx);
+
+  // 生成一个空的 edits.json 模板, 让用户能在任务目录里直接看到
+  // 「可以手工删段 / 改文案」的入口 (已存在则不覆盖用户内容)
+  writeEditsTemplate(taskDir);
+
   return ctx;
 };
 

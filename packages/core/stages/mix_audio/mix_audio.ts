@@ -3,6 +3,7 @@ import { writeJson, ensureDir } from "@repo/util/file_op";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import {
+  emitLog,
   ffmpeg,
   nowISO,
   probeSampleRate,
@@ -10,6 +11,7 @@ import {
   read_split_audio_timings,
 } from "@repo/core/stages/utils/utils.ts";
 import { probeDurationMs } from "@repo/core/utils/ffmpeg";
+import { readTaskEdits } from "@repo/core/edits";
 import { TaskCtx, setStage, setTask } from "@repo/core/context/context.ts";
 import { Timing } from "./types";
 
@@ -48,11 +50,22 @@ export async function stageMixAudio(ctx: TaskCtx) {
     join(ttsDir, `${String(i + 1).padStart(4, "0")}.wav`),
   );
 
-  for (const f of ttsFiles) {
+  // 用户编辑层 (edits.json): 被删掉的段既不配音也不上字幕
+  const edits = readTaskEdits(taskDir);
+  if (edits.dropped.size > 0) {
+    // emitLog() 会自动加阶段前缀, 文案里不要再写一遍 "[mix_audio] "
+    emitLog(taskDir, `应用 edits.json: 跳过被删除的 ${edits.dropped.size} 段`);
+  }
+
+  for (const [i, f] of ttsFiles.entries()) {
+    // 删掉的段不做缺文件校验: 它可能从未生成过音频
+    if (edits.dropped.has(i + 1)) continue;
     if (!existsSync(f)) throw new Error(`Missing TTS segment: ${f}`);
   }
 
-  const sampleRate = probeSampleRate(ttsFiles[0]);
+  const firstExisting = ttsFiles.find((f, i) => !edits.dropped.has(i + 1) && existsSync(f));
+  if (!firstExisting) throw new Error("没有任何可用的 TTS 段音频, 无法确定采样率");
+  const sampleRate = probeSampleRate(firstExisting);
 
   const segmentInputs: string[] = [];
   let lastEndMs = 0;
@@ -67,6 +80,13 @@ export async function stageMixAudio(ctx: TaskCtx) {
     const ttsFile = ttsFiles[i];
     const idx = String(i + 1).padStart(4, "0");
     const stretchedFile = join(stretchedDir, `${idx}.wav`);
+
+    // 用户在 edits.json 中删掉的段: 不加配音音频, 也不写入 timings。
+    // timings 同时驱动 mix_video 的字幕, 所以这一段是「配音留白 + 字幕消失」同步生效。
+    // 不更新 lastEndMs, 相邻段之间的静音填充会自然盖住这段原本的时间槽。
+    if (edits.dropped.has(i + 1)) {
+      continue;
+    }
 
     // Probe original TTS duration
     const ttsMs = probeDurationMs(ttsFile);
