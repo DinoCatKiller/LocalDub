@@ -16,6 +16,7 @@ import { TaskCtx, setStage, setTask } from "@repo/core/context/context.ts";
 import { startLog } from "../utils/log.ts";
 import { newVoxCPMEngine } from "@repo/core/ml/voxcpm/voxcpm";
 import { log } from "@repo/util/log";
+import { DEFAULT_TTS_QUALITY_CONFIG, runTtsQualityCheck, type TtsQualityConfig } from "./quality";
 
 /**
  * 生成合法的零时长静音 WAV (PCM 16-bit mono), 作为空译文/缺参考音段的占位。
@@ -298,6 +299,23 @@ export async function stageTts(ctx: TaskCtx) {
 
   ensureDir(join(taskDir, "tts"));
   writeJson(tts_filepath(taskDir), { segments: ttsSegments });
+
+  // TTS 语音质检: 挑出与上一段语气/响度/语速偏差过大的段 (仅报告, 不自动修改/重生成音频)
+  const qcConfig: TtsQualityConfig = {
+    ...DEFAULT_TTS_QUALITY_CONFIG,
+    ...(ttsArgs.qualityCheck ?? {}),
+  };
+  if (qcConfig.enabled) {
+    try {
+      await runTtsQualityCheck({ taskDir, ttsSegments, config: qcConfig });
+    } catch (e) {
+      // 质检是辅助功能, 任何异常都不应让 TTS 阶段失败
+      log(
+        `[tts-qc] 质检失败 (不影响 TTS 结果): ${e instanceof Error ? e.message : JSON.stringify(e)}`,
+      );
+    }
+  }
+
   await setStage(taskDir, "tts", {
     status: "success",
     completed_at: nowISO(),
