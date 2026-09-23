@@ -229,8 +229,8 @@ export async function runTtsQualityCheck(opts: {
       reliable: false,
     };
 
-    // empty/error 段没有可用音频, 不分析
-    if (seg.status === "empty" || seg.status === "error") {
+    // empty/error/dropped 段没有可用音频, 不分析
+    if (seg.status === "empty" || seg.status === "error" || seg.status === "dropped") {
       q.unreliable_reason = `status=${seg.status}`;
       qualities.push(q);
       continue;
@@ -320,7 +320,14 @@ export async function runTtsQualityCheck(opts: {
     segments: qualities,
     flagged,
   };
-  writeJson(join(taskDir, "tts", "quality.json"), report);
+  // 只把「有问题」的段写进 quality.json, 全量 segments 不落盘 —— 否则几百段
+  // 逐一罗列, 排查时反而找不到重点。 flaggged 已自带 cur/prev 特征与触发原因, 足够复盘。
+  writeJson(join(taskDir, "tts", "quality.json"), {
+    generated_at: report.generated_at,
+    config: report.config,
+    summary: report.summary,
+    flagged: report.flagged,
+  });
 
   const lines: string[] = [
     `[tts-qc] 质检: 共 ${report.summary.total} 段, 分析 ${analyzed} 段, 参与比较 ${report.summary.reliable} 段, 标记 ${flagged.length} 段`,
